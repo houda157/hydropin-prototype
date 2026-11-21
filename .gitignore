@@ -1,0 +1,12 @@
+# secrets
+firmware/include/secrets.h
+
+# data
+data/raw/
+*.db
+
+# python
+__pycache__/
+
+# platformio
+.pio/

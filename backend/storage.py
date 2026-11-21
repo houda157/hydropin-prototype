@@ -1,0 +1,1 @@
+# SQLite: readings, runs, alerts
