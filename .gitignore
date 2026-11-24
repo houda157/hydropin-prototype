@@ -10,3 +10,7 @@ __pycache__/
 
 # platformio
 .pio/
+
+# simulation venv
+.venv-sim/
+.pytest_cache/

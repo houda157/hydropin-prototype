@@ -1,0 +1,200 @@
+[TITLE]
+
+[JUNCTIONS]
+;ID                      Elevation       Demand Pattern                 
+ PS                      327.75839414               0                            ;
+ M1                      326.65023562               0                            ;
+ H1                      330.00748643               0                            ;
+ B1                      334.45176698               0                            ;
+ A1                      327.36739245    271.22883887                            ;
+ E1                       326.5382847    271.22883887                            ;
+ H2                      327.84778003               0                            ;
+ B2                      327.14199077               0                            ;
+ A2                      330.55958109    266.12182085                            ;
+ E2                       328.3435609    266.12182085                            ;
+ M2                      332.22600473               0                            ;
+ H3                      328.24810545               0                            ;
+ B3                      332.99219834               0                            ;
+ A3                      332.21334131    224.89632296                            ;
+ E3                      329.54600381    224.89632296                            ;
+ H4                      333.11245564               0                            ;
+ B4                      332.01494915               0                            ;
+ A4                      333.06828495    220.19043605                            ;
+ E4                      333.62634763    220.19043605                            ;
+ M3                      335.55625755               0                            ;
+ H5                      335.47545722               0                            ;
+ B5                      336.61625796               0                            ;
+ A5                      334.99937076    267.65595394                            ;
+ E5                      336.00058428    267.65595394                            ;
+ H6                      337.31887174               0                            ;
+ B6                      336.21008239               0                            ;
+ A6                      335.79118315    256.63458372                            ;
+ E6                      336.89945579    256.63458372                            ;
+
+[RESERVOIRS]
+;ID                                   Head                  Pattern
+ R0                      321.52230971                            ;
+
+[TANKS]
+;ID                              Elevation           Init Level            Min Level            Max Level             Diameter           Min Volume Volume Curve         Overflow            
+
+[PIPES]
+;ID                   Node1                Node2                              Length             Diameter            Roughness           Minor Loss               Status
+ MN1                  PS                   M1                      390.96675416    9.2519685039    159.84689829               0                 Open   ;
+ MN2                  M1                   M2                      781.93350831    9.2519685039    146.69484604               0                 Open   ;
+ MN3                  M2                   M3                      781.93350831    9.2519685039    129.25877516               0                 Open   ;
+ L1                   M1                   H1                       19.68503937     5.905511811    138.30986202               0                 Open   ;
+ V1                   H1                   B1                        6.56167979     5.905511811    156.65977837               2                 Open   ;
+ S1a                  B1                   A1                      367.45406824     5.905511811    150.77309744               0                 Open   ;
+ S1b                  A1                   E1                      557.74278215    4.3307086614    144.11922094               0                 Open   ;
+ L2                   M1                   H2                       19.68503937     5.905511811     141.9475488               0                 Open   ;
+ V2                   H2                   B2                        6.56167979     5.905511811    152.75085275               2                 Open   ;
+ S2a                  B2                   A2                      367.45406824     5.905511811    136.90704279               0                 Open   ;
+ S2b                  A2                   E2                      557.74278215    4.3307086614    130.91019939               0                 Open   ;
+ L3                   M2                   H3                       19.68503937     5.905511811    148.43213756               0                 Open   ;
+ V3                   H3                   B3                        6.56167979     5.905511811     129.4670918               2                 Open   ;
+ S3a                  B3                   A3                      367.45406824     5.905511811    137.65331587               0                 Open   ;
+ S3b                  A3                   E3                      557.74278215    4.3307086614    139.00744699               0                 Open   ;
+ L4                   M2                   H4                       19.68503937     5.905511811     139.2345748               0                 Open   ;
+ V4                   H4                   B4                        6.56167979     5.905511811    139.43794503               2                 Open   ;
+ S4a                  B4                   A4                      367.45406824     5.905511811    138.52317342               0                 Open   ;
+ S4b                  A4                   E4                      557.74278215    4.3307086614    136.22527803               0                 Open   ;
+ L5                   M3                   H5                       19.68503937     5.905511811    137.56982602               0                 Open   ;
+ V5                   H5                   B5                        6.56167979     5.905511811    134.32102546               2                 Open   ;
+ S5a                  B5                   A5                      367.45406824     5.905511811    139.77561105               0                 Open   ;
+ S5b                  A5                   E5                      557.74278215    4.3307086614    131.62338703               0                 Open   ;
+ L6                   M3                   H6                       19.68503937     5.905511811     164.2811332               0                 Open   ;
+ V6                   H6                   B6                        6.56167979     5.905511811    135.32363389               2                 Open   ;
+ S6a                  B6                   A6                      367.45406824     5.905511811    141.67870249               0                 Open   ;
+ S6b                  A6                   E6                      557.74278215    4.3307086614    138.33466387               0                 Open   ;
+
+[PUMPS]
+;ID                   Node1                Node2                Properties          
+ PUMP                 R0                   PS                   HEAD     PUMP_CURVE             ;
+
+[VALVES]
+;ID                   Node1                Node2                            Diameter Type              Setting           Minor Loss
+
+[TAGS]
+;type      name       tag       
+
+[DEMANDS]
+;ID        Demand     Pattern   
+
+[STATUS]
+;ID        Setting   
+
+[PATTERNS]
+;ID        Multipliers
+
+[CURVES]
+;ID         X-Value      Y-Value     
+;PUMP: PUMP_CURVE
+ PUMP_CURVE     0.000000   130.905512   ;
+ PUMP_CURVE  1109.522620    98.425197   ;
+ PUMP_CURVE  2219.045240     0.000000   ;
+
+
+[CONTROLS]
+
+[RULES]
+
+[ENERGY]
+GLOBAL PRICE           0.0000
+
+[EMITTERS]
+;ID        Flow coefficient
+
+[QUALITY]
+
+[SOURCES]
+;Node      Type       Quality    Pattern   
+
+[REACTIONS]
+;Type           Pipe/Tank               Coefficient
+
+ ORDER BULK 1
+ ORDER TANK 1
+ ORDER WALL 1
+ GLOBAL BULK 0.0000    
+ GLOBAL WALL 0.0000    
+
+[MIXING]
+;Tank ID             Model Fraction
+
+[TIMES]
+DURATION             00:00:00
+HYDRAULIC TIMESTEP   01:00:00
+QUALITY TIMESTEP     00:06:00
+PATTERN TIMESTEP     01:00:00
+PATTERN START        00:00:00
+REPORT TIMESTEP      01:00:00
+REPORT START         00:00:00
+START CLOCKTIME      00:00:00 AM
+RULE TIMESTEP        00:06:00
+STATISTIC            NONE      
+
+[REPORT]
+
+[OPTIONS]
+UNITS                GPM                 
+HEADLOSS             H-W                 
+SPECIFIC GRAVITY     1
+VISCOSITY            1
+TRIALS               200
+ACCURACY             0.001
+CHECKFREQ            2
+MAXCHECK             10
+UNBALANCED           STOP                
+PATTERN              1                   
+DEMAND MULTIPLIER    1
+DEMAND MODEL         PDA
+MINIMUM PRESSURE     0.00
+REQUIRED PRESSURE    17.06
+PRESSURE EXPONENT    0.5
+EMITTER EXPONENT     0.5
+QUALITY              NONE                
+DIFFUSIVITY          1
+TOLERANCE            0.01
+
+[COORDINATES]
+;Node      X-Coord    Y-Coord   
+R0                350.000000000        -30.000000000
+PS                350.000000000          0.000000000
+M1                350.000000000        119.166666667
+H1                344.000000000        119.166666667
+B1                342.000000000        119.166666667
+A1                230.000000000        119.166666667
+E1                 60.000000000        119.166666667
+H2                356.000000000        119.166666667
+B2                358.000000000        119.166666667
+A2                470.000000000        119.166666667
+E2                640.000000000        119.166666667
+M2                350.000000000        357.500000000
+H3                344.000000000        357.500000000
+B3                342.000000000        357.500000000
+A3                230.000000000        357.500000000
+E3                 60.000000000        357.500000000
+H4                356.000000000        357.500000000
+B4                358.000000000        357.500000000
+A4                470.000000000        357.500000000
+E4                640.000000000        357.500000000
+M3                350.000000000        595.833333333
+H5                344.000000000        595.833333333
+B5                342.000000000        595.833333333
+A5                230.000000000        595.833333333
+E5                 60.000000000        595.833333333
+H6                356.000000000        595.833333333
+B6                358.000000000        595.833333333
+A6                470.000000000        595.833333333
+E6                640.000000000        595.833333333
+
+[VERTICES]
+;Link      X-Coord    Y-Coord   
+
+[LABELS]
+
+[BACKDROP]
+UNITS    NONE
+
+[END]

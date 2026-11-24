@@ -1,0 +1,162 @@
+[
+ {
+  "row": 0,
+  "id": "PS",
+  "node_index": 0,
+  "kind": "pump_out",
+  "branch": "main",
+  "sector": null,
+  "x": 350.0,
+  "y": 0.0
+ },
+ {
+  "row": 1,
+  "id": "M1",
+  "node_index": 1,
+  "kind": "main",
+  "branch": "main",
+  "sector": null,
+  "x": 350.0,
+  "y": 119.16666666666667
+ },
+ {
+  "row": 2,
+  "id": "H1",
+  "node_index": 2,
+  "kind": "sector_head",
+  "branch": "sector_1",
+  "sector": 1,
+  "x": 344.0,
+  "y": 119.16666666666667
+ },
+ {
+  "row": 3,
+  "id": "E1",
+  "node_index": 5,
+  "kind": "submain_end",
+  "branch": "sector_1",
+  "sector": 1,
+  "x": 60.0,
+  "y": 119.16666666666667
+ },
+ {
+  "row": 4,
+  "id": "H2",
+  "node_index": 6,
+  "kind": "sector_head",
+  "branch": "sector_2",
+  "sector": 2,
+  "x": 356.0,
+  "y": 119.16666666666667
+ },
+ {
+  "row": 5,
+  "id": "E2",
+  "node_index": 9,
+  "kind": "submain_end",
+  "branch": "sector_2",
+  "sector": 2,
+  "x": 640.0,
+  "y": 119.16666666666667
+ },
+ {
+  "row": 6,
+  "id": "M2",
+  "node_index": 10,
+  "kind": "main",
+  "branch": "main",
+  "sector": null,
+  "x": 350.0,
+  "y": 357.5
+ },
+ {
+  "row": 7,
+  "id": "H3",
+  "node_index": 11,
+  "kind": "sector_head",
+  "branch": "sector_3",
+  "sector": 3,
+  "x": 344.0,
+  "y": 357.5
+ },
+ {
+  "row": 8,
+  "id": "E3",
+  "node_index": 14,
+  "kind": "submain_end",
+  "branch": "sector_3",
+  "sector": 3,
+  "x": 60.0,
+  "y": 357.5
+ },
+ {
+  "row": 9,
+  "id": "H4",
+  "node_index": 15,
+  "kind": "sector_head",
+  "branch": "sector_4",
+  "sector": 4,
+  "x": 356.0,
+  "y": 357.5
+ },
+ {
+  "row": 10,
+  "id": "E4",
+  "node_index": 18,
+  "kind": "submain_end",
+  "branch": "sector_4",
+  "sector": 4,
+  "x": 640.0,
+  "y": 357.5
+ },
+ {
+  "row": 11,
+  "id": "M3",
+  "node_index": 19,
+  "kind": "main",
+  "branch": "main",
+  "sector": null,
+  "x": 350.0,
+  "y": 595.8333333333334
+ },
+ {
+  "row": 12,
+  "id": "H5",
+  "node_index": 20,
+  "kind": "sector_head",
+  "branch": "sector_5",
+  "sector": 5,
+  "x": 344.0,
+  "y": 595.8333333333334
+ },
+ {
+  "row": 13,
+  "id": "E5",
+  "node_index": 23,
+  "kind": "submain_end",
+  "branch": "sector_5",
+  "sector": 5,
+  "x": 60.0,
+  "y": 595.8333333333334
+ },
+ {
+  "row": 14,
+  "id": "H6",
+  "node_index": 24,
+  "kind": "sector_head",
+  "branch": "sector_6",
+  "sector": 6,
+  "x": 356.0,
+  "y": 595.8333333333334
+ },
+ {
+  "row": 15,
+  "id": "E6",
+  "node_index": 27,
+  "kind": "submain_end",
+  "branch": "sector_6",
+  "sector": 6,
+  "x": 640.0,
+  "y": 595.8333333333334
+ }
+]
