@@ -10,3 +10,9 @@ __pycache__/
 
 # platformio
 .pio/
+
+# simulation venv and large generated data
+.venv-sim/
+.pytest_cache/
+m3/out/cnn_data.npz
+m3/out/*.log

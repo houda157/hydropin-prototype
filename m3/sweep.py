@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+from m3.cnn import MODEL_PATH, cnn_locate  # noqa: E402
 from m3.locate import (echo_locate, estimate_wave_speed, matched_field, measure,  # noqa: E402
                        mfp_bank, time_reversal)
 from m3.moc import leak_cda_for_fraction, load_setup  # noqa: E402
@@ -28,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # Inside the covered zone: blind ~4 m at the sensor (a·Tc/2) and ~0.12·L at the reservoir
 # end (first-round-trip window with a ±10 % wave-speed margin).
 POSITIONS = [30.0, 50.0, 75.0, 100.0, 125.0, 140.0]
-METHODS = ("tr", "tr_id", "mfp", "echo")
+METHODS = ("tr", "tr_id", "mfp", "echo") + (("cnn",) if MODEL_PATH.exists() else ())
 U_IDENTIFIED = 0.03   # window margin once the wave speed is identified from the trace
 NOISE_M = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2]
 A_ERR = [-0.10, -0.05, -0.02, 0.0, 0.02, 0.05, 0.10]
@@ -48,7 +49,8 @@ def _evaluate(model, bank, x_true, sigma, seed):
     true = true.with_(x_leak=x_true, leak_cda=leak_cda_for_fraction(true, LEAK_FRACTION, x_true))
     t, h = measure(true, sigma_m=sigma, rng=np.random.default_rng([seed, int(x_true * 10), int(sigma * 1e4)]))
     a_id = estimate_wave_speed(model, t, h)
-    return {
+    extra = {"cnn": cnn_locate(model, t, h)} if "cnn" in METHODS else {}
+    return extra | {
         "x_true": x_true, "sigma_m": sigma, "seed": seed, "a_identified": a_id,
         "tr": time_reversal(model, t, h).x_est,
         "tr_id": time_reversal(model.with_(a=a_id), t, h, a_uncertainty=U_IDENTIFIED).x_est,
@@ -106,8 +108,9 @@ def main() -> None:
     (out / "sweep.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
 
     labels = {"tr": "time reversal (assumed a)", "tr_id": "time reversal (a identified from trace)",
-              "mfp": "matched-field (assumed a)", "echo": "echo (assumed a)"}
-    colors = {"tr": "#2d6fa3", "tr_id": "#1a9850", "mfp": "#e07b00", "echo": "#888"}
+              "mfp": "matched-field (assumed a)", "echo": "echo (assumed a)",
+              "cnn": "1D CNN (trained on simulated traces)"}
+    colors = {"tr": "#2d6fa3", "tr_id": "#1a9850", "mfp": "#e07b00", "echo": "#888", "cnn": "#8e44ad"}
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     for m in METHODS:
         s = result["noise"][m]
