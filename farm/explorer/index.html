@@ -4,7 +4,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: a simulation "studio" console. Header strip of data cells; numbered panels left and
    right; the farm as a tilted 3D model on a studio floor in the middle, with pressure pillars and
@@ -26,7 +26,7 @@
   --idle: #9b9b95;
   --lo: #cfcfca;          /* "no change" end of the scale */
   --font-display: "Archivo", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-mono: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;   /* labels and readouts */
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #141413; --panel: #1c1c1b; --panel-2: #222220; --ink: #ecebe6; --muted: #8e8d87; --line: #30302d;
@@ -181,7 +181,7 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
     <div class="tag" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c3.5 5 6 8.6 6 12a6 6 0 0 1-12 0c0-3.4 2.5-7 6-12z"/></svg>HP-FARM
     </div>
-    <div class="title"><span class="lbl">HydroPin · virtual drip farm · 50 ha · simulation</span><b>Farm Twin<i>/</i></b></div>
+    <div class="title"><span class="lbl">HydroPin virtual drip farm, 50 ha, simulation</span><b>Farm Twin<i>/</i></b></div>
     <div><span class="lbl">Irrigation shift</span><span class="cellv" id="h-shift">—</span></div>
     <div class="x"><span class="lbl">Scenarios</span><span class="cellv">2,070 leaks</span></div>
     <div class="x x2"><span class="lbl">Sensor noise σ</span><span class="cellv" id="h-sigma">10 mbar</span></div>
@@ -255,7 +255,7 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
     <div class="col center">
       <div class="stage">
         <svg id="map" role="img" aria-label="3D view of the simulated farm"></svg>
-        <div class="stage-top"><span class="lbl" id="s-tl">Model HP-FARM · rev 1.0</span><span class="lbl" id="s-tr">Studio · bay 1</span></div>
+        <div class="stage-top"><span class="lbl" id="s-tl">Model HP-FARM rev 1.0</span><span class="lbl" id="s-tr">Studio bay 1</span></div>
         <div class="legend" id="legend"></div>
         <div class="mode"><span class="lbl" id="m-small">Scenario</span><b id="m-big">—</b><span class="lbl" id="m-sub"></span></div>
         <div class="hints lbl" id="hints"></div>
@@ -308,8 +308,8 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
   </div>
 
   <div class="foot">
-    <span class="lbl">Simulated data · WNTR model · farm/leaks/out (3 shifts × 10 farm versions × 23 spots × 3 sizes)</span>
-    <span class="lbl">Assumptions: farm/model/params.yaml · 3σ rule = a sensor notices a drop above 3 × noise</span>
+    <span class="lbl">Simulated data from the WNTR model in farm/leaks/out (3 shifts × 10 farm versions × 23 spots × 3 sizes)</span>
+    <span class="lbl">Assumptions in farm/model/params.yaml. 3σ rule: a sensor notices a drop above 3 × noise</span>
   </div>
 </div>
 
@@ -326,12 +326,12 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
   const FIELD = (s) => `Field ${s}`;
   const branchName = (b) => b === "main" ? "Main" : FIELD(b.split("_")[1]);
   const LONG = { PS: "Pump outlet", M1: "Main junction 1", M2: "Main junction 2", M3: "Main junction 3",
-    MN1: "Main pipe · pump→J1", MN2: "Main pipe · J1→J2", MN3: "Main pipe · J2→J3" };
+    MN1: "Main pipe, pump to J1", MN2: "Main pipe, J1 to J2", MN3: "Main pipe, J2 to J3" };
   function spotName(id) {
     if (LONG[id]) return LONG[id];
     const k = id[0], s = id.replace(/\D/g, "");
-    if (id.startsWith("S")) return `${FIELD(s)} · sub-main ${id.endsWith("a") ? "1st" : "2nd"} half`;
-    return { H: `${FIELD(s)} · entrance`, B: `${FIELD(s)} · after valve`, A: `${FIELD(s)} · middle`, E: `${FIELD(s)} · far end` }[k] || id;
+    if (id.startsWith("S")) return `${FIELD(s)} sub-main, ${id.endsWith("a") ? "1st" : "2nd"} half`;
+    return { H: `${FIELD(s)} entrance`, B: `${FIELD(s)} after valve`, A: `${FIELD(s)} middle`, E: `${FIELD(s)} far end` }[k] || id;
   }
   const SHORT = (id) => id === "PS" ? "Pump out" : id[0] === "M" ? `Main J${id.slice(1)}` : id[0] === "H" ? `F${id.slice(1)} entry` : `F${id.slice(1)} end`;
 
@@ -404,7 +404,7 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
       el("polygon", { points: pts([P(x0 + i, y0 + i), P(x1 - i, y0 + i), P(x1 - i, y1 - i), P(x0 + i, y1 - i)]), class: "fieldp" + (on ? "" : " off") }, gFields);
       const c = P((x0 + x1) / 2, y1 - 40);
       const t = el("text", { x: c.x, y: c.y, "text-anchor": "middle", class: "flab" }, gFields);
-      t.textContent = FIELD(s.id) + (on ? "" : " · closed");
+      t.textContent = FIELD(s.id) + (on ? "" : " closed");
     }
     for (const p of D.pipes) {
       const a = NODE[p.from], b = NODE[p.to];
@@ -545,7 +545,7 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
       callouts: () => {
         const L = P(sc.x[s], sc.y[s]);
         callout(L.x, L.y + 2, L.x > 0 ? -70 : 70, 46, "Leak spot", spotName(state.at));
-        if (clue) { const T = P(NODE[top].x, NODE[top].y, 6 + PH); const right = T.x < VB.maxX - 190; callout(T.x + (right ? 8 : -8), T.y - 4, right ? 40 : -40, -30, "Biggest extra drop", `${top} · +${extra.toFixed(1)} mbar`); }
+        if (clue) { const T = P(NODE[top].x, NODE[top].y, 6 + PH); const right = T.x < VB.maxX - 190; callout(T.x + (right ? 8 : -8), T.y - 4, right ? 40 : -40, -30, "Biggest extra drop", `${top} +${extra.toFixed(1)} mbar`); }
       },
     });
 
@@ -569,15 +569,15 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
     $("r-note").textContent = `Every pressure falls by about ${common.toFixed(0)} mbar: that says there is a leak. Only ${top} falls ${extra.toFixed(0)} mbar more: that difference says where.`;
 
     // stage text
-    $("m-small").textContent = clue ? "Location clue · extra drop beyond the average" : "Total pressure drop";
-    $("m-big").textContent = `Leak · ${branchName(sc.branch[s])}`;
-    $("m-sub").textContent = `${state.size} % · ${leak.toFixed(2)} L/s · farm version ${pad2(state.world + 1)}`;
-    $("s-tr").textContent = `Shift · fields ${D.configs[state.cfg].join(" + ")}`;
-    $("hints").innerHTML = "<span>Click · move the leak</span><span>▶ · leak tour</span>";
-    $("legend").innerHTML = `<span class="lbl">${clue ? "Extra drop" : "Pressure drop"} · pillar height</span><span class="ramp"></span><span class="lbl">0 → ${maxVal.toFixed(0)} mbar</span>`;
+    $("m-small").textContent = clue ? "Location clue: extra drop beyond the average" : "Total pressure drop";
+    $("m-big").textContent = sc.branch[s] === "main" ? "Leak on the main" : `Leak in ${branchName(sc.branch[s])}`;
+    $("m-sub").textContent = `${state.size} % leak, ${leak.toFixed(2)} L/s, farm version ${pad2(state.world + 1)}`;
+    $("s-tr").textContent = `Shift: fields ${D.configs[state.cfg].join(" + ")}`;
+    $("hints").innerHTML = "<span>Click a dot to move the leak</span><span>▶ for a leak tour</span>";
+    $("legend").innerHTML = `<span class="lbl">${clue ? "Extra drop" : "Pressure drop"} = pillar height</span><span class="ramp"></span><span class="lbl">0 → ${maxVal.toFixed(0)} mbar</span>`;
 
     // sensor list
-    $("list-title").textContent = "Sensor spots · live";
+    $("list-title").textContent = "Sensor spots, live";
     $("list").innerHTML = CANDS.map(id => {
       const n = NODE[id];
       if (!live(n)) return row(id, "—", `<span class="st off">Closed</span>`);
@@ -589,9 +589,9 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
     // timeline: leak tour
     const ids = [...SPOTS[state.cfg].keys()], cur = ids.indexOf(state.at);
     $("t-left").textContent = "Leak tour";
-    $("t-mid").textContent = `Operator · ${spotName(state.at)}`;
+    $("t-mid").textContent = `Leak at ${spotName(state.at)}`;
     $("t-right").textContent = `Spot ${pad2(cur + 1)} / ${ids.length}`;
-    $("t-bl").textContent = `${branchName(sc.branch[s])} · ${state.size} %`;
+    $("t-bl").textContent = `${branchName(sc.branch[s])}, ${state.size} % leak`;
     $("t-br").textContent = `${ids.length} leak spots in this shift`;
     track(ids.map((id, i) => ({ title: spotName(id), cur: i === cur, on: () => { stopTour(); state.at = id; render(); } })), cur / (ids.length - 1));
   }
@@ -676,7 +676,7 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
           const g = on ? pillar(n, 46, "var(--accent)", id) : pillar(n, 6, "var(--idle)", null);
           g.classList.add("cand-sq"); g.setAttribute("tabindex", "0"); g.setAttribute("role", "button");
           g.setAttribute("aria-label", `${on ? "Remove" : "Add"} sensor at ${spotName(id)}`);
-          el("title", {}, g).textContent = `${spotName(id)} · click to ${on ? "remove" : "add"}`;
+          el("title", {}, g).textContent = `${spotName(id)}: click to ${on ? "remove" : "add"}`;
           const tog = () => { stopTour(); on ? state.sensors.delete(id) : state.sensors.add(id); render(); };
           g.addEventListener("click", tog); g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); tog(); } });
         }
@@ -697,15 +697,15 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
       : r.br < 0.5 ? "Leaks are noticed but often not traced: add sensors where the ground dots stay orange."
       : small < 0.5 ? `Small 1 % leaks stay hard: their drop is close to the noise. A quieter sensor (try 5 mbar) helps more than extra sensors.`
       : "Good coverage. Remove a sensor: if the numbers barely move, the kit can be cheaper.";
-    $("m-small").textContent = "Sensor placement · tested on all 2,070 leaks";
-    $("m-big").textContent = `${n} sensors · ${Math.round(100 * r.br)} %`;
-    $("m-sub").textContent = `${Math.round(100 * r.det)} % noticed · ${(n * 292).toLocaleString("en")} DT kit`;
-    $("s-tr").textContent = "All shifts · all farm versions";
-    $("hints").innerHTML = "<span>Click a stub · add / remove sensor</span><span>▶ · sweep the budget</span>";
-    $("legend").innerHTML = `<span class="lbl">Ground dots · traced to the right field</span><span class="ramp score"></span><span class="lbl">0 → 100 %</span>`;
+    $("m-small").textContent = "Sensor placement, tested on all 2,070 leaks";
+    $("m-big").textContent = `${n} sensors, ${Math.round(100 * r.br)} %`;
+    $("m-sub").textContent = `${Math.round(100 * r.det)} % noticed, ${(n * 292).toLocaleString("en")} DT kit`;
+    $("s-tr").textContent = "All shifts, all farm versions";
+    $("hints").innerHTML = "<span>Click a stub to add or remove a sensor</span><span>▶ to sweep the budget</span>";
+    $("legend").innerHTML = `<span class="lbl">Ground dots: traced to the right field</span><span class="ramp score"></span><span class="lbl">0 → 100 %</span>`;
 
     // single-sensor value list
-    $("list-title").textContent = "Sensor spots · toggle";
+    $("list-title").textContent = "Sensor spots, toggle";
     $("list").innerHTML = CANDS.map(id => {
       const on = state.sensors.has(id);
       return `<div class="li"><span class="id">${id}</span><span class="nm">${SHORT(id)}</span><span class="v"></span><button type="button" class="st ${on ? "hot" : "off"}" data-id="${id}" aria-pressed="${on}">${on ? "On" : "Off"}</button></div>`;
@@ -720,10 +720,10 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
     const curK = ks.indexOf(n);
     $("t-left").textContent = "Sensor budget";
     const isOpt = curK >= 0 && BUDGET[`${state.sigma}|${n}`].set.length === n && BUDGET[`${state.sigma}|${n}`].set.every(id => state.sensors.has(id));
-    $("t-mid").textContent = isOpt ? `Optimiser · ${n} sensors → ${Math.round(100 * res[curK].br)} % right field`
-                                   : `Your selection · ${n} sensors → ${Math.round(100 * r.br)} % right field`;
+    $("t-mid").textContent = isOpt ? `Optimiser: ${n} sensors → ${Math.round(100 * res[curK].br)} % right field`
+                                   : `Your selection: ${n} sensors → ${Math.round(100 * r.br)} % right field`;
     $("t-right").textContent = `${pad2(Math.max(0, n))} / 10`;
-    $("t-bl").textContent = "Bars · share traced to the right field with the best set";
+    $("t-bl").textContent = "Bars: share traced to the right field with the best set";
     const best = res.reduce((m, x, i) => x.br > res[m].br + 0.005 ? i : m, 0);
     $("t-br").textContent = `More than ${ks[best]} sensors adds nothing`;
     track(ks.map((k, i) => ({ title: `${k} sensors: ${Math.round(100 * res[i].det)} % noticed, ${Math.round(100 * res[i].br)} % right field`,
