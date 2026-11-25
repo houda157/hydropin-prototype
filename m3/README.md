@@ -15,7 +15,8 @@ sensor at the valve, 2 kHz). Full data description: `docs/DATA_PIPELINE.md`.
 | `sweep.py` | Error vs noise and vs wave-speed error → `out/sweep.json`, `report/figures/m3_accuracy.png` (~8 min). |
 | `ve_study.py` | Creep: 3 real pipes × every locator, with and without calibration → `out/ve_study.json`, `report/figures/m3_viscoelastic.png` (~6 min; `plot` redraws only). |
 | `plot_focus.py` | Focusing curves → `report/figures/m3_time_reversal.png`. |
-| `tests/` | 40 tests: solver physics, creep, calibration, every locator, the CNN. |
+| `export_dashboard.py` | M3 tab data → `dashboard/m3/` (format: `dashboard/m3/FORMAT.md`). |
+| `tests/` | 45 tests: solver physics, creep, calibration, every locator, the CNN, the dashboard files. |
 
 ```powershell
 .venv-sim\Scripts\python -m pytest m3/tests
@@ -102,5 +103,7 @@ for leaks ≥ 4 %, 3.3 m for 2–4 %, but 17.6 m for 1–2 % leaks, whose echo (
 - Tiny leaks (1–2 %) need a quieter sensor, longer averaging or repeated tests.
 - Leaks are known-size orifices; noise is white Gaussian.
 
-Next: `dashboard/m3/*.json` exports (pressure along the pipe over time, sensor trace,
-focusing curve, estimates); mentor review (time-reversal formulation, creep values, calibration).
+## Dashboard files (M3 tab)
+`python -m m3.export_dashboard` writes `dashboard/m3/index.json` and 4 showcase cases (wave animation,
+sensor trace, time-reversal and matched-field curves, every method's estimate). Format and suggested
+use: `dashboard/m3/FORMAT.md`. Mentor review: done (Moez approved).

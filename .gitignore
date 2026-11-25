@@ -16,3 +16,4 @@ __pycache__/
 .pytest_cache/
 m3/out/cnn_data.npz
 m3/out/*.log
+.claude/
