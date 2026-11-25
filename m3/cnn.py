@@ -2,11 +2,13 @@
 
 In the spirit of ref [4] (Waqar, Memon, Louati, Ghidaoui et al. 2025, transients with
 domain-guided ML). "Domain-guided" here means the input carries physics:
-  channel 0: sensor head, pre-closure level removed, scaled by the nominal Joukowsky surge
-  channel 1: sensor head − intact-pipe model (nominal), scaled by a typical echo (0.25 m)
-The CNN never sees the true wave speed or friction: the training pipes vary around the
-nominal model (a ±10 %, friction, leak size), so it learns to cope with model error,
-like the other locators.
+  channel 0: sensor head, pre-closure level removed, scaled by the Joukowsky surge a·V0/g
+  channel 1: sensor head − intact-pipe model, scaled by a typical echo (0.25 m)
+The intact-pipe model uses the wave speed **identified from the same trace**
+(`locate.estimate_wave_speed`: reservoir-return time), not an assumed one. So the CNN does
+not depend on the wave speed the user's model assumes, the same way `tr_id` does for time
+reversal. Friction stays at the nominal value; the training pipes vary in a (±10 %),
+friction, leak size and position, so the CNN learns to cope with the remaining model error.
 
     python -m m3.cnn data    # simulate clean training traces  -> m3/out/cnn_data.npz (not committed)
     python -m m3.cnn train   # train, noise added on the fly    -> m3/out/cnn.pt + cnn_eval.json
@@ -22,8 +24,8 @@ from pathlib import Path
 
 import numpy as np
 
-from m3.locate import FS
-from m3.moc import PipeSetup, joukowsky_head, leak_cda_for_fraction, load_setup, simulate
+from m3.locate import FS, estimate_wave_speed
+from m3.moc import G, PipeSetup, leak_cda_for_fraction, load_setup, simulate
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "m3" / "out"
@@ -32,6 +34,7 @@ MODEL_PATH = OUT / "cnn.pt"
 
 WINDOW_S = 1.1          # 0 .. t_close + 2L/a_min (a_min = 315 m/s) with margin
 N_SAMPLES = int(WINDOW_S * FS)
+ID_WINDOW_S = 1.3       # simulated length used to identify a (reservoir return + margin)
 ECHO_SCALE_M = 0.25
 SEED = 20261124
 
@@ -55,18 +58,25 @@ _REF_CACHE: dict = {}
 
 def reference_trace(model: PipeSetup) -> np.ndarray:
     """Intact-pipe model trace for this model setup (cached)."""
-    key = (model.a, model.f, model.L, model.D, model.V0, model.H_res, model.Tc, model.t_close)
+    key = (model.a, model.f, model.L, model.D, model.V0, model.H_res, model.Tc, model.t_close,
+           model.ve_J, model.ve_tau)
     if key not in _REF_CACHE:
         _REF_CACHE[key] = _trace(model.with_(x_leak=None, leak_cda=0.0))
     return _REF_CACHE[key]
 
 
-def features(h: np.ndarray, h_ref: np.ndarray, model: PipeSetup) -> np.ndarray:
-    """[..., 2, N_SAMPLES] input channels from sensor trace(s) h and the model trace."""
+def features(h: np.ndarray, h_ref: np.ndarray, model: PipeSetup, a=None) -> np.ndarray:
+    """[..., 2, N_SAMPLES] input channels from sensor trace(s) h and the model trace(s).
+
+    a: wave speed(s) used for the surge scale a·V0/g (scalar or one per trace); default model.a.
+    h_ref: [N] or [..., N], the intact-pipe trace built with that wave speed.
+    """
     n_pre = int(model.t_close * FS)
     h = h[..., :N_SAMPLES]
-    c0 = (h - h[..., :n_pre].mean(axis=-1, keepdims=True)) / joukowsky_head(model)
-    r = h - h_ref[:N_SAMPLES]
+    a = np.asarray(model.a if a is None else a, dtype=np.float32)
+    jouk = (a * model.V0 / G)[..., None] if a.ndim else a * model.V0 / G
+    c0 = (h - h[..., :n_pre].mean(axis=-1, keepdims=True)) / jouk
+    r = h - h_ref[..., :N_SAMPLES]
     c1 = (r - r[..., :n_pre].mean(axis=-1, keepdims=True)) / ECHO_SCALE_M
     return np.stack([c0, c1], axis=-2).astype(np.float32)
 
@@ -82,7 +92,10 @@ def _sample_pipe(args):
     true = nominal.with_(a=a, f=f)
     true = true.with_(x_leak=x, leak_cda=leak_cda_for_fraction(true, frac, x))
     x_actual = round(x / true.dx) * true.dx           # solver snaps the leak to the grid
-    return _trace(true), x_actual, a, f, frac
+    t_long, h_long = simulate(true.with_(duration=ID_WINDOW_S)).sampled(FS)
+    a_id = estimate_wave_speed(nominal, t_long, h_long)   # what the monitoring side can know
+    ref = _trace(nominal.with_(a=a_id, x_leak=None, leak_cda=0.0))
+    return h_long[:N_SAMPLES].astype(np.float32), ref, x_actual, a, f, frac, a_id
 
 
 def make_data(n: int = N_TRAIN_PIPES) -> None:
@@ -91,10 +104,13 @@ def make_data(n: int = N_TRAIN_PIPES) -> None:
     with mp.Pool(max(1, mp.cpu_count() - 1)) as pool:
         rows = pool.map(_sample_pipe, [(k, nominal) for k in range(n)], chunksize=16)
     X = np.stack([r[0] for r in rows])
-    meta = np.array([r[1:] for r in rows], dtype=np.float32)   # x, a, f, frac
+    refs = np.stack([r[1] for r in rows])
+    meta = np.array([r[2:] for r in rows], dtype=np.float32)   # x, a, f, frac, a_id
     OUT.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(DATA_PATH, traces=X, meta=meta, ref=reference_trace(nominal))
-    print(f"{n} traces x {X.shape[1]} samples in {time.time() - t0:.0f}s -> {DATA_PATH.relative_to(ROOT)}")
+    np.savez_compressed(DATA_PATH, traces=X, refs=refs, meta=meta)
+    err = np.abs(meta[:, 4] / meta[:, 1] - 1)
+    print(f"{n} traces x {X.shape[1]} samples in {time.time() - t0:.0f}s -> {DATA_PATH.relative_to(ROOT)}; "
+          f"a identified within {100 * err.mean():.2f} % (max {100 * err.max():.2f} %)")
 
 
 # ----------------------------------------------------------------------------- model
@@ -121,7 +137,11 @@ def train(epochs: int = 40, batch: int = 64) -> None:
     torch.set_num_threads(max(1, mp.cpu_count() - 1))
     nominal = load_setup()
     d = np.load(DATA_PATH)
-    traces, meta, ref = d["traces"], d["meta"], d["ref"]
+    traces, refs, meta = d["traces"], d["refs"], d["meta"]
+    a_id = meta[:, 4]
+
+    def feats(h, idx):
+        return features(h, refs[idx], nominal, a=a_id[idx])
     n = len(traces)
     rng = np.random.default_rng(SEED)
     perm = rng.permutation(n)
@@ -145,7 +165,7 @@ def train(epochs: int = 40, batch: int = 64) -> None:
     loss_fn = torch.nn.SmoothL1Loss(beta=0.01)
     val_gen = np.random.default_rng([SEED, 1])
     Xv, _ = noisy(val_i, val_gen)
-    Xv = torch.from_numpy(features(Xv, ref, nominal))
+    Xv = torch.from_numpy(feats(Xv, val_i))
     yv = torch.from_numpy(y_all[val_i]).float()
     best, best_state = 1e9, None
     t0 = time.time()
@@ -156,7 +176,7 @@ def train(epochs: int = 40, batch: int = 64) -> None:
         for b in range(0, len(order), batch):
             idx = order[b:b + batch]
             h, _ = noisy(idx, gen)
-            xb = torch.from_numpy(features(h, ref, nominal))
+            xb = torch.from_numpy(feats(h, idx))
             yb = torch.from_numpy(y_all[idx]).float()
             opt.zero_grad()
             loss = loss_fn(net(xb).squeeze(1), yb)
@@ -183,7 +203,7 @@ def train(epochs: int = 40, batch: int = 64) -> None:
     for s in (0.0, 0.01, 0.02, 0.05, 0.1, 0.2):
         h, _ = noisy(test_i, test_gen, fixed_sigma=s)
         with torch.no_grad():
-            pred = net(torch.from_numpy(features(h, ref, nominal))).squeeze(1).numpy() * nominal.L
+            pred = net(torch.from_numpy(feats(h, test_i))).squeeze(1).numpy() * nominal.L
         err = np.abs(pred - xs)
         ev["test_by_sigma"][str(s)] = {"mae_m": float(err.mean()), "mae_covered_m": float(err[covered].mean()),
                                        "within_5m": float((err <= 5).mean())}
@@ -208,9 +228,12 @@ def load_net():
 
 
 def cnn_locate(model: PipeSetup, t: np.ndarray, h: np.ndarray) -> float:
-    """Leak position (m from the reservoir) from a 2 kHz sensor trace."""
+    """Leak position (m from the reservoir) from a 2 kHz sensor trace.
+
+    The wave speed is identified from the trace first; `model.a` is not used."""
     import torch
-    x = features(np.asarray(h, dtype=np.float32), reference_trace(model), model)[None]
+    m = model.with_(a=estimate_wave_speed(model, t, h))
+    x = features(np.asarray(h, dtype=np.float32), reference_trace(m), m)[None]
     with torch.no_grad():
         return float(load_net()(torch.from_numpy(x)).squeeze().item() * model.L)
 
