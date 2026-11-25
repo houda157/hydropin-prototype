@@ -1,4 +1,4 @@
-"""M3 solver validation (role 5 brief: validate before anything else)."""
+"""M3 solver validation"""
 import numpy as np
 import pytest
 
