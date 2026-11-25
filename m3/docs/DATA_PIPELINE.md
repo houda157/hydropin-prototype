@@ -157,7 +157,7 @@ All model-based locators start from the **residual rate** `residual_rate()`:
 | `noise.<method>.<σ>` | `mae_m` (mean \|estimate − true\|) and `within_5m` (fraction ≤ 5 m), over 18 traces |
 | `wave_speed.<method>.<a_err>` | the same, per wave-speed Results, mean absolute error on held-out test pipes |
 | `a_identified_rel_Results, mean absolute error on held-out test pipes` | `mean` and `max` of \|a_identified / 350 − 1\| (0.46 % / 0.47 %) |
-| `runtime_s` | about 6 minutes |
+| `runtime_s` | about 7–8 minutes (445 s for the committed run) |
 
 **Used for:** the report chart `report/figures/m3_accuracy.png` (Results, mean absolute error on held-out test pipes vs noise, error vs
 wave-speed Results, mean absolute error on held-out test pipes, all methods). `plot_focus.py` re-makes 3 traces the same way
@@ -422,7 +422,7 @@ JSON) and the report's message: **on PE pipes, calibrate the model once per pipe
 .venv-sim\Scripts\python -m m3.cnn data              # dataset C (~10 min)
 .venv-sim\Scripts\python -m m3.cnn train 100         # CNN (~45 min on CPU)
 .venv-sim\Scripts\python -m m3.sweep                 # dataset B + comparison chart (~8 min)
-.venv-sim\Scripts\python -m m3.ve_study              # dataset D + creep figure (~10 min)
+.venv-sim\Scripts\python -m m3.ve_study              # dataset D + creep figure (~6 min)
 .venv-sim\Scripts\python -m m3.plot_focus            # focusing figure
 ```
 

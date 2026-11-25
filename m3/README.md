@@ -74,7 +74,7 @@ This is the zero-lag imaging-condition form of time reversal, on the first round
 | CNN, no calibration | 1.0 m | 0.9 m | 1.2 m |
 | CNN, calibrated | 0.8 m | 0.9 m | ⚠️ 4.6 m |
 
-- Creep damps and smooths the wave, and shrinks the echo by about 20–25 %.
+- Creep damps and smooths the wave, and shrinks the echo by about 17–27 % (5 % leak at 90 m: 0.103 m → 0.075 m with typical creep).
 - **Without calibration, model-based methods fail on creeping pipes:** creep changes the whole
   trace by up to 1.8 m, about 10× the echo. Without calibration the creep must be known to about ±10 %.
 - **Calibration fixes time reversal and matched-field on all three pipes**, including one whose

@@ -21,7 +21,7 @@ The training pipes cover elastic and creeping walls (creep 0…1.5 × typical, a
 other shapes than the model assumes), so one network serves both routes.
 
     python -m m3.cnn data    # simulate clean training traces  -> m3/out/cnn_data.npz (not committed)
-    python -m m3.cnn train   # train, noise added on the fly    -> m3/out/cnn.pt + cnn_eval.json
+    python -m m3.cnn train   # 100 epochs, noise added on the fly -> m3/out/cnn.pt + cnn_eval.json
 """
 from __future__ import annotations
 
@@ -190,7 +190,7 @@ def build_net():
     )
 
 
-def train(epochs: int = 40, batch: int = 64) -> None:
+def train(epochs: int = 100, batch: int = 64) -> None:
     import torch
 
     torch.manual_seed(SEED)
@@ -320,6 +320,6 @@ if __name__ == "__main__":
     if cmd == "data":
         make_data(int(sys.argv[2]) if len(sys.argv) > 2 else N_TRAIN_PIPES)
     elif cmd == "train":
-        train(int(sys.argv[2]) if len(sys.argv) > 2 else 40)
+        train(int(sys.argv[2]) if len(sys.argv) > 2 else 100)
     else:
         print(__doc__)
