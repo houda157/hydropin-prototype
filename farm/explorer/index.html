@@ -1,0 +1,534 @@
+<meta charset="utf-8">
+<title>Farm Leak Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: an engineer's field sheet. Map of the farm on the left, readout panel on the right;
+   two modes (explore one leak / place sensors) share the same map. */
+:root {
+  --bg: #f3f6f4;        /* faint green-grey ground, like survey paper */
+  --surface: #ffffff;
+  --ink: #15211d;
+  --muted: #5a6a64;
+  --line: #d5dfda;
+  --field: #e4ede5;     /* irrigated plots */
+  --field-edge: #b9ccbd;
+  --water: #1d6f8c;     /* pipes in normal state */
+  --accent: #1d6f8c;
+  --accent-soft: #d8ebf1;
+  --drop-lo: #c6d2cd;   /* no pressure change */
+  --drop-hi: #c2361f;   /* biggest pressure drop */
+  --ok: #2b8a5f;
+  --warn: #c98a14;
+  --closed: #a9b5b0;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1614; --surface: #17211e; --ink: #e5ede9; --muted: #96a8a1; --line: #2a3833;
+  --field: #1c2a25; --field-edge: #34483f; --water: #5fb2cf; --accent: #5fb2cf; --accent-soft: #1d3540;
+  --drop-lo: #3d4d47; --drop-hi: #ff6b4f; --ok: #4fc08c; --warn: #e3a93a; --closed: #4a5a54; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1614; --surface: #17211e; --ink: #e5ede9; --muted: #96a8a1; --line: #2a3833;
+  --field: #1c2a25; --field-edge: #34483f; --water: #5fb2cf; --accent: #5fb2cf; --accent-soft: #1d3540;
+  --drop-lo: #3d4d47; --drop-hi: #ff6b4f; --ok: #4fc08c; --warn: #e3a93a; --closed: #4a5a54; color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+h2 { font-size: 1.15rem; }
+h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+header { display: grid; gap: 10px; }
+.badge { justify-self: start; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--drop-hi); color: var(--drop-hi); padding: 2px 8px; border-radius: 3px; }
+.why { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.why div { border-top: 2px solid var(--accent); padding-top: 8px; display: grid; gap: 2px; min-width: 0; }
+.why b { font-family: var(--font-display); font-size: 1rem; }
+.why span { color: var(--muted); font-size: 0.9rem; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: 600 0.95rem var(--font-display); padding: 8px 16px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.tab:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.mapcard { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+svg { width: 100%; height: auto; display: block; }
+.panel { display: grid; gap: 16px; min-width: 0; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+
+.controls { display: grid; gap: 10px; }
+.ctl { display: grid; gap: 4px; }
+.ctl label, .ctl .lab { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { font: 500 0.85rem var(--font-body); padding: 5px 10px; border-radius: 5px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+select, input[type=range] { width: 100%; }
+select { font: 0.9rem var(--font-body); padding: 6px 8px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.btn { font: 600 0.88rem var(--font-body); padding: 7px 12px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 0.92rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.take { font-size: 0.98rem; border-left: 3px solid var(--drop-hi); padding-left: 10px; }
+
+.bars { display: grid; gap: 3px; font-size: 0.8rem; }
+.bar { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 4.2rem; gap: 8px; align-items: center; }
+.bar .track { position: relative; height: 12px; background: var(--drop-lo); border-radius: 2px; overflow: hidden; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--drop-hi); }
+.bar .thr { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 2px dashed var(--ink); opacity: 0.55; }
+.bar .v { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.bar.closed .v { color: var(--closed); }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat b { font: 700 1.7rem var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.8rem; color: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); align-items: center; }
+.ramp { width: 120px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, var(--drop-lo), var(--drop-hi)); }
+.ramp.ok { background: linear-gradient(90deg, var(--drop-hi), var(--warn), var(--ok)); }
+.note { font-size: 0.82rem; color: var(--muted); }
+footer { font-size: 0.8rem; color: var(--muted); display: grid; gap: 4px; }
+
+/* map pieces */
+.fieldrect { fill: var(--field); stroke: var(--field-edge); stroke-width: 1.5; }
+.fieldrect.off { fill: var(--bg); stroke-dasharray: 6 5; }
+.fieldlab { font: 600 15px var(--font-display); fill: var(--muted); }
+.pipe { stroke-linecap: round; fill: none; }
+.pipe.closed { stroke: var(--closed) !important; stroke-dasharray: 2 7; }
+.node { stroke: var(--surface); stroke-width: 2; }
+.cand { stroke: var(--ink); stroke-width: 1.5; }
+.cand.sel { stroke: var(--accent); stroke-width: 4; }
+.spot { fill: var(--surface); stroke: var(--water); stroke-width: 2; cursor: pointer; }
+.spot:hover { stroke-width: 4; }
+.leakmark { fill: var(--drop-hi); stroke: var(--surface); stroke-width: 2; }
+.pulse { fill: none; stroke: var(--drop-hi); stroke-width: 3; }
+.maplab { font: 500 12px var(--font-mono); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.clickable { cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) { .pulse { animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; } }
+@keyframes pulse { from { transform: scale(0.6); opacity: 0.9; } to { transform: scale(2.2); opacity: 0; } }
+
+@media (max-width: 880px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .why { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 460px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="badge">Simulation · virtual farm (WNTR)</span>
+    <h1>Farm Leak Explorer</h1>
+    <p class="muted">A computer copy of a 50-hectare drip farm: a pump, a 600 m main pipe and 6 fields, two watered at a time.
+      We opened 2,070 pretend leaks on it and recorded what pressure sensors would read. Pick a leak to see its
+      "fingerprint", or place sensors and see how many leaks they would catch.</p>
+    <div class="why" aria-label="Why this dataset matters">
+      <div><b>It sets the price</b><span>Each sensor costs about 292 DT. The data shows how few sensors still catch the leaks.</span></div>
+      <div><b>It trains the AI</b><span>No real farm has thousands of recorded leaks. The GNN learns from these 2,070 instead.</span></div>
+      <div><b>It proves the idea at farm scale</b><span>The bench has 2 sensors on 2 branches; here there are 6 fields and 16 possible sensor spots.</span></div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab" role="tab" id="tab-explore" aria-selected="true">1 · Explore a leak</button>
+    <button class="tab" role="tab" id="tab-place" aria-selected="false">2 · Place sensors</button>
+  </div>
+
+  <div class="main">
+    <div class="mapcard">
+      <svg id="map" viewBox="-30 -10 760 790" role="img" aria-label="Map of the simulated farm"></svg>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="panel">
+      <!-- explore mode -->
+      <section class="box" id="p-explore-ctl">
+        <h2>Choose a leak</h2>
+        <div class="controls">
+          <div class="ctl"><span class="lab">Which fields are being watered (irrigation shift)</span>
+            <div class="seg" id="cfg"></div></div>
+          <div class="ctl"><label for="spot">Leak spot (or click a white dot on the map)</label>
+            <select id="spot"></select></div>
+          <div class="ctl"><span class="lab">Leak size (share of the water being used)</span>
+            <div class="seg" id="size"></div></div>
+          <div class="ctl"><span class="lab">Colour the map by</span>
+            <div class="seg" id="colour"></div></div>
+          <div class="ctl"><label for="world">Farm version: <span id="worldv" class="mono"></span> of 10
+            <span class="muted">(each has slightly different pipes, ground and drippers, like a real farm vs its plan)</span></label>
+            <input type="range" id="world" min="0" max="9" step="1" value="0"></div>
+        </div>
+      </section>
+      <section class="box" id="p-explore-out">
+        <h2 id="leaktitle">Leak</h2>
+        <dl class="kv" id="leakkv"></dl>
+        <p class="take" id="take"></p>
+        <h3>Pressure drop at the 16 possible sensor spots</h3>
+        <div class="bars" id="bars"></div>
+        <p class="note">Dashed line: 3 × sensor noise (<span id="thr1" class="mono"></span> mbar). A sensor only "notices" a drop bigger than that.
+          Grey: field closed, no water flowing, so it reads nothing.</p>
+      </section>
+
+      <!-- place mode -->
+      <section class="box" id="p-place-ctl" hidden>
+        <h2>Place sensors</h2>
+        <p class="note">Click the squares on the map to add or remove a sensor. The numbers below test your choice on all 2,070 leaks.</p>
+        <div class="ctl"><span class="lab">Sensor noise σ (bench value still to be measured; 10 mbar is our guess)</span>
+          <div class="seg" id="sigma"></div></div>
+        <div class="row">
+          <label for="nauto" class="note">Let the computer choose</label>
+          <select id="nauto" style="width:auto"></select>
+          <button class="btn" id="auto">Choose</button>
+          <button class="btn ghost" id="clear">Clear</button>
+        </div>
+      </section>
+      <section class="box" id="p-place-out" hidden>
+        <div class="stats">
+          <div class="stat"><b id="s-n" class="mono">0</b><span>sensors · kit ≈ <span id="s-cost" class="mono">0</span> DT</span></div>
+          <div class="stat"><b id="s-det" class="mono">0%</b><span>of leaks noticed</span></div>
+          <div class="stat"><b id="s-br" class="mono">0%</b><span>pointed to the right field</span></div>
+        </div>
+        <dl class="kv" id="bysize"></dl>
+        <p class="take" id="take2"></p>
+        <p class="note">"Right field" uses a simple rule: the sensor that drops most beyond the others' average points to its field
+          (or the main pipe). Role 2's real placement tool optimises this properly (greedy + genetic search) and re-tests the choice
+          on 10 farm versions it never saw. Cost: 217 DT per sensor node + 75 DT per buried tapping point (master document prices).</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <span>Data: <span class="mono">farm/leaks/out</span> on branch <span class="mono">feat/farm-model</span> (2,070 scenarios = 3 shifts × 10 farm versions × 23 leak spots × 3 sizes).
+      Pressure changes are noise-free; the 3σ rule adds the noise.</span>
+    <span>All values are simulated. Farm layout, pipe sizes and the pump are assumptions listed in <span class="mono">farm/model/params.yaml</span>.</span>
+  </footer>
+</div>
+
+<script src="farm-data.js"></script>
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (id) => document.getElementById(id);
+  const state = { mode: "explore", colour: "total", cfg: 0, at: "A2", size: 3, world: 0, sigma: 10, sensors: new Set(["PS", "H1", "H2", "H3", "H4", "H5", "H6"]) };
+  let D, NODE, IDX, CANDS, KEY, SPOTS;
+  const Y0 = 760;                         // svg y = Y0 - farm y
+  const sy = (y) => Y0 - y;
+  const FIELD = (s) => `Field ${s}`;
+  const branchName = (b) => b === "main" ? "Main pipe" : FIELD(b.split("_")[1]);
+  const nice = {
+    PS: "Pump outlet", M1: "Main junction 1", M2: "Main junction 2", M3: "Main junction 3",
+    MN1: "Main pipe, pump → junction 1", MN2: "Main pipe, junction 1 → 2", MN3: "Main pipe, junction 2 → 3",
+  };
+  function spotName(id) {
+    if (nice[id]) return nice[id];
+    const k = id[0], s = id.replace(/\D/g, "");
+    if (id.startsWith("S")) return `Field ${s} sub-main, ${id.endsWith("a") ? "first" : "second"} half`;
+    return { H: `Field ${s} entrance (before the valve)`, B: `Field ${s}, just after the valve`,
+             A: `Field ${s}, middle of the field`, E: `Field ${s}, far end of the pipe` }[k] || id;
+  }
+
+  // farm-data.js (built by build_data.py) sets window.FARM_DATA, so the page opens straight from disk.
+  // start after this whole script has run (init uses helpers defined further down)
+  if (window.FARM_DATA) Promise.resolve().then(() => init(window.FARM_DATA));
+  else fetch("farm-data.json").then(r => r.json()).then(init).catch(err => {
+    $("take").textContent = "The farm data could not be loaded (" + err.message + "). Run: python -m farm.explorer.build_data";
+  });
+
+  function init(data) {
+    D = data;
+    NODE = Object.fromEntries(D.nodes.map(n => [n.id, n]));
+    IDX = Object.fromEntries(D.node_order.map((id, i) => [id, i]));
+    CANDS = D.candidate_order.slice();
+    const sc = D.scen;
+    KEY = new Map();
+    SPOTS = [new Map(), new Map(), new Map()];
+    for (let i = 0; i < sc.at.length; i++) {
+      KEY.set(`${sc.cfg[i]}|${sc.world[i]}|${sc.at[i]}|${sc.size[i]}`, i);
+      if (!SPOTS[sc.cfg[i]].has(sc.at[i])) SPOTS[sc.cfg[i]].set(sc.at[i], { x: sc.x[i], y: sc.y[i], kind: sc.kind[i] });
+    }
+    buildControls();
+    drawStatic();
+    state.sensors = new Set(greedy(6));     // open the sensor view on the computer's best 6
+    render();
+  }
+
+  // ---------- controls
+  function seg(el, items, get, set) {
+    el.innerHTML = "";
+    for (const [val, label] of items) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label;
+      b.setAttribute("aria-pressed", String(get() === val));
+      b.addEventListener("click", () => { set(val); render(); });
+      el.appendChild(b);
+    }
+  }
+  function buildControls() {
+    $("tab-explore").addEventListener("click", () => { state.mode = "explore"; render(); });
+    $("tab-place").addEventListener("click", () => { state.mode = "place"; render(); });
+    $("spot").addEventListener("change", (e) => { state.at = e.target.value; render(); });
+    $("world").addEventListener("input", (e) => { state.world = +e.target.value; render(); });
+    for (let n = 1; n <= 10; n++) { const o = document.createElement("option"); o.value = n; o.textContent = `${n} sensor${n > 1 ? "s" : ""}`; if (n === 6) o.selected = true; $("nauto").appendChild(o); }
+    $("auto").addEventListener("click", () => { state.sensors = new Set(greedy(+$("nauto").value)); render(); });
+    $("clear").addEventListener("click", () => { state.sensors = new Set(); render(); });
+  }
+  function refreshControls() {
+    seg($("cfg"), [[0, "Fields 1 + 2"], [1, "Fields 3 + 4"], [2, "Fields 5 + 6"]], () => state.cfg, v => { state.cfg = v; if (!SPOTS[v].has(state.at)) state.at = `A${2 * v + 2}`; });
+    seg($("size"), [[1, "1 % small"], [3, "3 % medium"], [10, "10 % big"]], () => state.size, v => state.size = v);
+    seg($("colour"), [["total", "Total drop (is there a leak?)"], ["clue", "Location clue (where is it?)"]], () => state.colour, v => state.colour = v);
+    seg($("sigma"), [[5, "5 mbar"], [10, "10 mbar"], [20, "20 mbar"]], () => state.sigma, v => state.sigma = v);
+    const sel = $("spot"); sel.innerHTML = "";
+    for (const id of SPOTS[state.cfg].keys()) { const o = document.createElement("option"); o.value = id; o.textContent = spotName(id); if (id === state.at) o.selected = true; sel.appendChild(o); }
+    $("world").value = state.world; $("worldv").textContent = state.world + 1;
+  }
+
+  // ---------- map
+  let gFields, gPipes, gSpots, gNodes, gMarks;
+  function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function drawStatic() {
+    const svg = $("map"); svg.innerHTML = "";
+    gFields = el("g", {}, svg); gPipes = el("g", {}, svg); gSpots = el("g", {}, svg); gNodes = el("g", {}, svg); gMarks = el("g", {}, svg);
+    // basin + pump
+    const r0 = NODE.R0, ps = NODE.PS;
+    el("rect", { x: r0.x - 28, y: sy(r0.y) - 4, width: 56, height: 18, rx: 3, fill: "var(--accent-soft)", stroke: "var(--water)" }, svg);
+    const t = el("text", { x: r0.x + 36, y: sy(r0.y) + 10, class: "maplab" }, svg); t.textContent = "basin + pump";
+  }
+  const pipeWidth = (d) => d ? Math.max(3, d * 40) : 2;
+  const mix = (f) => `color-mix(in oklab, var(--drop-hi) ${Math.round(100 * Math.max(0, Math.min(1, f)))}%, var(--drop-lo))`;
+  const scoreMix = (f) => f >= 0.5
+    ? `color-mix(in oklab, var(--ok) ${Math.round(200 * (f - 0.5))}%, var(--warn))`
+    : `color-mix(in oklab, var(--warn) ${Math.round(200 * f)}%, var(--drop-hi))`;
+
+  function drawMap(view) {
+    gFields.innerHTML = ""; gPipes.innerHTML = ""; gSpots.innerHTML = ""; gNodes.innerHTML = ""; gMarks.innerHTML = "";
+    const open = new Set(D.configs[state.cfg]);
+    for (const s of D.sectors) {
+      const [x0, y0, x1, y1] = s.bbox;
+      const on = state.mode === "place" || open.has(s.id);
+      el("rect", { x: x0 + 4, y: sy(y1) + 4, width: x1 - x0 - 8, height: y1 - y0 - 8, rx: 6, class: "fieldrect" + (on ? "" : " off") }, gFields);
+      const lab = el("text", { x: (x0 + x1) / 2, y: sy(y1) + 26, "text-anchor": "middle", class: "fieldlab" }, gFields);
+      lab.textContent = FIELD(s.id) + (on ? "" : " · valve closed");
+    }
+    for (const p of D.pipes) {
+      const a = NODE[p.from], b = NODE[p.to];
+      const closed = state.mode === "explore" && p.sector && !open.has(p.sector) && p.kind !== "sector_link";
+      const col = view.pipeColor ? view.pipeColor(p) : "var(--water)";
+      el("line", { x1: a.x, y1: sy(a.y), x2: b.x, y2: sy(b.y), class: "pipe" + (closed ? " closed" : ""),
+        stroke: p.kind === "pump" ? "var(--muted)" : col, "stroke-width": p.kind === "pump" ? 2 : pipeWidth(p.d),
+        "stroke-dasharray": p.kind === "pump" ? "3 4" : null }, gPipes);
+    }
+    if (view.spots) view.spots();
+    for (const n of D.nodes) {
+      if (n.kind === "reservoir") continue;
+      const isCand = n.candidate;
+      const fill = view.nodeColor ? view.nodeColor(n) : "var(--water)";
+      if (isCand) {
+        const sel = state.mode === "place" && state.sensors.has(n.id);
+        const r = el("rect", { x: n.x - 8, y: sy(n.y) - 8, width: 16, height: 16, rx: 2, fill, class: "cand" + (sel ? " sel" : "") + (state.mode === "place" ? " clickable" : "") }, gNodes);
+        if (state.mode === "place") {
+          r.setAttribute("tabindex", "0"); r.setAttribute("role", "button"); r.setAttribute("aria-label", `Sensor at ${spotName(n.id)}`);
+          const toggle = () => { state.sensors.has(n.id) ? state.sensors.delete(n.id) : state.sensors.add(n.id); render(); };
+          r.addEventListener("click", toggle); r.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+        }
+      } else if (state.mode === "explore") {
+        el("circle", { cx: n.x, cy: sy(n.y), r: 5, fill, class: "node" }, gNodes);
+      }
+    }
+    for (const id of ["PS", "M1", "M2", "M3"]) {
+      const n = NODE[id]; const t = el("text", { x: n.x + 14, y: sy(n.y) + (id === "PS" ? 4 : 18), class: "maplab" }, gNodes); t.textContent = id;
+    }
+    if (view.marks) view.marks();
+  }
+
+  // ---------- data helpers
+  const NN = () => D.node_order.length;
+  const dp = (s, nodeId) => D.dP[s * NN() + IDX[nodeId]] / 10;     // mbar (negative = drop)
+
+  // ---------- explore mode
+  function renderExplore() {
+    const s = KEY.get(`${state.cfg}|${state.world}|${state.at}|${state.size}`);
+    const sc = D.scen;
+    const open = new Set(D.configs[state.cfg]);
+    const pressurised = (n) => n.sector === null || n.kind === "sector_head" || open.has(n.sector);
+    let maxDrop = 0;
+    for (const id of D.node_order) maxDrop = Math.max(maxDrop, -dp(s, id));
+    const drop = (id) => -dp(s, id);
+    const thr = 3 * 10;   // explore view always uses the 10 mbar guess
+    const liveAll = D.node_order.filter(id => pressurised(NODE[id]));
+    const sortedAll = liveAll.map(drop).sort((a, b) => a - b);
+    const commonAll = sortedAll[Math.floor(sortedAll.length / 2)];
+    const clue = state.colour === "clue";
+    const val = (id) => clue ? Math.max(0, drop(id) - commonAll) : drop(id);
+    let maxVal = 1e-9;
+    for (const id of liveAll) maxVal = Math.max(maxVal, val(id));
+
+    drawMap({
+      nodeColor: (n) => pressurised(n) ? mix(val(n.id) / maxVal) : "var(--closed)",
+      pipeColor: (p) => {
+        if (p.kind === "pump") return "var(--muted)";
+        const v = (val(p.from) + val(p.to)) / 2;
+        return mix(v / maxVal);
+      },
+      spots: () => {
+        for (const [id, sp] of SPOTS[state.cfg]) {
+          if (id === state.at) continue;
+          const c = el("circle", { cx: sp.x, cy: sy(sp.y), r: 6, class: "spot", tabindex: "0", role: "button", "aria-label": `Put the leak at ${spotName(id)}` }, gSpots);
+          const pick = () => { state.at = id; render(); };
+          c.addEventListener("click", pick); c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+          const tt = el("title", {}, c); tt.textContent = spotName(id);
+        }
+      },
+      marks: () => {
+        const x = sc.x[s], y = sy(sc.y[s]);
+        el("circle", { cx: x, cy: y, r: 12, class: "pulse" }, gMarks);
+        el("path", { d: `M ${x} ${y - 16} C ${x + 10} ${y - 2}, ${x + 9} ${y + 9}, ${x} ${y + 9} C ${x - 9} ${y + 9}, ${x - 10} ${y - 2}, ${x} ${y - 16} Z`, class: "leakmark" }, gMarks);
+      },
+    });
+    $("legend").innerHTML = `<span>${clue ? "Extra drop beyond the average:" : "Pressure drop:"}</span><span>none</span><span class="ramp"></span><span class="mono">${maxVal.toFixed(0)} mbar</span>
+      <span>■ possible sensor spot</span><span>○ other leak spots (click)</span>`;
+
+    // readout
+    const leak = sc.leak[s], pump = sc.pump[s], pump0 = sc.pump0[s];
+    $("leaktitle").textContent = `Leak at: ${spotName(state.at)}`;
+    $("leakkv").innerHTML = `
+      <dt>Belongs to</dt><dd>${branchName(sc.branch[s])}</dd>
+      <dt>Water lost</dt><dd>${leak.toFixed(2)} L/s · ${(leak * 86.4).toFixed(0)} m³ per day</dd>
+      <dt>Pump flow</dt><dd>${pump0.toFixed(1)} → ${pump.toFixed(1)} L/s (+${(pump - pump0).toFixed(2)})</dd>`;
+
+    const live = CANDS.filter(id => pressurised(NODE[id]));
+    const drops = live.map(drop).sort((a, b) => a - b);
+    const common = drops[Math.floor(drops.length / 2)];
+    const top = live.reduce((a, id) => drop(id) > drop(a) ? id : a, live[0]);
+    const extra = drop(top) - common;
+    const seen = live.filter(id => drop(id) > thr).length;
+    $("take").innerHTML = `Almost every working sensor drops by about <b class="mono">${common.toFixed(1)} mbar</b> because the pump works harder: that says <i>there is a leak</i>.
+      The spot <b>${spotName(top)}</b> drops <b class="mono">${extra.toFixed(1)} mbar</b> more: that small difference is the only clue to <i>where</i> it is.
+      ${seen ? `${seen} of ${live.length} working spots would notice it.` : `No sensor would notice it above the noise.`}
+      ${clue ? "" : ` <b>Switch the map to "Location clue"</b> to see where the extra drop is.`}`;
+
+    $("thr1").textContent = thr;
+    const maxBar = Math.max(maxDrop, thr * 1.2);
+    $("bars").innerHTML = CANDS.map(id => {
+      const n = NODE[id], on = pressurised(n), v = drop(id);
+      return `<div class="bar${on ? "" : " closed"}" title="${spotName(id)}"><span class="mono">${id}</span>
+        <span class="track"><span class="fill" style="width:${on ? (100 * v / maxBar).toFixed(1) : 0}%"></span><span class="thr" style="left:${(100 * thr / maxBar).toFixed(1)}%"></span></span>
+        <span class="v">${on ? "−" + v.toFixed(1) : "closed"}</span></div>`;
+    }).join("");
+  }
+
+  // ---------- place mode
+  function evaluate(sensors, sigma) {
+    const sc = D.scen, n = sc.at.length, thr = 3 * sigma, list = [...sensors];
+    let det = 0, br = 0;
+    const bySize = { 1: [0, 0], 3: [0, 0], 10: [0, 0] };
+    const spot = new Map();
+    for (let s = 0; s < n; s++) {
+      let any = false;
+      const vals = [];
+      for (const id of list) { const v = dp(s, id); if (v !== 0) vals.push([id, v]); if (-v > thr) any = true; }
+      let right = false;
+      if (any && vals.length) {
+        const mean = vals.reduce((a, [, v]) => a + v, 0) / vals.length;
+        let best = vals[0];
+        for (const e of vals) if (e[1] - mean < best[1] - mean) best = e;
+        right = NODE[best[0]].branch === sc.branch[s];
+      }
+      if (any) det++;
+      if (right) br++;
+      bySize[sc.size[s]][0]++; if (any) bySize[sc.size[s]][1]++;
+      const k = sc.at[s] + "|" + sc.cfg[s];
+      const a = spot.get(k) || [0, 0, 0]; a[0]++; if (any) a[1]++; if (right) a[2]++; spot.set(k, a);
+    }
+    return { det: det / n, br: br / n, bySize, spot, n };
+  }
+  // Greedy pick, then swaps (a simplified version of the blueprint's greedy + genetic search)
+  const score = (set) => { const r = evaluate(set, state.sigma); return r.br + 0.25 * r.det; };
+  function greedy(k) {
+    const chosen = [];
+    for (let i = 0; i < k; i++) {
+      let best = null, bestScore = -1;
+      for (const c of CANDS) {
+        if (chosen.includes(c)) continue;
+        const sc = score([...chosen, c]);
+        if (sc > bestScore + 1e-9) { bestScore = sc; best = c; }
+      }
+      chosen.push(best);
+    }
+    let cur = score(chosen), improved = true;
+    while (improved) {
+      improved = false;
+      for (let i = 0; i < chosen.length; i++) {
+        for (const c of CANDS) {
+          if (chosen.includes(c)) continue;
+          const trial = chosen.slice(); trial[i] = c;
+          const sc = score(trial);
+          if (sc > cur + 1e-9) { chosen.splice(0, chosen.length, ...trial); cur = sc; improved = true; }
+        }
+      }
+    }
+    return chosen;
+  }
+  function renderPlace() {
+    const r = evaluate(state.sensors, state.sigma);
+    // per leak spot (all shifts): share pointed to the right field
+    const agg = new Map();
+    for (const [k, a] of r.spot) { const id = k.split("|")[0]; const b = agg.get(id) || [0, 0, 0]; b[0] += a[0]; b[1] += a[1]; b[2] += a[2]; agg.set(id, b); }
+    const allSpots = new Map();
+    for (const m of SPOTS) for (const [id, sp] of m) allSpots.set(id, sp);
+    drawMap({
+      nodeColor: (n) => state.sensors.has(n.id) ? "var(--accent)" : "var(--surface)",
+      pipeColor: () => "var(--water)",
+      spots: () => {
+        for (const [id, sp] of allSpots) {
+          const a = agg.get(id); if (!a) continue;
+          const f = a[2] / a[0];
+          const c = el("circle", { cx: sp.x, cy: sy(sp.y), r: 9, fill: scoreMix(f), stroke: "var(--surface)", "stroke-width": 2 }, gSpots);
+          const tt = el("title", {}, c); tt.textContent = `${spotName(id)}: noticed ${(100 * a[1] / a[0]).toFixed(0)} %, right field ${(100 * f).toFixed(0)} %`;
+        }
+      },
+    });
+    $("legend").innerHTML = `<span>Leak spots, share pointed to the right field:</span><span>0 %</span><span class="ramp ok"></span><span>100 %</span><span>■ blue = your sensor (click squares)</span>`;
+    const n = state.sensors.size;
+    $("s-n").textContent = n;
+    $("s-cost").textContent = (n * 292).toLocaleString("en");
+    $("s-det").textContent = Math.round(100 * r.det) + "%";
+    $("s-br").textContent = Math.round(100 * r.br) + "%";
+    const bs = r.bySize;
+    $("bysize").innerHTML = `<dt>Small leaks (1 %)</dt><dd>${Math.round(100 * bs[1][1] / bs[1][0])} % noticed</dd>
+      <dt>Medium leaks (3 %)</dt><dd>${Math.round(100 * bs[3][1] / bs[3][0])} % noticed</dd>
+      <dt>Big leaks (10 %)</dt><dd>${Math.round(100 * bs[10][1] / bs[10][0])} % noticed</dd>`;
+    let msg;
+    if (n === 0) msg = "No sensors yet: click squares on the map, or let the computer choose.";
+    else if (r.br < 0.5) msg = "Big leaks are noticed, but most are not traced to the right field: add sensors in the fields that stay red.";
+    else if (bs[1][1] / bs[1][0] < 0.5) msg = `Medium and big leaks are well covered. Small 1 % leaks stay hard: their pressure change is close to the noise (${state.sigma} mbar). A quieter sensor helps more than extra sensors.`;
+    else msg = "Good coverage. Try removing a sensor: if the numbers barely move, the kit can be cheaper.";
+    $("take2").textContent = msg;
+  }
+
+  // ---------- main render
+  function render() {
+    const ex = state.mode === "explore";
+    $("tab-explore").setAttribute("aria-selected", String(ex));
+    $("tab-place").setAttribute("aria-selected", String(!ex));
+    $("p-explore-ctl").hidden = !ex; $("p-explore-out").hidden = !ex;
+    $("p-place-ctl").hidden = ex; $("p-place-out").hidden = ex;
+    refreshControls();
+    ex ? renderExplore() : renderPlace();
+  }
+})();
+</script>
