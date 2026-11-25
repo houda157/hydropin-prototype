@@ -14,3 +14,8 @@ __pycache__/
 # simulation venv
 .venv-sim/
 .pytest_cache/
+
+# local tool settings and large generated M3 data (never commit)
+.claude/
+m3/out/cnn_data.npz
+m3/out/*.log
