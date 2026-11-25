@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+from m3.calibrate import CAL_WINDOW_S, calibrate  # noqa: E402
 from m3.cnn import MODEL_PATH, cnn_locate  # noqa: E402
 from m3.locate import (echo_locate, estimate_wave_speed, matched_field, measure,  # noqa: E402
                        mfp_bank, time_reversal)
@@ -29,7 +30,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # Inside the covered zone: blind ~4 m at the sensor (a·Tc/2) and ~0.12·L at the reservoir
 # end (first-round-trip window with a ±10 % wave-speed margin).
 POSITIONS = [30.0, 50.0, 75.0, 100.0, 125.0, 140.0]
-METHODS = ("tr", "tr_id", "mfp", "echo") + (("cnn",) if MODEL_PATH.exists() else ())
+METHODS = ("tr", "tr_id", "mfp", "echo") + (("cnn", "cnn_cal") if MODEL_PATH.exists() else ())
+_CAL: list = []      # the pipe model fitted on one leak-free valve test (set in main)
 U_IDENTIFIED = 0.03   # window margin once the wave speed is identified from the trace
 NOISE_M = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2]
 A_ERR = [-0.10, -0.05, -0.02, 0.0, 0.02, 0.05, 0.10]
@@ -49,7 +51,8 @@ def _evaluate(model, bank, x_true, sigma, seed):
     true = true.with_(x_leak=x_true, leak_cda=leak_cda_for_fraction(true, LEAK_FRACTION, x_true))
     t, h = measure(true, sigma_m=sigma, rng=np.random.default_rng([seed, int(x_true * 10), int(sigma * 1e4)]))
     a_id = estimate_wave_speed(model, t, h)
-    extra = {"cnn": cnn_locate(model, t, h)} if "cnn" in METHODS else {}
+    extra = ({"cnn": cnn_locate(model, t, h), "cnn_cal": cnn_locate(model, t, h, calibrated=_CAL[0])}
+             if "cnn" in METHODS else {})
     return extra | {
         "x_true": x_true, "sigma_m": sigma, "seed": seed, "a_identified": a_id,
         "tr": time_reversal(model, t, h).x_est,
@@ -76,6 +79,10 @@ def main() -> None:
     with mp.Pool(min(len(A_ERR), max(1, mp.cpu_count() - 1))) as pool:
         banks = dict(pool.map(_bank, A_ERR))
     print(f"replica banks: {time.time() - t0:.0f}s")
+    t_c, h_c = measure(base.with_(duration=CAL_WINDOW_S + 0.01), sigma_m=0.05, rng=np.random.default_rng([20261125, 9, 0]))
+    cal_model, cal_info = calibrate(base, t_c, h_c)
+    _CAL.append(cal_model)
+    print(f"calibration: {time.time() - t0:.0f}s", cal_info)
 
     noise_rows = [_evaluate(base, banks[0.0], x, s, k)
                   for s in NOISE_M for x in POSITIONS for k in range(SEEDS)]
@@ -91,6 +98,7 @@ def main() -> None:
     echo_amp = 0.23  # m, 5 % leak (m3/out/validation.json)
     result = {
         "simulation": True,
+        "calibration": cal_info,
         "setup": {"L_m": base.L, "a_true_mps": base.a, "closure_ms": base.Tc * 1000, "fs_hz": 2000,
                   "leak_fraction": LEAK_FRACTION, "positions_m": POSITIONS, "seeds": SEEDS,
                   "echo_amplitude_m": echo_amp, "sigma_for_a_sweep_m": SIGMA_FOR_A_SWEEP},
@@ -109,8 +117,8 @@ def main() -> None:
 
     labels = {"tr": "time reversal (assumed a)", "tr_id": "time reversal (a identified from trace)",
               "mfp": "matched-field (assumed a)", "echo": "echo (assumed a)",
-              "cnn": "1D CNN (trained on simulated traces)"}
-    colors = {"tr": "#2d6fa3", "tr_id": "#1a9850", "mfp": "#e07b00", "echo": "#888", "cnn": "#8e44ad"}
+              "cnn": "1D CNN, no calibration", "cnn_cal": "1D CNN, calibrated"}
+    colors = {"tr": "#2d6fa3", "tr_id": "#1a9850", "mfp": "#e07b00", "echo": "#888", "cnn": "#8e44ad", "cnn_cal": "#c51b7d"}
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     for m in METHODS:
         s = result["noise"][m]
