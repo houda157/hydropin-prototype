@@ -1,0 +1,587 @@
+{
+ "version": "1.0",
+ "simulation": true,
+ "nodes": [
+  {
+   "index": 0,
+   "id": "PS",
+   "x": 350.0,
+   "y": 0.0,
+   "elev": 100.0,
+   "kind": "pump_out",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "index": 1,
+   "id": "M1",
+   "x": 350.0,
+   "y": 119.16666666666667,
+   "elev": 100.477,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "index": 2,
+   "id": "H1",
+   "x": 344.0,
+   "y": 119.16666666666667,
+   "elev": 100.468,
+   "kind": "sector_head",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": true
+  },
+  {
+   "index": 3,
+   "id": "B1",
+   "x": 342.0,
+   "y": 119.16666666666667,
+   "elev": 100.465,
+   "kind": "valve_out",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": false
+  },
+  {
+   "index": 4,
+   "id": "A1",
+   "x": 230.0,
+   "y": 119.16666666666667,
+   "elev": 100.297,
+   "kind": "manifold",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": false
+  },
+  {
+   "index": 5,
+   "id": "E1",
+   "x": 60.0,
+   "y": 119.16666666666667,
+   "elev": 100.042,
+   "kind": "submain_end",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": true
+  },
+  {
+   "index": 6,
+   "id": "H2",
+   "x": 356.0,
+   "y": 119.16666666666667,
+   "elev": 100.486,
+   "kind": "sector_head",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": true
+  },
+  {
+   "index": 7,
+   "id": "B2",
+   "x": 358.0,
+   "y": 119.16666666666667,
+   "elev": 100.489,
+   "kind": "valve_out",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": false
+  },
+  {
+   "index": 8,
+   "id": "A2",
+   "x": 470.0,
+   "y": 119.16666666666667,
+   "elev": 100.657,
+   "kind": "manifold",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": false
+  },
+  {
+   "index": 9,
+   "id": "E2",
+   "x": 640.0,
+   "y": 119.16666666666667,
+   "elev": 100.912,
+   "kind": "submain_end",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": true
+  },
+  {
+   "index": 10,
+   "id": "M2",
+   "x": 350.0,
+   "y": 357.5,
+   "elev": 101.43,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "index": 11,
+   "id": "H3",
+   "x": 344.0,
+   "y": 357.5,
+   "elev": 101.421,
+   "kind": "sector_head",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": true
+  },
+  {
+   "index": 12,
+   "id": "B3",
+   "x": 342.0,
+   "y": 357.5,
+   "elev": 101.418,
+   "kind": "valve_out",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": false
+  },
+  {
+   "index": 13,
+   "id": "A3",
+   "x": 230.0,
+   "y": 357.5,
+   "elev": 101.25,
+   "kind": "manifold",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": false
+  },
+  {
+   "index": 14,
+   "id": "E3",
+   "x": 60.0,
+   "y": 357.5,
+   "elev": 100.995,
+   "kind": "submain_end",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": true
+  },
+  {
+   "index": 15,
+   "id": "H4",
+   "x": 356.0,
+   "y": 357.5,
+   "elev": 101.439,
+   "kind": "sector_head",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": true
+  },
+  {
+   "index": 16,
+   "id": "B4",
+   "x": 358.0,
+   "y": 357.5,
+   "elev": 101.442,
+   "kind": "valve_out",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": false
+  },
+  {
+   "index": 17,
+   "id": "A4",
+   "x": 470.0,
+   "y": 357.5,
+   "elev": 101.61,
+   "kind": "manifold",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": false
+  },
+  {
+   "index": 18,
+   "id": "E4",
+   "x": 640.0,
+   "y": 357.5,
+   "elev": 101.865,
+   "kind": "submain_end",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": true
+  },
+  {
+   "index": 19,
+   "id": "M3",
+   "x": 350.0,
+   "y": 595.8333333333334,
+   "elev": 102.383,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "index": 20,
+   "id": "H5",
+   "x": 344.0,
+   "y": 595.8333333333334,
+   "elev": 102.374,
+   "kind": "sector_head",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": true
+  },
+  {
+   "index": 21,
+   "id": "B5",
+   "x": 342.0,
+   "y": 595.8333333333334,
+   "elev": 102.371,
+   "kind": "valve_out",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": false
+  },
+  {
+   "index": 22,
+   "id": "A5",
+   "x": 230.0,
+   "y": 595.8333333333334,
+   "elev": 102.203,
+   "kind": "manifold",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": false
+  },
+  {
+   "index": 23,
+   "id": "E5",
+   "x": 60.0,
+   "y": 595.8333333333334,
+   "elev": 101.948,
+   "kind": "submain_end",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": true
+  },
+  {
+   "index": 24,
+   "id": "H6",
+   "x": 356.0,
+   "y": 595.8333333333334,
+   "elev": 102.392,
+   "kind": "sector_head",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": true
+  },
+  {
+   "index": 25,
+   "id": "B6",
+   "x": 358.0,
+   "y": 595.8333333333334,
+   "elev": 102.395,
+   "kind": "valve_out",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": false
+  },
+  {
+   "index": 26,
+   "id": "A6",
+   "x": 470.0,
+   "y": 595.8333333333334,
+   "elev": 102.563,
+   "kind": "manifold",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": false
+  },
+  {
+   "index": 27,
+   "id": "E6",
+   "x": 640.0,
+   "y": 595.8333333333334,
+   "elev": 102.818,
+   "kind": "submain_end",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": true
+  }
+ ],
+ "edges": [
+  {
+   "id": "MN1",
+   "source": 0,
+   "target": 1,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "length": 119.17,
+   "diameter": 0.235
+  },
+  {
+   "id": "L1",
+   "source": 1,
+   "target": 2,
+   "kind": "sector_link",
+   "sector": 1,
+   "branch": "sector_1",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V1",
+   "source": 2,
+   "target": 3,
+   "kind": "sector_valve",
+   "sector": 1,
+   "branch": "sector_1",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S1a",
+   "source": 3,
+   "target": 4,
+   "kind": "submain_1",
+   "sector": 1,
+   "branch": "sector_1",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S1b",
+   "source": 4,
+   "target": 5,
+   "kind": "submain_2",
+   "sector": 1,
+   "branch": "sector_1",
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L2",
+   "source": 1,
+   "target": 6,
+   "kind": "sector_link",
+   "sector": 2,
+   "branch": "sector_2",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V2",
+   "source": 6,
+   "target": 7,
+   "kind": "sector_valve",
+   "sector": 2,
+   "branch": "sector_2",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S2a",
+   "source": 7,
+   "target": 8,
+   "kind": "submain_1",
+   "sector": 2,
+   "branch": "sector_2",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S2b",
+   "source": 8,
+   "target": 9,
+   "kind": "submain_2",
+   "sector": 2,
+   "branch": "sector_2",
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "MN2",
+   "source": 1,
+   "target": 10,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "length": 238.33,
+   "diameter": 0.235
+  },
+  {
+   "id": "L3",
+   "source": 10,
+   "target": 11,
+   "kind": "sector_link",
+   "sector": 3,
+   "branch": "sector_3",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V3",
+   "source": 11,
+   "target": 12,
+   "kind": "sector_valve",
+   "sector": 3,
+   "branch": "sector_3",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S3a",
+   "source": 12,
+   "target": 13,
+   "kind": "submain_1",
+   "sector": 3,
+   "branch": "sector_3",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S3b",
+   "source": 13,
+   "target": 14,
+   "kind": "submain_2",
+   "sector": 3,
+   "branch": "sector_3",
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L4",
+   "source": 10,
+   "target": 15,
+   "kind": "sector_link",
+   "sector": 4,
+   "branch": "sector_4",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V4",
+   "source": 15,
+   "target": 16,
+   "kind": "sector_valve",
+   "sector": 4,
+   "branch": "sector_4",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S4a",
+   "source": 16,
+   "target": 17,
+   "kind": "submain_1",
+   "sector": 4,
+   "branch": "sector_4",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S4b",
+   "source": 17,
+   "target": 18,
+   "kind": "submain_2",
+   "sector": 4,
+   "branch": "sector_4",
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "MN3",
+   "source": 10,
+   "target": 19,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "length": 238.33,
+   "diameter": 0.235
+  },
+  {
+   "id": "L5",
+   "source": 19,
+   "target": 20,
+   "kind": "sector_link",
+   "sector": 5,
+   "branch": "sector_5",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V5",
+   "source": 20,
+   "target": 21,
+   "kind": "sector_valve",
+   "sector": 5,
+   "branch": "sector_5",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S5a",
+   "source": 21,
+   "target": 22,
+   "kind": "submain_1",
+   "sector": 5,
+   "branch": "sector_5",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S5b",
+   "source": 22,
+   "target": 23,
+   "kind": "submain_2",
+   "sector": 5,
+   "branch": "sector_5",
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L6",
+   "source": 19,
+   "target": 24,
+   "kind": "sector_link",
+   "sector": 6,
+   "branch": "sector_6",
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V6",
+   "source": 24,
+   "target": 25,
+   "kind": "sector_valve",
+   "sector": 6,
+   "branch": "sector_6",
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S6a",
+   "source": 25,
+   "target": 26,
+   "kind": "submain_1",
+   "sector": 6,
+   "branch": "sector_6",
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S6b",
+   "source": 26,
+   "target": 27,
+   "kind": "submain_2",
+   "sector": 6,
+   "branch": "sector_6",
+   "length": 170.0,
+   "diameter": 0.11
+  }
+ ],
+ "note": "Undirected in practice. Sector-valve edges (kind=sector_valve) are closed when their sector is not open; see sector_open.npy per scenario."
+}
