@@ -7,7 +7,8 @@ Pressure (ADC counts : reference bar, repeat --point):
     python -m tools.calibrate pressure --point 1667:2.0 --point 3333:4.0 --point 5000:6.0
 
 The pressure fit is `bar = gain * sensor_volts + offset`, where sensor_volts is
-reconstructed through the 3.2 divider. Print the fitted constants and copy them
+reconstructed through the divider in hydropin/config.py (PRESSURE_DIVIDER, x3.0 on rev 1;
+the fit is for PT1). Print the fitted constants and copy them
 into `hydropin/config.py` and `firmware/include/config.h`.
 """
 from __future__ import annotations

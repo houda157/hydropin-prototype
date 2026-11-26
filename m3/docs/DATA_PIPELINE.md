@@ -79,8 +79,8 @@ sensor sits at the valve.** Positions are measured from the reservoir.
 
 | Check | Expected | Result |
 |---|---|---|
-| Joukowsky jump (no friction, instantaneous closure) | a·V0/g = 17.845 m | 17.845 m (Results, mean absolute error on held-out test pipes 0) |
-| Oscillation period | 4L/a = 1.714 s | 1.714 s (Results, mean absolute error on held-out test pipes 2 × 10⁻¹⁶) |
+| Joukowsky jump (no friction, instantaneous closure) | a·V0/g = 17.845 m | 17.845 m (error 0) |
+| Oscillation period | 4L/a = 1.714 s | 1.714 s (error 2 × 10⁻¹⁶) |
 | Grid convergence (N vs 2N) | difference < 2 % of the jump | passes |
 | Steady state + leak mass balance | Q_up − Q_down = Q_L | passes (1e-9) |
 | Echo position, 5 % leak at 20/60/100/140 m | within 1 m | 0.25 m off |
@@ -101,9 +101,9 @@ sensor sits at the valve.** Positions are measured from the reservoir.
 | Field | Meaning |
 |---|---|
 | `setup` | `L_m, D_m, a_mps, darcy_f, H_res_m, V0_mps, closure_ms, dx_m, dt_ms, fs_hz` |
-| `joukowsky` | `expected_m`, `simulated_m` (mean head rise on the first plateau), `rel_Results, mean absolute error on held-out test pipes` |
-| `period` | `expected_s` (4L/a), `simulated_s` (2 × mean time between sign changes of H − H0), `rel_Results, mean absolute error on held-out test pipes` |
-| `echo` | `x_leak_true_m`, `x_leak_est_m`, `Results, mean absolute error on held-out test pipes_m`, `echo_amplitude_m` (0.235 m), `leak_fraction`, `note` |
+| `joukowsky` | `expected_m`, `simulated_m` (mean head rise on the first plateau), `rel_error` |
+| `period` | `expected_s` (4L/a), `simulated_s` (2 × mean time between sign changes of H − H0), `rel_error` |
+| `echo` | `x_leak_true_m`, `x_leak_est_m`, `error_m`, `echo_amplitude_m` (0.235 m), `leak_fraction`, `note` |
 | `min_head_m` | lowest head anywhere in the pipe (> 0, so no column separation) |
 
 **Used for:** proving the solver is correct (report, mentor review).
@@ -121,7 +121,7 @@ sensor sits at the valve.** Positions are measured from the reservoir.
    a 2 s trace at 2 kHz = 4,000 samples.
 4. **Noise sweep:** σ ∈ {0, 0.01, 0.02, 0.05, 0.1, 0.2} m × 6 positions × 3 seeds (0, 1, 2)
    = **108 traces**. The locators use the correct model (a = 350).
-5. **Wave-speed sweep:** model Results, mean absolute error on held-out test pipes e ∈ {−10, −5, −2, 0, +2, +5, +10} %, σ = 0.02 m,
+5. **Wave-speed sweep:** model error e ∈ {−10, −5, −2, 0, +2, +5, +10} %, σ = 0.02 m,
    × 6 positions × 3 seeds = **126 traces**. The locators get a model with
    a = 350·(1 + e) while the true pipe stays at 350. This plays the role of "we don't
    know the real wave speed".
@@ -153,14 +153,14 @@ All model-based locators start from the **residual rate** `residual_rate()`:
 | `setup` | `L_m, a_true_mps, closure_ms, fs_hz, leak_fraction, positions_m, seeds, echo_amplitude_m, sigma_for_a_sweep_m` |
 | `calibration` | the calibrated model's `a_mps, f, creep_scale, rms_m, n_eval, a_start_mps` |
 | `rows.noise[]` | one per trace: `x_true, sigma_m, seed, a_identified, tr, tr_id, mfp, echo, cnn, cnn_cal` (estimates in m from the reservoir) |
-| `rows.wave_speed[]` | the same, plus `a_err` (the model's relative wave-speed Results, mean absolute error on held-out test pipes) |
+| `rows.wave_speed[]` | the same, plus `a_err` (the model's relative wave-speed error) |
 | `noise.<method>.<σ>` | `mae_m` (mean \|estimate − true\|) and `within_5m` (fraction ≤ 5 m), over 18 traces |
-| `wave_speed.<method>.<a_err>` | the same, per wave-speed Results, mean absolute error on held-out test pipes |
-| `a_identified_rel_Results, mean absolute error on held-out test pipes` | `mean` and `max` of \|a_identified / 350 − 1\| (0.46 % / 0.47 %) |
+| `wave_speed.<method>.<a_err>` | the same, per wave-speed error |
+| `a_identified_rel_error` | `mean` and `max` of \|a_identified / 350 − 1\| (0.46 % / 0.47 %) |
 | `runtime_s` | about 7–8 minutes (445 s for the committed run) |
 
-**Used for:** the report chart `report/figures/m3_accuracy.png` (Results, mean absolute error on held-out test pipes vs noise, error vs
-wave-speed Results, mean absolute error on held-out test pipes, all methods). `plot_focus.py` re-makes 3 traces the same way
+**Used for:** the report chart `report/figures/m3_accuracy.png` (error vs noise, error vs
+wave-speed error, all methods). `plot_focus.py` re-makes 3 traces the same way
 (x = 35, 90, 135 m; σ = 0.02 m; rng seed = x) for `report/figures/m3_time_reversal.png`.
 
 ---
@@ -182,7 +182,7 @@ the values are drawn **in this order**:
 | 6 | leak fraction | log-uniform 1 %…10 % of Q0 | small and large leaks |
 | 7 | leak position `x` | Uniform(3, 147) m | the whole pipe, blind zones included |
 | 8 | calibrated? | yes with probability 0.7 | the CNN must work with and without a field test |
-| 9 | calibration Results, mean absolute error on held-out test pipess | a × N(1, 0.01), f × N(1, 0.10), s + N(0, 0.10) | see below |
+| 9 | calibration errors | a × N(1, 0.01), f × N(1, 0.10), s + N(0, 0.10) | see below |
 
 Then:
 1. **true pipe** = nominal geometry with `a`, `f`, creep (`s` × typical compliances, with the typical or the
@@ -190,15 +190,15 @@ Then:
 2. `x_actual` = `round(x / dx)·dx` (where the solver really puts the leak): **the label**;
 3. simulate **1.3 s**, sample at 2 kHz;
 4. **reference model** (what the monitoring side believes about the pipe):
-   - *calibrated*: the true `a`, `f`, `s` plus the calibration Results, mean absolute error on held-out test pipess (typical creep shape);
+   - *calibrated*: the true `a`, `f`, `s` plus the calibration errors (typical creep shape);
    - *uncalibrated*: wave speed read off the trace (`estimate_wave_speed`), `f` = 0.02, `s` = 1 (typical creep);
 5. simulate the **intact** reference model → `ref`;
 6. keep the first **2,200 samples** (0…1.1 s) of the recording and of `ref`;
 7. **no noise is stored**: noise is added during training (4.4).
 
-**Why such large calibration Results, mean absolute error on held-out test pipess?** In simulation, calibration is nearly perfect (section 5:
+**Why such large calibration errors?** In simulation, calibration is nearly perfect (section 5:
 0.003 % on `a`, 0.4 % on `f`, 0.001 on `s`) because the simulated pipe belongs to the model
-family. A real pipe will not, so the CNN is trained with deliberately larger Results, mean absolute error on held-out test pipess
+family. A real pipe will not, so the CNN is trained with deliberately larger errors
 (creep ±0.1 is the tolerance limit found in section 6).
 
 ### 4.2 File: `m3/out/cnn_data.npz` (125 MB, compressed, **not committed**; re-make in ~10 min)
@@ -247,8 +247,8 @@ Input shape per trace: **[5 × 2200]**. Target: **`x_actual / 150`** (0…1).
    flatten (64 × 34) → Linear 2176 → 128 → ReLU → Dropout 0.1 → Linear 128 → 1.
 5. **Optimisation:** SmoothL1 (β = 0.01) on x/L; AdamW (lr 2 × 10⁻³, weight decay 10⁻⁴), OneCycle
    (max lr 3 × 10⁻³); batch 64; **100 epochs** (40 was not enough for this harder task:
-   validation Results, mean absolute error on held-out test pipes was still falling); `torch.manual_seed(20261125)`.
-6. **Model choice:** the epoch with the lowest validation mean Results, mean absolute error on held-out test pipes is saved to `m3/out/cnn.pt`.
+   validation error was still falling); `torch.manual_seed(20261125)`.
+6. **Model choice:** the epoch with the lowest validation mean error is saved to `m3/out/cnn.pt`.
 7. **Test (once, at the end):** σ ∈ {0, 0.02, 0.05, 0.1, 0.2} m, noise with `default_rng([20261125, 2])`.
 
 ### 4.5 Output: `m3/out/cnn_eval.json`
@@ -256,14 +256,14 @@ Input shape per trace: **[5 × 2200]**. Target: **`x_actual / 150`** (0…1).
 | Field | Meaning |
 |---|---|
 | `n_train`, `n_val`, `n_test` | 9000, 1000, 2000 |
-| `val_mae_m` | best validation mean Results, mean absolute error on held-out test pipes (m) |
-| `calibration_Results, mean absolute error on held-out test pipes_sd` | the calibration errors used (4.1) |
-| `test_by_sigma.<σ>.<group>` | `n`, `mae_covered_m` (mean \|Results, mean absolute error on held-out test pipes\|, leaks 18 m < x < 145 m), `within_5m` |
+| `val_mae_m` | best validation mean error (m) |
+| `calibration_error_sd` | the calibration errors used (4.1) |
+| `test_by_sigma.<σ>.<group>` | `n`, `mae_covered_m` (mean \|error\|, leaks 18 m < x < 145 m), `within_5m` |
 
 Groups: `all, calibrated, uncalibrated, elastic_pipe, creeping_pipe, creep_other_shape,
 creeping_calibrated, creeping_uncalibrated`.
 
-Results, mean absolute error on held-out test pipes (leaks 18–145 m); best validation error 3.69 m:
+error (leaks 18–145 m); best validation error 3.69 m:
 
 | σ (m) | all | elastic pipe | creeping, calibrated | creeping, not calibrated | creep of another shape | within 5 m (all) |
 |---|---|---|---|---|---|---|
@@ -310,13 +310,13 @@ leak-free, and record the sensor. Fit the model's unknowns so its intact trace m
 48 random pipes: a = 350 × U(0.9, 1.1), f = U(0.015, 0.030), creep 0 (1 pipe in 4) or U(0, 1.5),
 σ = 0.05 m, rng `default_rng([20261125, k])`.
 
-| | mean Results, mean absolute error on held-out test pipes | spread (std) | worst |
+| | mean error | spread (std) | worst |
 |---|---|---|---|
 | wave speed | 0.0002 % | 0.001 % | 0.003 % |
 | friction | 0.01 % | 0.16 % | 0.38 % |
 | creep scale | 0.000001 | 0.0004 | 0.0012 |
 
-The fit's remaining Results, mean absolute error on held-out test pipes is 0.050 m on average: exactly the sensor noise, i.e. the model
+The fit's remaining error is 0.050 m on average: exactly the sensor noise, i.e. the model
 reproduces the pipe perfectly. **This is optimistic:** the simulated pipe has the same kind of creep as the model.
 
 ### 5.2 Model-form test (`python -m m3.calibrate formtest` → `calibration.json: model_form_test`)
@@ -327,9 +327,9 @@ the echo). Yet time reversal with the calibrated model still finds 5 % leaks at
 30–140 m within **0.33 m on average** (worst 1.2 m). The leftover mismatch is slow and smooth,
 and the residual rate ignores it.
 
-**Fields:** `setup`, `Results, mean absolute error on held-out test pipess.{a_rel, f_rel, creep_scale_abs}.{mean, std, max_abs}`, `fit_rms_m`,
+**Fields:** `setup`, `errors.{a_rel, f_rel, creep_scale_abs}.{mean, std, max_abs}`, `fit_rms_m`,
 `rows[]` (`k, a_true, f_true, s_true, a_mps, f, creep_scale, rms_m, n_eval, a_start_mps`),
-`model_form_test.cases[]` (`case, true_J_per_Pa, true_tau_s, calibrated, tr_Results, mean absolute error on held-out test pipes_m_by_position, tr_mae_m`).
+`model_form_test.cases[]` (`case, true_J_per_Pa, true_tau_s, calibrated, tr_error_m_by_position, tr_mae_m`).
 
 ---
 
@@ -379,7 +379,7 @@ which absorbs wave energy. The solver models a **generalised Kelvin-Voigt** wall
 | `traces.<truth>` | `t_s, H_m`: 6 s no-leak valve trace (every 40th step), for the figure |
 | `summary.<truth>.<method>.<σ>` | `mae_m`, `within_5m` over 18 traces |
 | `labels` | method key → readable name |
-| `creep_model_sensitivity.by_scale.<s>` | `mae_m, max_m, Results, mean absolute error on held-out test pipess_m` |
+| `creep_model_sensitivity.by_scale.<s>` | `mae_m, max_m, errors_m` |
 | `rows[]` | one per trace: `truth, x_true, sigma_m, seed, a_identified` and every method's estimate |
 
 ### 6.4 Results and use
