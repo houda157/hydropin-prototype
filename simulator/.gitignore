@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+# EPANET scratch files written by WNTR
+temp.inp
+temp.bin
+temp.rpt

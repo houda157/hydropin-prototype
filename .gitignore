@@ -10,3 +10,5 @@ __pycache__/
 
 # platformio
 .pio/
+
+simulator/data

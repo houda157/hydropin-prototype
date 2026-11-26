@@ -8,7 +8,7 @@ How to run everything, in a few commands.
 - `broker/` local MQTT broker
 - `firmware/` ESP32, PlatformIO project
 - `hydropin/` shared Python code
-- `simulator/` simulated bench data
+- `simulator/` digital twin (physics, sensors, M1/M2/M3, prototype bench) + simulated bench data
 - `backend/` FastAPI app + MQTT listener
 - `detection/` leak detection
 - `dashboard/` live Streamlit dashboard

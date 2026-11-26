@@ -1,0 +1,187 @@
+[TITLE]
+
+[JUNCTIONS]
+;ID                      Elevation       Demand Pattern                 
+ HEAD                               0               0                            ;
+ M1                              0.06               0                            ;
+ S1                             0.072               0                            ;
+ B11                            0.102               0                            ;
+ B12                            0.162               0                            ;
+ B13                            0.222               0                            ;
+ M2                              0.33               0                            ;
+ S2                             0.342               0                            ;
+ B21                            0.372               0                            ;
+ B22                            0.432               0                            ;
+ B23                            0.492               0                            ;
+ M3                               0.6               0                            ;
+ S3                             0.612               0                            ;
+ B31                            0.642               0                            ;
+ B32                            0.702               0                            ;
+ B33                            0.762               0                            ;
+ M4                              0.87               0                            ;
+ S4                             0.882               0                            ;
+ B41                            0.912               0                            ;
+ B42                            0.972               0                            ;
+ B43                            1.032               0                            ;
+
+[RESERVOIRS]
+;ID                                   Head                  Pattern
+ BASIN                              0                            ;
+
+[TANKS]
+;ID                              Elevation           Init Level            Min Level            Max Level             Diameter           Min Volume Volume Curve         Overflow            
+
+[PIPES]
+;ID                   Node1                Node2                              Length             Diameter            Roughness           Minor Loss               Status
+ MAIN1                HEAD                 M1                                20    81.428571429          0.0015               0                 Open   ;
+ V1                   M1                   S1                                 2    61.363636364          0.0015               2                 Open   ;
+ SUB11                S1                   B11                                5    61.363636364          0.0015               0                 Open   ;
+ SUB12                B11                  B12                               10    61.363636364          0.0015               0                 Open   ;
+ SUB13                B12                  B13                               10    61.363636364          0.0015               0                 Open   ;
+ MAIN2                M1                   M2                                90    81.428571429          0.0015               0                 Open   ;
+ V2                   M2                   S2                                 2    61.363636364          0.0015               2                 Open   ;
+ SUB21                S2                   B21                                5    61.363636364          0.0015               0                 Open   ;
+ SUB22                B21                  B22                               10    61.363636364          0.0015               0                 Open   ;
+ SUB23                B22                  B23                               10    61.363636364          0.0015               0                 Open   ;
+ MAIN3                M2                   M3                                90    81.428571429          0.0015               0                 Open   ;
+ V3                   M3                   S3                                 2    61.363636364          0.0015               2                 Open   ;
+ SUB31                S3                   B31                                5    61.363636364          0.0015               0                 Open   ;
+ SUB32                B31                  B32                               10    61.363636364          0.0015               0                 Open   ;
+ SUB33                B32                  B33                               10    61.363636364          0.0015               0                 Open   ;
+ MAIN4                M3                   M4                                90    81.428571429          0.0015               0                 Open   ;
+ V4                   M4                   S4                                 2    61.363636364          0.0015               2                 Open   ;
+ SUB41                S4                   B41                                5    61.363636364          0.0015               0                 Open   ;
+ SUB42                B41                  B42                               10    61.363636364          0.0015               0                 Open   ;
+ SUB43                B42                  B43                               10    61.363636364          0.0015               0                 Open   ;
+
+[PUMPS]
+;ID                   Node1                Node2                Properties          
+ PUMP                 BASIN                HEAD                 HEAD     PUMP_curve             ;
+
+[VALVES]
+;ID                   Node1                Node2                            Diameter Type              Setting           Minor Loss
+
+[TAGS]
+;type      name       tag       
+
+[DEMANDS]
+;ID        Demand     Pattern   
+
+[STATUS]
+;ID        Setting   
+
+[PATTERNS]
+;ID        Multipliers
+
+[CURVES]
+;ID         X-Value      Y-Value     
+;PUMP: PUMP_curve
+ PUMP_curve     0.000000    28.000000   ;
+ PUMP_curve     5.354624    21.000000   ;
+ PUMP_curve    10.173786     2.730000   ;
+
+
+[CONTROLS]
+
+[RULES]
+
+[ENERGY]
+GLOBAL PRICE           0.0000
+
+[EMITTERS]
+;ID        Flow coefficient
+B11        0.3268685314453037
+B12        0.3268685314453037
+B13        0.3268685314453037
+B21        0.3268685314453037
+B22        0.3268685314453037
+B23        0.3268685314453037
+B31        0.3268685314453037
+B32        0.3268685314453037
+B33        0.3268685314453037
+B41        0.3268685314453037
+B42        0.3268685314453037
+B43        0.3268685314453037
+
+[QUALITY]
+
+[SOURCES]
+;Node      Type       Quality    Pattern   
+
+[REACTIONS]
+;Type           Pipe/Tank               Coefficient
+
+ ORDER BULK 1
+ ORDER TANK 1
+ ORDER WALL 1
+ GLOBAL BULK 0.0000    
+ GLOBAL WALL 0.0000    
+
+[MIXING]
+;Tank ID             Model Fraction
+
+[TIMES]
+DURATION             00:00:00
+HYDRAULIC TIMESTEP   01:00:00
+QUALITY TIMESTEP     00:06:00
+PATTERN TIMESTEP     01:00:00
+PATTERN START        00:00:00
+REPORT TIMESTEP      01:00:00
+REPORT START         00:00:00
+START CLOCKTIME      00:00:00 AM
+RULE TIMESTEP        00:06:00
+STATISTIC            NONE      
+
+[REPORT]
+
+[OPTIONS]
+UNITS                LPS                 
+HEADLOSS             D-W                 
+SPECIFIC GRAVITY     1
+VISCOSITY            0.98245145985
+TRIALS               500
+ACCURACY             1e-07
+CHECKFREQ            2
+MAXCHECK             10
+UNBALANCED           STOP                
+PATTERN              1                   
+DEMAND MULTIPLIER    1
+EMITTER EXPONENT     0.5
+QUALITY              NONE                
+DIFFUSIVITY          1
+TOLERANCE            0.01
+
+[COORDINATES]
+;Node      X-Coord    Y-Coord   
+BASIN             -10.000000000          0.000000000
+HEAD                0.000000000          0.000000000
+M1                 20.000000000          0.000000000
+S1                 20.000000000          2.000000000
+B11                20.000000000          7.000000000
+B12                20.000000000         17.000000000
+B13                20.000000000         27.000000000
+M2                110.000000000          0.000000000
+S2                110.000000000          2.000000000
+B21               110.000000000          7.000000000
+B22               110.000000000         17.000000000
+B23               110.000000000         27.000000000
+M3                200.000000000          0.000000000
+S3                200.000000000          2.000000000
+B31               200.000000000          7.000000000
+B32               200.000000000         17.000000000
+B33               200.000000000         27.000000000
+M4                290.000000000          0.000000000
+S4                290.000000000          2.000000000
+B41               290.000000000          7.000000000
+B42               290.000000000         17.000000000
+B43               290.000000000         27.000000000
+
+[VERTICES]
+;Link      X-Coord    Y-Coord   
+
+[LABELS]
+
+[BACKDROP]
+UNITS    NONE
+
+[END]
