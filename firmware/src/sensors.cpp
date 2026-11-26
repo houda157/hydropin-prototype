@@ -12,7 +12,7 @@ static uint32_t s_last_count = 0;
 static uint32_t s_slots[FLOW_WINDOW_SLOTS] = {};
 static uint8_t s_slot = 0;
 
-static void IRAM_ATTR isr_main() { g_pulses_main++; }
+static void IRAM_ATTR isr_main() { g_pulses_main = g_pulses_main + 1; }
 
 static void attach_flow(uint8_t pin, void (*isr)()) {
     pinMode(pin, INPUT);

@@ -63,7 +63,7 @@ Now it has a working vertical slice:
 | ML | causal features, RandomForest multiclass, group-aware CV, saved bundle |
 | Backend | FastAPI + SQLite + MQTT listener + REST + WebSocket + CSV export |
 | Dashboard | Streamlit live charts, alarm banner, run start/stop, CSV link |
-| Firmware | ESP32 PlatformIO project, ADS1115 + 4 flow ISRs + MQTT JSON |
+| Firmware | ESP32 PlatformIO project, ADS1115 PT1/PT2 + one flow ISR + MQTT JSON, compiled |
 | Tests | 40 passed (`python -m pytest -q`) |
 
 File map:
@@ -400,7 +400,7 @@ The simulator is a **test harness for the pipeline**, not a digital twin.
 | 4 | ML | grouped CV macro F1 > 0.75, unseen seed generalisation | macro F1 0.982, unseen seeds ~0.98 |
 | 5 | Backend | ingest/query/export/runs/WS tests + real MQTT | 3 tests + MQTT e2e 180/180, 1 alert |
 | 6 | Dashboard | serves, live charts | HTTP 200 |
-| 7 | Firmware | code complete; compile not possible here | **not compiled** (no PlatformIO) |
+| 7 | Firmware | code complete; compiles for ESP32 | **compiled** (PlatformIO 6.2.0, espressif32 6.9.0); not flashed |
 | 8 | Docs + full validation | 40 tests, e2e, this file | 40 passed |
 
 ### Measured detector results (simulator, 120 s runs)
@@ -442,7 +442,7 @@ Micro over all 6 leak runs: **precision 1.000, recall 0.918, F1 0.957**
 | 4 | False alarms: baseline 18/min, ripple 40/min, drift 97% | detector used absolute flow, which drifts | normalize to branch shares + CUSUM | 0 FA/min on all healthy runs |
 | 5 | ML L2/L3 recall = 0 | too few runs per class + GroupKFold put them in one fold | all branches x all sizes + `StratifiedGroupKFold` | macro F1 0.982 |
 | 6 | E2E harness "backend not up" | `Start-Process` ran outside the repo dir | pass `-WorkingDirectory`; use `curl.exe` for health | MQTT e2e 180/180 |
-| 7 | Firmware not compiled | PlatformIO not installed | flagged, not hidden | `pio --version` fails |
+| 7 | Firmware would not compile | default platform pulled Arduino-ESP32 3.3.12, whose WiFi headers failed | pinned `espressif32@6.9.0` (Arduino-ESP32 2.0.17) | `pio run` SUCCESS, RAM 14.1%, flash 58.9% |
 | 8 | Pressure math was wrong | doc assumed 22k/10k (3.2:1) and a 0..5 V sensor; rev 1 is 20k/10k (3.0:1) and 0-10 V sensors | corrected to 20k/10k; PT1 `bar=0.6*V_sensor`, PT2 `bar=-1+0.26*V_sensor` | `test_pressure_sensor_full_scale_is_6_bar` |
 | 9 | Raw pulse fields 4x too small | `make_message` reconstructed them with the 0.5 s publish period | default is now the 2 s flow window; regression test asserts 3 L/min -> 30 pulses | `test_make_message_raw_pulses_use_the_2s_flow_window` |
 | 10 | Real firmware samples were all labelled `none` | dashboard run label was stored only in `runs`, never applied to readings | added `runs.onset_ts`, `POST /api/runs/{id}/onset`, ingest override for live samples; offline `tools.label_csv` fallback | `test_live_labels_follow_marked_onset` |
@@ -467,8 +467,9 @@ not by assuming.
   (L1/L2/L3); rev 1 has branch pressure sensors only, so live localisation is
   not validated until branch flow sensors are added or the models are retrained
   on PT1/PT2.
-- **Firmware not compiled.** The C++ is written but PlatformIO is absent; the
-  ms timestamp and NTP path have not run on hardware.
+- **Firmware compiled, not flashed.** `pio run` succeeds (RAM 14.1%, flash
+  58.9%) but the binary has not run on the ESP32; the ms timestamp and NTP path
+  are still untested on hardware.
 - **QoS 0 on the device, no offline buffering.** MQTT outages drop samples;
   `seq` gaps are real loss. The validator reports them but cannot recover them.
 - **Real labelling is implemented, not yet exercised on hardware.**
@@ -495,8 +496,8 @@ not by assuming.
 4. **Train on real runs** with `--data-dir` and a separate `--holdout-dir`;
    compare with simulation-only metrics. Add M1 (Isolation Forest / PCA) on the
    same split.
-5. **Finish the firmware**: compile with PlatformIO, flash, verify the 2 Hz JSON
-   and ms timestamps, add NTP sync guard + offline ring buffer.
+5. **Finish the firmware**: flash the compiled binary, verify the 2 Hz JSON and
+   ms timestamps, add NTP sync guard + offline ring buffer.
 6. **MQTT hardening**: auth/TLS, retained status, gap detection, alert cooldown,
    and either accept QoS 0 with buffering or move to a QoS 1-capable client.
 7. **Dashboard polish**: replay a CSV through `/api/ingest`, alert history,
@@ -540,9 +541,10 @@ streamlit run dashboard/app.py
 $env:HYDROPIN_MQTT="1"; uvicorn backend.main:app --port 8016
 python -m simulator.sim --scenario leak_L1 --duration 90 --seed 11 --publish --broker localhost --quiet
 
-# firmware (not run here: PlatformIO missing)
+# firmware (compiled here; upload needs the board)
 cd firmware
 copy include\secrets.example.h include\secrets.h
+pio run
 pio run -t upload
 pio device monitor -b 115200
 ```
@@ -558,6 +560,6 @@ F1 with group-aware validation, but that is a **simulation** result and must be
 re-proven on the bench. The divider math (20k/10k, ratio 3.0), raw-pulse window,
 PT1/PT2 ranges and real-run onset labelling are now fixed and regression-tested.
 The remaining open items are physical: calibrate the flow gain, gauge-check
-PT1/PT2, compile the firmware, and collect the first real labelled runs. Rev 1
+PT1/PT2, flash the compiled firmware, and collect the first real labelled runs. Rev 1
 has branch pressure sensors, not branch flow sensors, so live branch
 localisation still needs either extra flow sensors or retraining on PT1/PT2.

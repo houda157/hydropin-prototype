@@ -88,7 +88,7 @@ flag, so the validator and calibration fitter can run on exported runs too.
 
 - `contract/` shared message schema, labels and API (changed only together)
 - `broker/` local MQTT broker config
-- `firmware/` ESP32 PlatformIO project (ADS1115 + flow pulse ISRs + MQTT)
+- `firmware/` ESP32 PlatformIO project (ADS1115 PT1/PT2 + main flow ISR + MQTT)
 - `hydropin/` shared Python: config, units, message parsing
 - `simulator/` digital twin `hydropin_sim/` (physics, sensors, M1/M2/M3, prototype bench; see simulator/README.md)
   + bench data generator `sim.py` / `scenarios.py` (scenarios, quantization, dropout)
@@ -116,12 +116,14 @@ yet. See `data/calibration.md` and `python -m tools.calibrate --help`.
 
 ## Firmware
 
-PlatformIO is not installed in this environment, so the firmware has not been
-compiled here.
+The firmware compiles for `esp32dev` with PlatformIO 6.2.0 and
+`espressif32@6.9.0` (RAM 14.1%, flash 58.9%). It has **not** been flashed or run
+on hardware yet.
 
 ```powershell
 cd firmware
 copy include\secrets.example.h include\secrets.h   # then edit Wi-Fi + broker
+pio run
 pio run -t upload
 pio device monitor -b 115200
 ```
