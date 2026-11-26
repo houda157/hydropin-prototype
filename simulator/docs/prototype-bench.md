@@ -24,7 +24,7 @@ The simulation contains a twin of the 3rd-phase prototype bench (hardware list +
 | Leak taps L1, L2, L3 (½" valve + 25 cm tube) | Tee branch + valve + tube + free outlet; optional calibrated orifice | Tube length |
 | Swagelok sensor tees | Short stainless section (contraction/expansion) | Inside diameter, length |
 | Swagelok S sensors P1, P2 | −1…1.6 bar → 0–10 V, accuracy 0.5 % span, thermal drift, noise, 1 ms response, saturation; 4–20 mA option | Check the 2nd sensor's label; noise |
-| 22 kΩ / 10 kΩ dividers | Ratio with 1 % resistors and the ADC input impedance | – |
+| 20 kΩ / 10 kΩ dividers (rev 1) | Ratio with 1 % resistors and the ADC input impedance | – |
 | ADS1115 | ±4.096 V, 16 bit, data rate shared by P1/P2, gain/offset error, noise, conversion filter | Data rate chosen in the firmware |
 | ESP32 firmware | Your formulas (× 3.2, −1 + V/10 × 2.6), 1-s averages, pulse counting | K factor used for F0 |
 | Return pipe to the bucket | Free outlet (or siphon if it runs full) | Does it run full? |

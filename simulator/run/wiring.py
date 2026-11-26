@@ -336,8 +336,8 @@ def draw(lora: bool = False) -> Sheet:
         s.wire((cx, yo), (cx + 20, yo))
         s.glabel(cx + 20, yo, label, "right")
 
-    pressure(160, "PT1", "P1 – branch A", ("R1", "22 kΩ"), ("R2", "10 kΩ"), "C1", "ADC_A0")
-    pressure(470, "PT2", "P2 – branch B", ("R3", "22 kΩ"), ("R4", "10 kΩ"), "C2", "ADC_A1")
+    pressure(160, "PT1", "P1 – branch A", ("R1", "20 kΩ"), ("R2", "10 kΩ"), "C1", "ADC_A0")
+    pressure(470, "PT2", "P2 – branch B", ("R3", "20 kΩ"), ("R4", "10 kΩ"), "C2", "ADC_A1")
     # flow sensor
     x0, y0 = 600, 790
     s.rect(x0, y0, 120, 100)
@@ -473,7 +473,7 @@ def draw(lora: bool = False) -> Sheet:
         "4. R5/R6: 5 V pulse → 3.3 V (the 22 k / 10 k of the list gives only 1.6 V).",
         "5. If PT2 is the 4–20 mA version: pin 1 to +24V, pin 2 to 150 Ω",
         "    to GND, ADC_A1 at pin 2; leave out R3/R4.",
-        "6. Firmware: V_sensor = V_ADC × 3.2; p [bar] = −1 + 0.26 × V_sensor.",
+        "6. Firmware: V_sensor = V_ADC × 3.0; p [bar] = −1 + 0.26 × V_sensor.",
         "7. PT pin numbers: usual DIN 175301-803 layout, check the datasheet.",
         "8. One ESP32 only: it reads P1, P2, F0 and publishes over Wi-Fi.",
         "9. U1: wire by GPIO name, header pin numbers differ between boards.",
@@ -545,7 +545,7 @@ def draw_gateway() -> Sheet:
         "8. On the bench the radios are ~1 m apart: set TX power low (2–10 dBm) so the receiver is not saturated.",
         "9. Both radios must use the same frequency, bandwidth, spreading factor and sync word (e.g. 433 MHz, 125 kHz, SF7).",
         "10. GPIO5 is a boot strapping pin; the Ra-02 NSS line idles high, which is what the ESP32 needs at boot.",
-        "11. Firmware: V_sensor = V_ADC × 3.2; p [bar] = −1 + 0.26 × V_sensor. Node sends P1, P2, F0, seq every 1 s.",
+        "11. Firmware: V_sensor = V_ADC × 3.0; p [bar] = −1 + 0.26 × V_sensor. Node sends P1, P2, F0, seq every 1 s.",
         "12. Pin numbers of PT1/PT2: usual DIN 175301-803 layout; Ra-02 pins: Ai-Thinker datasheet. Check before wiring.",
     ]
     nx0, ny0 = 60, 650

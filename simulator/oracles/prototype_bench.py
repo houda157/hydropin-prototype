@@ -134,7 +134,7 @@ def checks() -> list[Check]:
     c.append(Check("12.17", "ADS1115 step at ±4.096 V = 125 µV", 1.25e-4, lsb, 1e-12, "rel", "§10.4", "V"))
     p = np.linspace(-0.9, 1.55, 2001)
     u = sb.PressureChain.span_fraction(p, P)
-    ideal_v = B.PS_V_MAX.v * u / B.FW_DIV_FACTOR.v            # divider exactly 1/3.2
+    ideal_v = B.PS_V_MAX.v * u / B.FW_DIV_FACTOR.v            # divider exactly 1/FW_DIV_FACTOR (1/3.0)
     p_hat = ch.firmware(np.round(ideal_v / lsb), lsb, P)
     lsb_bar = B.FW_DIV_FACTOR.v * lsb / B.PS_V_MAX.v * (B.PS_P_MAX.v - B.PS_P_MIN.v)
     c.append(Check("12.18", "Ideal chain: the firmware formula inverts the sensor to ± ½ code",

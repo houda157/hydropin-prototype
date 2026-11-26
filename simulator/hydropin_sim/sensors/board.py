@@ -1,8 +1,8 @@
 """The prototype's real measurement chain, simulated part by part. Math note §10.3–10.5.
 
 Pressure (P1, P2):  Swagelok S transducer (−1 … 1.6 bar → 0–10 V, or 4–20 mA)
-                    → 22 kΩ / 10 kΩ divider (or 150 Ω shunt) → ADS1115 (PGA ±4.096 V,
-                    DR shared by the channels) → ESP32 firmware (× 3.2, bar formula, 1 s mean).
+                    → 20 kΩ / 10 kΩ divider (or 150 Ω shunt) → ADS1115 (PGA ±4.096 V,
+                    DR shared by the channels) → ESP32 firmware (× 3.0, bar formula, 1 s mean).
 Flow (F0):          brass Hall sensor, f = K_F Q + f_0 pulses/s → ESP32 edge counter
                     over T_w → Q̂ = n / (K_fw T_w).
 Hydraulic inputs:   steady board states (steady.board), pump ripple at f_r, slow wander of
@@ -176,7 +176,7 @@ class PressureChain:
         return np.round(v / lsb).astype(int), lsb
 
     def firmware(self, code, lsb, P: Params):
-        """The team's formulas: V_s = 3.2 × V_adc; p = −1 + (V_s / 10) × 2.6 (bar). Math note §10.4."""
+        """The team's formulas: V_s = FW_DIV_FACTOR (3.0 on rev 1) × V_adc; p = −1 + (V_s / 10) × 2.6 (bar). Math note §10.4."""
         b = P.prototype
         v_adc = np.asarray(code) * lsb
         span = b.PS_P_MAX.v - b.PS_P_MIN.v

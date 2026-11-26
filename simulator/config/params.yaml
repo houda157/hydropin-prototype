@@ -924,11 +924,11 @@ prototype:
     source: "Hardware list"
     range: [100.0, 250.0]
   DIV_R_TOP:
-    value: 22000.0
+    value: 20000.0
     unit: "Ohm"
     symbol: 'R_1'
     meaning: "Divider top resistor (sensor side)"
-    source: "Hardware list"
+    source: "Bench rev 1 as built: 20k/10k (was 22k in the 18 Nov list)"
     range: [1000.0, 100000.0]
   DIV_R_BOT:
     value: 10000.0
@@ -945,11 +945,11 @@ prototype:
     source: "Cost sheet (1/4 W 1 % kit)"
     range: [0.001, 0.05]
   FW_DIV_FACTOR:
-    value: 3.2
+    value: 3.0
     unit: "-"
     symbol: 'c_{fw}'
-    meaning: "Divider factor written in the firmware (sensor voltage = measured x 3.2)"
-    source: "Hardware list"
+    meaning: "Divider factor in the firmware conversion (sensor voltage = measured x 3.0)"
+    source: "Bench rev 1 as built (firmware/include/config.h, hydropin/config.py)"
     range: [1.0, 10.0]
   FW_T_AVG:
     value: 1.0

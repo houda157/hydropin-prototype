@@ -132,7 +132,7 @@ Parameters of the bench prototype (hardware list and sketch of 18 Nov 2026). ⚠
 | `PS_P_MIN`, `PS_P_MAX`, `PS_V_MAX` | $p_{min},p_{max},V_{max}$ | Swagelok S range and output | −1, 1.6, 10 | bar, bar, V |
 | `PS_ACC`, `PS_TEMPCO`, `PS_DRIFT_YR` | $ACC_s,\alpha_s,\beta_s$ | Accuracy, thermal effect, stability (fractions of span) | 0.005, 0.0002, 0.002 | –, 1/K, 1/yr |
 | `PS_SIGMA_N`, `PS_TAU` | $\sigma_s,\tau_{ps}$ | Output noise ⚠, response time | 0.0002, 0.001 | –, s |
-| `DIV_R_TOP`, `DIV_R_BOT`, `DIV_TOL` | $R_1,R_2,t_R$ | Divider resistors and tolerance | 22 k, 10 k, 1 % | Ω, Ω, – |
+| `DIV_R_TOP`, `DIV_R_BOT`, `DIV_TOL` | $R_1,R_2,t_R$ | Divider resistors and tolerance | 20 k, 10 k, 1 % (rev 1) | Ω, Ω, – |
 | `CL_R_SHUNT` | $R_{sh}$ | Shunt for a 4–20 mA sensor | 150 | Ω |
 | `FW_DIV_FACTOR`, `FW_T_AVG` | $c_{fw},T_{fw}$ | Firmware divider factor, averaging period | 3.2, 1 | –, s |
 | `ADS_FSR`, `ADS_BITS`, `ADS_DR` | $FSR,n_{ads},DR$ | ADS1115 range, resolution, data rate | ±4.096, 16, 128 | V, bit, SPS |
