@@ -11,3 +11,4 @@ jsonschema
 rich
 httpx
 pytest
+pyserial
