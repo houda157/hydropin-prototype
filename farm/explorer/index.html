@@ -612,7 +612,9 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
   }
 
   // ---------- place
+  let OPEN = null;
   function evaluate(sensors, sigma) {
+    OPEN = OPEN || Object.fromEntries(Object.entries(D.configs).map(([k, v]) => [k, new Set(v)]));
     const sc = D.scen, n = sc.at.length, thr = 3 * sigma, list = [...sensors];
     let det = 0, br = 0;
     const bySize = { 1: [0, 0], 3: [0, 0], 10: [0, 0] }, spot = new Map();
@@ -621,9 +623,14 @@ select.sel { font: 600 0.75rem var(--font-mono); padding: 5px 6px; border: 1px s
       for (const id of list) { const v = dp(s, id); if (v !== 0) vals.push([id, v]); if (-v > thr) any = true; }
       let right = false;
       if (any && vals.length) {
+        // same rule as farm/placement/optimise.py: candidates in row order, ties to the first;
+        // a sensor at the head of a closed sector reads the main pipe, so it speaks for "main"
+        vals.sort((a, b) => CANDS.indexOf(a[0]) - CANDS.indexOf(b[0]));
         const mean = vals.reduce((a, [, v]) => a + v, 0) / vals.length;
         let best = vals[0]; for (const e of vals) if (e[1] - mean < best[1] - mean) best = e;
-        right = NODE[best[0]].branch === sc.branch[s];
+        const nd = NODE[best[0]], open = OPEN[sc.cfg[s]];
+        const said = nd.sector != null && !open.has(nd.sector) ? "main" : nd.branch;
+        right = said === sc.branch[s];
       }
       if (any) det++; if (right) br++;
       bySize[sc.size[s]][0]++; if (any) bySize[sc.size[s]][1]++;

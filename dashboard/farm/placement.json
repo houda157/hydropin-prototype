@@ -1,0 +1,541 @@
+{
+ "version": "1.1",
+ "simulation": true,
+ "source": "farm/placement/optimise.py on farm/leaks/out (WNTR virtual farm)",
+ "n_scenarios": 2070,
+ "candidates": [
+  "PS",
+  "M1",
+  "H1",
+  "E1",
+  "H2",
+  "E2",
+  "M2",
+  "H3",
+  "E3",
+  "H4",
+  "E4",
+  "M3",
+  "H5",
+  "E5",
+  "H6",
+  "E6"
+ ],
+ "sigma_bar": 0.01,
+ "sigma_note": "placeholder until role 1's measured bench sigma",
+ "k": 3.0,
+ "cost_per_node_dt": 292,
+ "cost_note": "217 DT sensor node + 75 DT buried tapping point (master document prices); assumption until the market lead confirms the BOM",
+ "rules": {
+  "detected": "|dP| > k*sigma at one chosen sensor at least",
+  "isolated": "largest common-mode-free drop is on the leak's branch",
+  "distinguishable": "pairs of detected leaks on different branches (same farm state) whose patterns differ by > k*sigma at some sensor",
+  "robust": "same sets re-tested on the 10 perturbed farm models, 3 % and 10 % leaks"
+ },
+ "method": "nested greedy, then swaps, then a genetic algorithm (fixed seed); best kept",
+ "recommended_n": 9,
+ "target": "all 3 % and 10 % leaks detected and >= 90 % of them isolated; if no N reaches it, the N with the best isolation minus 1 point per sensor",
+ "target_met": false,
+ "sets": [
+  {
+   "n": 1,
+   "nodes": [
+    "PS"
+   ],
+   "greedy_nodes": [
+    "PS"
+   ],
+   "detected_pct": 66.7,
+   "isolated_pct": 20.3,
+   "by_size": {
+    "1": {
+     "detected_pct": 0.0,
+     "isolated_pct": 0.0
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 30.4
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 30.4
+    }
+   },
+   "distinguishable_pct": 0.0,
+   "cost_dt": 292,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 30.4,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 30.4
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 30.4
+     }
+    }
+   }
+  },
+  {
+   "n": 2,
+   "nodes": [
+    "M3",
+    "E5"
+   ],
+   "greedy_nodes": [
+    "PS",
+    "E5"
+   ],
+   "detected_pct": 68.3,
+   "isolated_pct": 27.7,
+   "by_size": {
+    "1": {
+     "detected_pct": 4.8,
+     "isolated_pct": 4.8
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 39.1
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 39.1
+    }
+   },
+   "distinguishable_pct": 19.2,
+   "cost_dt": 584,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 38.8,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 39.1
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 38.6
+     }
+    }
+   }
+  },
+  {
+   "n": 3,
+   "nodes": [
+    "M3",
+    "E5",
+    "E6"
+   ],
+   "greedy_nodes": [
+    "M3",
+    "E5",
+    "E6"
+   ],
+   "detected_pct": 69.8,
+   "isolated_pct": 34.9,
+   "by_size": {
+    "1": {
+     "detected_pct": 9.4,
+     "isolated_pct": 9.4
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 47.8
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 47.5
+    }
+   },
+   "distinguishable_pct": 40.3,
+   "cost_dt": 876,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 47.1,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 47.8
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 46.4
+     }
+    }
+   }
+  },
+  {
+   "n": 4,
+   "nodes": [
+    "M2",
+    "E4",
+    "E5",
+    "E6"
+   ],
+   "greedy_nodes": [
+    "M3",
+    "E5",
+    "E6",
+    "E1"
+   ],
+   "detected_pct": 71.1,
+   "isolated_pct": 40.1,
+   "by_size": {
+    "1": {
+     "detected_pct": 13.3,
+     "isolated_pct": 13.3
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 53.6
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 53.3
+    }
+   },
+   "distinguishable_pct": 31.5,
+   "cost_dt": 1168,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 53.0,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 53.6
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 52.5
+     }
+    }
+   }
+  },
+  {
+   "n": 5,
+   "nodes": [
+    "M2",
+    "E4",
+    "E5",
+    "E6",
+    "E3"
+   ],
+   "greedy_nodes": [
+    "M2",
+    "E4",
+    "E5",
+    "E6",
+    "E3"
+   ],
+   "detected_pct": 72.4,
+   "isolated_pct": 47.1,
+   "by_size": {
+    "1": {
+     "detected_pct": 17.1,
+     "isolated_pct": 17.1
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 62.3
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 62.0
+    }
+   },
+   "distinguishable_pct": 41.9,
+   "cost_dt": 1460,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 61.7,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 62.3
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 61.2
+     }
+    }
+   }
+  },
+  {
+   "n": 6,
+   "nodes": [
+    "E1",
+    "H2",
+    "H3",
+    "E4",
+    "E5",
+    "H6"
+   ],
+   "greedy_nodes": [
+    "M2",
+    "E4",
+    "E5",
+    "E6",
+    "E3",
+    "E1"
+   ],
+   "detected_pct": 70.7,
+   "isolated_pct": 52.3,
+   "by_size": {
+    "1": {
+     "detected_pct": 12.0,
+     "isolated_pct": 12.0
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 72.5
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 72.5
+    }
+   },
+   "distinguishable_pct": 28.7,
+   "cost_dt": 1752,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 72.2,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 72.5
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 71.9
+     }
+    }
+   }
+  },
+  {
+   "n": 7,
+   "nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6"
+   ],
+   "greedy_nodes": [
+    "E1",
+    "H2",
+    "H3",
+    "E4",
+    "E5",
+    "H6",
+    "M1"
+   ],
+   "detected_pct": 74.5,
+   "isolated_pct": 58.0,
+   "by_size": {
+    "1": {
+     "detected_pct": 23.5,
+     "isolated_pct": 23.5
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 75.4
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 75.1
+    }
+   },
+   "distinguishable_pct": 42.0,
+   "cost_dt": 2044,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 74.8,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 75.4
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 74.2
+     }
+    }
+   }
+  },
+  {
+   "n": 8,
+   "nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1"
+   ],
+   "greedy_nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1"
+   ],
+   "detected_pct": 74.5,
+   "isolated_pct": 60.9,
+   "by_size": {
+    "1": {
+     "detected_pct": 23.5,
+     "isolated_pct": 23.5
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 79.7
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 79.4
+    }
+   },
+   "distinguishable_pct": 46.7,
+   "cost_dt": 2336,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 79.1,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 79.7
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 78.6
+     }
+    }
+   }
+  },
+  {
+   "n": 9,
+   "nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1",
+    "M3"
+   ],
+   "greedy_nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1",
+    "M3"
+   ],
+   "detected_pct": 74.5,
+   "isolated_pct": 62.8,
+   "by_size": {
+    "1": {
+     "detected_pct": 23.5,
+     "isolated_pct": 23.5
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 82.6
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 82.3
+    }
+   },
+   "distinguishable_pct": 48.3,
+   "cost_dt": 2628,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 81.9,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 82.6
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 81.2
+     }
+    }
+   }
+  },
+  {
+   "n": 10,
+   "nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1",
+    "M3",
+    "H6"
+   ],
+   "greedy_nodes": [
+    "E1",
+    "E2",
+    "M2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "M1",
+    "M3",
+    "H6"
+   ],
+   "detected_pct": 74.5,
+   "isolated_pct": 62.9,
+   "by_size": {
+    "1": {
+     "detected_pct": 23.5,
+     "isolated_pct": 23.5
+    },
+    "3": {
+     "detected_pct": 100.0,
+     "isolated_pct": 82.6
+    },
+    "10": {
+     "detected_pct": 100.0,
+     "isolated_pct": 82.6
+    }
+   },
+   "distinguishable_pct": 49.5,
+   "cost_dt": 2920,
+   "robust": {
+    "detected_pct": 100.0,
+    "isolated_pct": 82.3,
+    "by_size": {
+     "3": {
+      "detected_pct": 100.0,
+      "isolated_pct": 82.6
+     },
+     "10": {
+      "detected_pct": 100.0,
+      "isolated_pct": 82.0
+     }
+    }
+   }
+  }
+ ]
+}
