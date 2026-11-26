@@ -15,13 +15,31 @@ Base URL: `http://localhost:8000` (uvicorn `backend.main:app`).
 | GET | `/api/export.csv` | CSV export with calibrated values, quality flags, and raw pulses/ADC |
 | WS | `/ws/live` | pushes new readings + latest alert every 0.5 s |
 
+**Planned for the demo (Role 2, not implemented yet):**
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/state` | latest processed frame (below) |
+| POST / GET | `/api/events` | record / list `leak_on, leak_off, valve_change, pump_on, pump_off` (see `labels.md`) |
+| POST | `/api/baseline/reset` | re-learn the healthy baseline (after any valve change) |
+
+Processed frame (what the dashboard shows; pushed on the WebSocket and stored for replays):
+`ts, run_id, pt1_bar, pt2_bar, dp_bar (PT1 − PT2), flow_lpm, flow_base_lpm,
+state (PUMP_OFF | SETTLING | LEARNING | HEALTHY | WATCH | LEAK | OFFLINE), p_leak,
+methods {flow, m2: {score, quality, excluded}}, faults [], branch ("A" | "B" | null),
+loc {L1, L2, L3}, leak_lpm, lost_l`.
+
 The export includes `dropout`, `ripple`, `clipped`, `raw_flow_*_pulses`, and
 `raw_pressure_adc`, so `tools.validate_dataset` and `tools.calibrate` can run
 directly on an exported real run.
 
-## Telemetry message
+## Telemetry message (frozen for the demo, bench rev 1)
 
-See `contract/message.schema.json`. Example:
+See `contract/message.schema.json`. On the bench as built only **`flow_main`** (F0),
+**`pressure`** (PT1, branch A, 0–6 bar) and **`pressure_b`** (PT2, branch B, −1…1.6 bar) carry data.
+`flow_l1/l2/l3` are **always 0**: kept in the schema so the current detector, ML and tests keep working;
+they are removed together with the detector update for the 2-pressure bench. Example
+(the branch flows below are from the older 4-flow simulator; on the real bench they are 0):
 
 ```json
 {
