@@ -61,7 +61,8 @@ flag, so the validator and calibration fitter can run on exported runs too.
 - `broker/` local MQTT broker config
 - `firmware/` ESP32 PlatformIO project (ADS1115 + flow pulse ISRs + MQTT)
 - `hydropin/` shared Python: config, units, message parsing
-- `simulator/` physically-motivated bench data (scenarios, quantization, dropout)
+- `simulator/` digital twin `hydropin_sim/` (physics, sensors, M1/M2/M3, prototype bench; see simulator/README.md)
+  + bench data generator `sim.py` / `scenarios.py` (scenarios, quantization, dropout)
 - `detection/` explainable M0 detector (normalized shares + CUSUM) and evaluation
 - `ml/` features, training, prediction (scikit-learn)
 - `backend/` FastAPI + SQLite + MQTT listener + REST/WebSocket
