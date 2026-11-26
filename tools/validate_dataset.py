@@ -72,7 +72,7 @@ def validate_frame(df: pd.DataFrame, expected_hz: float = 2.0) -> Report:
         rep.errors.append(f"{out_p} pressure values outside {config.PRESSURE_RANGE_BAR} bar")
 
     pressure_b = None
-    if "pressure_b_bar" in df.columns:
+    if "pressure_b_bar" in df.columns and df["pressure_b_bar"].notna().any():
         pressure_b = pd.to_numeric(df["pressure_b_bar"], errors="coerce")
         bad = int((~np.isfinite(pressure_b)).sum())
         if bad:

@@ -7,7 +7,9 @@ judged on data they have not seen. Every run gets a label from
 ## 0. Pre-flight
 
 1. Wire per `docs/wiring.md`, flash the firmware (`pio run -t upload`).
-2. Open the serial monitor: pressure and four flows must be present, no NaN.
+2. Open the serial monitor: `pressure_bar` (PT1), `pressure_b_bar` (PT2), and
+   `flow_main_lpm` must be present, no NaN. This rev has one flow sensor and two
+   pressure sensors; `flow_l1/l2/l3` are published as 0.
 3. Start the broker and backend:
 
 ```powershell
@@ -20,14 +22,17 @@ $env:HYDROPIN_MQTT="1"; uvicorn backend.main:app
 
 ## 1. Calibration (do this before any labelled run)
 
-See `data/calibration.md`. Do not skip: the provisional `*1.5` and `*3` gains
-are guesses until you check them.
+See `data/calibration.md`. Do not skip: `FLOW_GAIN` is still provisional, while
+the PT1/PT2 pressure fits come from the 0-10 V datasheet ranges and the actual
+20k/10k dividers.
 
 - Flow: run 2 L into a measuring jug, count pulses, then
   `python -m tools.calibrate flow --pulses <n> --litres 2.0 --seconds <s>`.
-- Pressure: compare against a mechanical gauge at 0.5, 1.0, 1.5, 2.0 bar, then
-  `python -m tools.calibrate pressure --point <adc>:<bar> ...`. Fit both gain
-  **and offset**; a sensor that idles at 0.5 V is not a 0..5 V sensor.
+- PT1 (0..6 bar): compare against a gauge at 0, 2, 4, 6 bar, then
+  `python -m tools.calibrate pressure --point <adc>:<bar> ...`.
+- PT2 (-1..1.6 bar): same, at -1, 0, 1.6 bar; set `PRESSURE_B_*` from the fit.
+- Fit both gain **and offset**; a sensor that idles above 0 V is not a 0..10 V
+  sensor.
 
 ## 2. Baseline (no leak)
 

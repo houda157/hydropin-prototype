@@ -18,27 +18,28 @@ sensor. The bench must:
 3. learn a model that can separate healthy operation from leaks,
 4. stay explainable and testable, not just "the neural net says so".
 
-Bench assumption used throughout:
+Bench assumption used throughout (rev 1 wiring):
 
 ```
-main flow = L1 + L2 + L3 (+ small losses)
-one pressure sensor on the manifold
-leak on a branch is downstream of that branch's flow sensor
+main flow = one Hall sensor on GPIO27
+PT1 = branch A pressure, 0..6 bar, ADS A0
+PT2 = branch B pressure, -1..1.6 bar, ADS A1
+no branch flow sensors yet
 ```
 
-Calibration chain (provisional, must be verified on the bench):
+Calibration chain (pressure from datasheet + actual divider):
 
 ```
-flow_lpm     = (pulses / window_s) / 7.5 * 1.5        # user: "flow * 3/2"
-sensor_volts = (adc / 32767) * 4.096 * 3.2            # ADS1115 + 22k/10k divider
-pressure_bar = sensor_volts * 3.0 + offset            # user: "pressure * 3"
+flow_lpm       = (pulses / window_s) / 7.5 * 1.5      # provisional, calibrate
+PT1: V_sensor  = V_ads * 3.0; pressure_bar   = 0.0 + 0.6  * V_sensor
+PT2: V_sensor  = V_ads * 3.0; pressure_b_bar = -1.0 + 0.26 * V_sensor
 ```
 
-The divider is 22k series + 10k shunt: `V_ads = V_sensor * 10/32 = V_sensor/3.2`.
-A 0..5 V sensor therefore reaches 15 bar full scale, which is only ~12500 ADS
-counts because the ADS pin never exceeds 1.5625 V. `PRESSURE_RANGE_BAR` is
-therefore `(0, 15)`, not 16. If the sensor idles at 0.5 V, fit
-`PRESSURE_OFFSET_BAR`; do not absorb an offset into the gain.
+Both pressure dividers are 20k series + 10k shunt:
+`V_ads = V_sensor * 10/30 = V_sensor/3.0`, so `V_sensor = V_ads * 3.0`.
+At 10 V the ADS pin sees 3.333 V, inside `GAIN_ONE` (+/-4.096 V).
+PT1 full scale is 6 bar (~26667 counts), not 15 bar. PT2 spans -1..1.6 bar.
+The flow gain `1.5` is still provisional; calibrate it with a measured volume.
 
 The same constants live in `hydropin/config.py` and `firmware/include/config.h`;
 a test fails if they drift apart.
@@ -185,9 +186,10 @@ flow sensors --ISR--> ESP32 --WiFi/MQTT--> Mosquitto --> backend (paho)
 2. Flow is **not** computed from 0.5 s of pulses: that gives 0.4 L/min per pulse.
    The firmware keeps a 2 s ring of four 0.5 s counts, so one pulse is
    0.1 L/min. Publish rate stays 2 Hz.
-3. Pressure: ADS1115 single-ended, ±4.096 V, 128 SPS, average of 8 reads,
-   `V_sensor = adc/32767 * 4.096 * 3.2`, `bar = V_sensor * 3.0`.
-4. Clamp to physical ranges, flag `clipped`.
+3. Pressure: ADS1115 single-ended, ±4.096 V, 128 SPS, average of 8 reads on
+   A0 (PT1) and A1 (PT2). `V_sensor = adc/32767 * 4.096 * 3.0`;
+   PT1 `bar = 0.6 * V_sensor`, PT2 `bar = -1.0 + 0.26 * V_sensor`.
+4. Clamp to physical ranges (PT1 0..6 bar, PT2 -1..1.6 bar), flag `clipped`.
 5. Build JSON with raw pulses/ADC + calibrated values (auditable).
 6. Publish; on failure, log (offline buffering is a next step, not implemented).
 

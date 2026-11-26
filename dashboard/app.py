@@ -102,10 +102,21 @@ def _chart(df: pd.DataFrame) -> go.Figure:
             col=1,
         )
     fig.add_trace(
-        go.Scatter(x=df["ts"], y=df["pressure_bar"], name="pressure", line=dict(color="#80ed99", width=2)),
+        go.Scatter(x=df["ts"], y=df["pressure_bar"], name="pressure A", line=dict(color="#80ed99", width=2)),
         row=2,
         col=1,
     )
+    if "pressure_b_bar" in df.columns and df["pressure_b_bar"].notna().any():
+        fig.add_trace(
+            go.Scatter(
+                x=df["ts"],
+                y=df["pressure_b_bar"],
+                name="pressure B",
+                line=dict(color="#ffd166", width=2),
+            ),
+            row=2,
+            col=1,
+        )
     fig.update_layout(
         template="plotly_dark",
         height=520,
@@ -138,12 +149,15 @@ def live_panel() -> None:
     df = pd.DataFrame(rows)
     df["ts"] = pd.to_datetime(df["ts"], utc=True)
     latest = df.iloc[-1]
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("main", f"{latest['flow_main_lpm']:.2f} L/min")
-    m2.metric("L1", f"{latest['flow_l1_lpm']:.2f} L/min")
-    m3.metric("L2", f"{latest['flow_l2_lpm']:.2f} L/min")
-    m4.metric("L3", f"{latest['flow_l3_lpm']:.2f} L/min")
-    m5.metric("pressure", f"{latest['pressure_bar']:.2f} bar")
+    has_pressure_b = "pressure_b_bar" in df.columns and pd.notna(latest.get("pressure_b_bar"))
+    metrics = st.columns(6 if has_pressure_b else 5)
+    metrics[0].metric("main", f"{latest['flow_main_lpm']:.2f} L/min")
+    metrics[1].metric("L1", f"{latest['flow_l1_lpm']:.2f} L/min")
+    metrics[2].metric("L2", f"{latest['flow_l2_lpm']:.2f} L/min")
+    metrics[3].metric("L3", f"{latest['flow_l3_lpm']:.2f} L/min")
+    metrics[4].metric("pressure A", f"{latest['pressure_bar']:.2f} bar")
+    if has_pressure_b:
+        metrics[5].metric("pressure B", f"{latest['pressure_b_bar']:.2f} bar")
     st.plotly_chart(_chart(df), use_container_width=True, key="live-chart")
 
     with st.expander("Recent alerts"):
