@@ -64,6 +64,36 @@ python -m tools.export_replays --db data/hydropin.db    # the recorded bench cam
 - GitHub Pages: `.github/workflows/pages.yml` publishes `dashboard/` (+ the farm explorer and the
   twin viewer) on every push to `main`. Pages has replay mode only; live mode needs the laptop.
 
+## Bench day: from the campaign to the scoreboard
+
+```powershell
+python -m tools.noise --db data/hydropin.db              # sigma from the longest quiet run -> data/noise.json
+python -m detection.train_bench --db data/hydropin.db    # 70/30 split, blind = test -> data/model.json
+python -m tools.export_replays --db data/hydropin.db     # replays + scoreboard.json (headline on test runs)
+python -m detection.report_charts                        # report/figures/bench_*.png (.venv-sim)
+python -m twin.compare --db data/hydropin.db             # twin vs real (needs twin/predictions.json)
+python -m tools.serial_bridge --port COM5 --post http://localhost:8000   # USB fallback if WiFi fails
+```
+
+Rehearse all of it without the bench: `python -m tools.sim_campaign --db <scratch>.db` (runs are
+marked SIMULATED and stay labelled simulation).
+
+## Farm (simulation): placement, M1/M2, drone
+
+Run in `.venv-sim`, in this order (after role 1's sigma, pass `--sigma-bar` to the first two):
+
+```powershell
+python -m farm.leaks.generate
+python -m farm.placement.optimise      # dashboard/farm/placement.json + 3/6/10 sets
+python -m farm.methods.m1_gnn          # GNN per sensor set (torch)
+python -m farm.methods.results         # dashboard/farm/results.json + report chart
+python -m farm.drone.dispatch          # dashboard/farm/drone.json
+python -m farm.explorer.build_data
+python -m tools.report_figures         # software chain, placement, drone figures
+```
+
+File formats: `contract/dashboard-data.md`.
+
 ## Real bench data
 
 ```powershell
