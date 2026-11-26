@@ -48,6 +48,8 @@ static void publish_snapshot(const SensorSnapshot& s) {
         return;
     }
     serializeJson(doc, payload, sizeof(payload));
+    // One JSON line per frame on USB too: tools/serial_bridge.py forwards it if WiFi fails.
+    Serial.println(payload);
     if (!network_publish(payload)) {
         Serial.println("[main] publish failed (mqtt down)");
     }
