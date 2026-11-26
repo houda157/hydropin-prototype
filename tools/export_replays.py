@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 from pathlib import Path
 
-from detection.bench_detector import run_messages
+from detection.bench_detector import MODEL_PATHS, load_config, run_messages
+from detection.campaign import load_runs
 from detection.replay import build_replay, score_replay, scoreboard
 from simulator.bench_rev1 import CLEAN_SCENARIOS, FAULT_SCENARIOS, LEAK_SCENARIOS, build, events_for, simulate
 
@@ -64,30 +64,28 @@ def sim_runs(seeds: int) -> tuple[list[dict], list[dict]]:
     return keep, rows
 
 
+def _split_of(model_path: Path = MODEL_PATHS[0]) -> dict[str, str]:
+    """run id -> "train" | "test", from the trained model (empty if there is none yet)."""
+    if not model_path.exists():
+        return {}
+    tr = json.loads(model_path.read_text(encoding="utf-8")).get("training") or {}
+    return {**{r: "train" for r in tr.get("train_runs", [])}, **{r: "test" for r in tr.get("test_runs", [])}}
+
+
 def db_runs(db: Path) -> tuple[list[dict], list[dict]]:
-    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row
+    """Every stopped run, re-detected with the current model (data/model.json if present)."""
+    cfg = load_config()
+    split = _split_of()
     keep, rows = [], []
-    runs = conn.execute("SELECT * FROM runs WHERE stopped_ts IS NOT NULL ORDER BY id").fetchall()
-    for run in runs:
-        rd = conn.execute("SELECT * FROM readings WHERE ts >= ? AND ts <= ? ORDER BY ts",
-                          (run["started_ts"], run["stopped_ts"])).fetchall()
-        if len(rd) < 20:
-            continue
-        msgs = [{"ts": r["ts"], "device": r["device"], "seq": r["seq"],
-                 "values": {"flow_main_lpm": r["flow_main_lpm"], "pressure_bar": r["pressure_bar"],
-                            "pressure_b_bar": r["pressure_b_bar"]}} for r in rd]
-        frames = run_messages(msgs)
-        evs = [dict(e) for e in conn.execute("SELECT ts, type, tap FROM events WHERE run_id = ? ORDER BY ts",
-                                              (run["id"],))]
-        if run["label"].startswith("leak_") and not any(e["type"] == "leak_on" for e in evs) and run["onset_ts"]:
-            evs.append({"ts": run["onset_ts"], "type": "leak_on", "tap": run["label"].split("_")[1]})
-        cols = run.keys()
-        meta = {k: run[k] for k in ("opening", "measured_leak_lpm", "blind", "notes", "started_ts") if k in cols}
-        rep = build_replay(frames, evs, run_id=f"bench_run_{run['id']}", label=run["label"], simulation=False,
-                           source="bench rev 1", meta=meta)
+    for r in load_runs(db):
+        frames = run_messages(r["msgs"], cfg)
+        meta = {**r["meta"], "split": split.get(r["id"])}
+        simulated = str(meta.get("notes") or "").startswith("SIMULATED")   # tools/sim_campaign.py rehearsal
+        rep = build_replay(frames, r["events"], run_id=r["id"], label=r["label"], simulation=simulated,
+                           source="simulated campaign (tools/sim_campaign.py)" if simulated else "bench rev 1",
+                           meta=meta)
         keep.append(rep)
-        rows.append(score_replay(rep))
+        rows.append(score_replay(rep, cfg.tau2, cfg.n_consecutive))
     return keep, rows
 
 
@@ -108,7 +106,11 @@ def main(argv=None) -> int:
         board_name = "scoreboard_sim.json"
     else:
         keep, rows = db_runs(a.db)
-        board = scoreboard(rows, simulation=False, notes=f"Bench rev 1 campaign, {len(rows)} recorded runs.")
+        trained = MODEL_PATHS[0].exists()
+        board = scoreboard(rows, simulation=any(r["simulation"] for r in keep),
+                           notes=f"Bench rev 1 campaign, {len(rows)} recorded runs. "
+                                 + ("Detector trained on the training split (data/model.json); headline on test runs."
+                                    if trained else "Detector with default settings (no data/model.json yet)."))
         board_name = "scoreboard.json"
 
     rdir = a.out / "replays"
@@ -123,6 +125,7 @@ def main(argv=None) -> int:
                               "opening": rep["meta"].get("opening"), "notes": rep["meta"].get("notes"),
                               "duration_s": rep["frames"][-1]["t_s"], "detected": s["detected"],
                               "delay_s": s["delay_s"], "branch": s["branch"], "false_alarm": s["false_alarm"],
+                              "split": rep["meta"].get("split"), "blind": bool(rep["meta"].get("blind")),
                               "file": f"{rep['id']}.json"})
     _write(idx_path, index)
     _write(a.out / board_name, board)

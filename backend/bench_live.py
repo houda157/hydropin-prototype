@@ -6,14 +6,12 @@ Sending runs in a daemon thread so a slow or failing Telegram never blocks inges
 from __future__ import annotations
 
 import threading
-from pathlib import Path
 from typing import Any
 
-from detection.bench_detector import BenchConfig, BenchDetector
+from detection.bench_detector import BenchConfig, BenchDetector, load_config
 
 from . import notify
 
-DEFAULT_CONFIG = Path("data/bench_detector.json")
 
 
 def _send_async(text: str) -> None:
@@ -22,8 +20,8 @@ def _send_async(text: str) -> None:
 
 class BenchLive:
     def __init__(self, cfg: BenchConfig | None = None, send_notifications: bool = False):
-        if cfg is None and DEFAULT_CONFIG.exists():
-            cfg = BenchConfig.from_json(DEFAULT_CONFIG)
+        if cfg is None:
+            cfg = load_config()          # data/model.json (trained) > data/bench_detector.json > defaults
         self.detector = BenchDetector(cfg)
         self.lock = threading.Lock()
         self.send_notifications = send_notifications

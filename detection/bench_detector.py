@@ -76,6 +76,19 @@ class BenchConfig:
         return asdict(self)
 
 
+# Trained model first (detection/train_bench.py, from the campaign's training split), then a
+# hand-edited config; defaults when neither exists.
+MODEL_PATHS = (Path("data/model.json"), Path("data/bench_detector.json"))
+
+
+def load_config(path: str | Path | None = None) -> BenchConfig:
+    """BenchConfig from `path`, else from the first file in MODEL_PATHS that exists, else defaults."""
+    for cand in ([Path(path)] if path else list(MODEL_PATHS)):
+        if cand.exists():
+            return BenchConfig.from_json(cand)
+    return BenchConfig()
+
+
 def _ts_seconds(ts) -> float:
     if isinstance(ts, (int, float)):
         return float(ts)
