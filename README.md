@@ -64,6 +64,12 @@ python -m tools.export_replays --db data/hydropin.db    # the recorded bench cam
 - GitHub Pages: `.github/workflows/pages.yml` publishes `dashboard/` (+ the farm explorer and the
   twin viewer) on every push to `main`. Pages has replay mode only; live mode needs the laptop.
 
+## Laptop settings (.env)
+
+Copy `.env.example` to `.env` and fill it in: Telegram bot token and chat id
+(`HYDROPIN_NOTIFY=1` to send), `HYDROPIN_MQTT=1` to listen to the ESP32 through the broker, and the
+database path. The backend reads `.env` at start; variables set in the shell win. Never commit `.env`.
+
 ## Bench day: from the campaign to the scoreboard
 
 ```powershell

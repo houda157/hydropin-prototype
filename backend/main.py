@@ -3,6 +3,8 @@
     uvicorn backend.main:app --reload
     $env:HYDROPIN_MQTT="1"; uvicorn backend.main:app
 
+Settings come from the shell or from .env at the repo root (copy .env.example).
+
 The MQTT listener is optional: without a broker the REST API still works and
 `POST /api/ingest` can be used for bench tests.
 """
@@ -137,7 +139,8 @@ def create_app(
         app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="dashboard")
 
     listener = (
-        MQTTListener(app, mqtt_host or config.MQTT_HOST, int(mqtt_port or config.MQTT_PORT))
+        MQTTListener(app, mqtt_host or os.environ.get("HYDROPIN_MQTT_HOST") or config.MQTT_HOST,
+                     int(mqtt_port or os.environ.get("HYDROPIN_MQTT_PORT") or config.MQTT_PORT))
         if start_mqtt
         else None
     )
