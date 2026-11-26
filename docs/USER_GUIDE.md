@@ -18,9 +18,8 @@ alerts, the bench-day tools, and the simulations (farm, placement, drone, M3).
 7. [Telegram alerts](#7-telegram-alerts)
 8. [Bench day: from the tests to the results](#8-bench-day-from-the-tests-to-the-results)
 9. [Farm and M3 (simulation)](#9-farm-and-m3-simulation)
-10. [Public link for the judges](#10-public-link-for-the-judges-github-pages)
-11. [Checking that everything works](#11-checking-that-everything-works)
-12. [Troubleshooting](#12-troubleshooting)
+10. [Checking that everything works](#10-checking-that-everything-works)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -437,20 +436,7 @@ All file formats: `contract/dashboard-data.md`.
 
 ---
 
-## 10. Public link for the judges (GitHub Pages)
-
-1. Merge PR #2 into `main`.
-2. Make the repo public: Settings → General → Danger zone (repo owner).
-3. Settings → Pages → Source: **GitHub Actions**.
-4. Every push to `main` publishes the site at `https://houda157.github.io/hydropin-prototype/`.
-   It contains the dashboard, the farm explorer and the twin viewer.
-5. Open it in a private window on a phone to check.
-
-The public site shows **replay mode only**. Live mode and the test buttons need the laptop.
-
----
-
-## 11. Checking that everything works
+## 10. Checking that everything works
 
 Platform tests (backend, detector, simulator, tools, dashboard files):
 
@@ -472,7 +458,7 @@ python -m pytest tests -q -o addopts=""
 
 ---
 
-## 12. Troubleshooting
+## 11. Troubleshooting
 
 | Problem | Fix |
 |---|---|
