@@ -7,6 +7,9 @@ two branch pressure sensors (PT1 0..6 bar, PT2 -1..1.6 bar) -> MQTT -> backend
 The full research, datasets, design decisions, plans and validation results are
 in **[`docs/RESEARCH_AND_PLAN.md`](docs/RESEARCH_AND_PLAN.md)**.
 
+**How to run, use and see everything** (website tabs, bench tests, ESP32, Telegram, bench-day
+commands, farm and M3, public link): **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)**.
+
 ## Quick start (no hardware)
 
 ```powershell
