@@ -48,6 +48,10 @@ class BenchConfig:
     flow_z0: float = 2.5
     m2_w: float = 1.0
     m2_z0: float = 2.5
+    # In the fusion, M2 cannot vote *against* a leak just because it sees no pressure change:
+    # a small leak raises the flow but barely moves the pressures. Its log-odds are floored at this
+    # value unless the pressures actually rose (then it keeps its negative vote).
+    m2_floor_llr: float = 0.0
     prior_logit: float = 0.0
     llr_clip: tuple[float, float] = (-3.0, 5.0)
     tau1: float = 0.5                 # WATCH
@@ -250,8 +254,9 @@ class BenchDetector:
             z_m2 = float(math.sqrt(max(0.0, d @ np.array(b["sigma_inv"]) @ d)))
             if d.sum() > 0:                      # pressures rose: not a leak signature
                 z_m2 = -z_m2
-            llr["m2"] = float(np.clip(c.m2_w * (z_m2 - c.m2_z0), lo, hi))
-            frame["methods"]["m2"].update(score=round(_sigmoid(llr["m2"]), 3), z=round(z_m2, 2))
+            raw = float(np.clip(c.m2_w * (z_m2 - c.m2_z0), lo, hi))
+            frame["methods"]["m2"].update(score=round(_sigmoid(raw), 3), z=round(z_m2, 2))   # M2 alone
+            llr["m2"] = max(raw, c.m2_floor_llr) if z_m2 >= 0 else raw                       # in the fusion
             nd = np.linalg.norm(d)
             if nd > 0:
                 sim = self._fp @ (d / nd)        # cosine similarity per tap

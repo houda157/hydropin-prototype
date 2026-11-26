@@ -116,5 +116,7 @@ permits are next steps.
   - placement, farm M2, drone.
 - **Not yet done on the real bench:** 10 minutes without a gap, a Telegram message received on
   a phone, the real scoreboard. The current scoreboard is from 160 simulated runs: medium and
-  large leaks 60/60 on the right branch in about 8.5 s; small leaks (0.15 L/min) only reach
-  WATCH because of flow-meter resolution; no false alarms.
+  large leaks 60/60 on the right branch in about 9 s; small leaks (0.15 L/min, about 1.5 flow
+  pulses per window) reach LEAK in 6/30 runs and at least WATCH in 25/30, the flow-meter
+  resolution limit; no false alarms. In the fusion, M2 is not allowed to vote against a leak
+  just because the pressures did not move (they barely do for a small leak).
