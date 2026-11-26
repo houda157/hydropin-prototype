@@ -1,8 +1,8 @@
 # hydropin-prototype
 
-Real-time leak detection for a 3-branch hydroponic bench: ESP32 + flow sensors +
-pressure sensor -> MQTT -> backend -> dashboard, with an explainable detector and
-a trained ML model.
+Real-time leak detection for a hydroponic bench: ESP32 + main flow sensor +
+two branch pressure sensors (PT1 0..6 bar, PT2 -1..1.6 bar) -> MQTT -> backend
+-> dashboard, with an explainable detector and a trained ML model.
 
 The full research, datasets, design decisions, plans and validation results are
 in **[`docs/RESEARCH_AND_PLAN.md`](docs/RESEARCH_AND_PLAN.md)**.

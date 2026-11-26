@@ -64,7 +64,7 @@ Now it has a working vertical slice:
 | Backend | FastAPI + SQLite + MQTT listener + REST + WebSocket + CSV export |
 | Dashboard | Streamlit live charts, alarm banner, run start/stop, CSV link |
 | Firmware | ESP32 PlatformIO project, ADS1115 + 4 flow ISRs + MQTT JSON |
-| Tests | 39 passed (`python -m pytest -q`) |
+| Tests | 40 passed (`python -m pytest -q`) |
 
 File map:
 
@@ -230,7 +230,7 @@ Planned (not done):
 
 ### 4.6 What was actually validated
 
-- Unit/integration tests: 39 passed.
+- Unit/integration tests: 40 passed.
 - **Real MQTT end-to-end** with the local Mosquitto service:
   - backend connected (`mqtt.connected = true`),
   - simulator published a 90 s L1 leak run,
@@ -396,19 +396,19 @@ The simulator is a **test harness for the pipeline**, not a digital twin.
 | 0 | Web research | datasets + methods + caveats | done (section 3) |
 | 1 | Contract + shared code | schema tests, unit conversions | 11 passed |
 | 2 | Simulator | all scenarios run, labels switch at onset, HTML/CSV produced | done |
-| 3 | Detector M0 | recall >= 0.80, correct branch, FA <= 1/min | P=1.000, R=0.914, F1=0.955, 0 FA/min |
-| 4 | ML | grouped CV macro F1 > 0.75, unseen seed generalisation | macro F1 0.981, unseen seeds ~0.98 |
+| 3 | Detector M0 | recall >= 0.80, correct branch, FA <= 1/min | P=1.000, R=0.918, F1=0.957, 0 FA/min |
+| 4 | ML | grouped CV macro F1 > 0.75, unseen seed generalisation | macro F1 0.982, unseen seeds ~0.98 |
 | 5 | Backend | ingest/query/export/runs/WS tests + real MQTT | 3 tests + MQTT e2e 180/180, 1 alert |
 | 6 | Dashboard | serves, live charts | HTTP 200 |
 | 7 | Firmware | code complete; compile not possible here | **not compiled** (no PlatformIO) |
-| 8 | Docs + full validation | 39 tests, e2e, this file | 39 passed |
+| 8 | Docs + full validation | 40 tests, e2e, this file | 40 passed |
 
 ### Measured detector results (simulator, 120 s runs)
 
 | Run | Recall | Delay | Branch | FA/min |
 |---|---|---|---|---|
 | leak_L1 medium (seed 7) | 0.950 | 4.5 s | l1 correct | 0 |
-| leak_L1 medium (seed 11) | 0.925 | 4.5 s | l1 correct | 0 |
+| leak_L1 medium (seed 11) | 0.950 | 4.5 s | l1 correct | 0 |
 | leak_L1 medium (seed 21) | 0.967 | 3.0 s | l1 correct | 0 |
 | leak_L2 medium | 0.956 | 4.0 s | l2 correct | 0 |
 | leak_L3 medium | 0.939 | 5.5 s | l3 correct | 0 |
@@ -418,14 +418,14 @@ The simulator is a **test harness for the pipeline**, not a digital twin.
 | dropout | - | - | - | 0 |
 | calibration drift | - | - | - | 0 |
 
-Micro over all 6 leak runs: **precision 1.000, recall 0.914, F1 0.955**
-(TP=950, FP=0, FN=90).
+Micro over all 6 leak runs: **precision 1.000, recall 0.918, F1 0.957**
+(TP=1010, FP=0, FN=90).
 
 ### Measured ML results (grouped CV, 56 runs, 13,440 samples)
 
-- Accuracy 0.980, macro F1 0.981.
-- Binary leak: precision 0.994, recall 0.969, F1 0.981.
-- Per class F1: none 0.978, L1 0.971, L2 0.995, L3 0.980.
+- Accuracy 0.980, macro F1 0.982.
+- Binary leak: precision 0.995, recall 0.969, F1 0.982.
+- Per class F1: none 0.979, L1 0.972, L2 0.995, L3 0.980.
 - Unseen seeds 5/6: accuracy ~0.98, macro F1 ~0.98; L1 recall ~0.90.
 - Residual false alarms on some healthy runs: 2-10 samples out of 240.
 - These are **simulation** numbers.
@@ -436,18 +436,19 @@ Micro over all 6 leak runs: **precision 1.000, recall 0.914, F1 0.955**
 
 | # | Symptom | Root cause | Fix | Evidence |
 |---|---|---|---|---|
-| 1 | Nothing runs | repo was one-line stubs | built the pipeline | `pytest` 39 passed |
+| 1 | Nothing runs | repo was one-line stubs | built the pipeline | `pytest` 40 passed |
 | 2 | One pulse = 0.4 L/min at 2 Hz | pulse counting over one publish period | 2 s sliding flow window (0.1 L/min) | `test_pulse_quantization...` |
 | 3 | Detector delay 34 s on an abrupt leak | simulator labelled the whole run as leak | label switches at `leak_start_s` | delay 4.5 s |
 | 4 | False alarms: baseline 18/min, ripple 40/min, drift 97% | detector used absolute flow, which drifts | normalize to branch shares + CUSUM | 0 FA/min on all healthy runs |
-| 5 | ML L2/L3 recall = 0 | too few runs per class + GroupKFold put them in one fold | all branches x all sizes + `StratifiedGroupKFold` | macro F1 0.981 |
+| 5 | ML L2/L3 recall = 0 | too few runs per class + GroupKFold put them in one fold | all branches x all sizes + `StratifiedGroupKFold` | macro F1 0.982 |
 | 6 | E2E harness "backend not up" | `Start-Process` ran outside the repo dir | pass `-WorkingDirectory`; use `curl.exe` for health | MQTT e2e 180/180 |
 | 7 | Firmware not compiled | PlatformIO not installed | flagged, not hidden | `pio --version` fails |
-| 8 | Pressure reading would be 2.2x too high | wiring doc used 10k series / 22k shunt, which is a 1.45:1 divider, not 3.2:1 | changed to 22k series / 10k shunt; added a math check in tests | 5 V -> 1.5625 V at ADS |
+| 8 | Pressure math was wrong | doc assumed 22k/10k (3.2:1) and a 0..5 V sensor; rev 1 is 20k/10k (3.0:1) and 0-10 V sensors | corrected to 20k/10k; PT1 `bar=0.6*V_sensor`, PT2 `bar=-1+0.26*V_sensor` | `test_pressure_sensor_full_scale_is_6_bar` |
 | 9 | Raw pulse fields 4x too small | `make_message` reconstructed them with the 0.5 s publish period | default is now the 2 s flow window; regression test asserts 3 L/min -> 30 pulses | `test_make_message_raw_pulses_use_the_2s_flow_window` |
 | 10 | Real firmware samples were all labelled `none` | dashboard run label was stored only in `runs`, never applied to readings | added `runs.onset_ts`, `POST /api/runs/{id}/onset`, ingest override for live samples; offline `tools.label_csv` fallback | `test_live_labels_follow_marked_onset` |
-| 11 | Pressure range accepted an impossible 16 bar | 0..5 V sensor x 3.0 = 15 bar full scale | range and firmware max are now 15 bar; full scale is ~12500 ADS counts | `test_pressure_sensor_full_scale_is_15_bar` |
+| 11 | Pressure range accepted an impossible 16 bar | assumed a 0..5 V, 15 bar sensor | rev 1 is PT1 0..6 bar + PT2 -1..1.6 bar; ranges and firmware max corrected | `test_pressure_sensor_full_scale_is_6_bar` |
 | 12 | QoS documented as 1 but firmware sends 0 | PubSubClient publish is QoS 0 | corrected contract/plan; dedupe by seq, validator reports gaps | `tools.validate_dataset` |
+| 13 | Firmware had 4 flow inputs / 1 pressure | old bench assumption, not rev 1 wiring | rev 1 uses 1 flow (GPIO27) + PT1 A0 + PT2 A1; branch flows publish 0 | `firmware/src/sensors.cpp` |
 
 This is the point of the phase gates: every one of these was found by testing,
 not by assuming.
@@ -551,10 +552,12 @@ pio device monitor -b 115200
 ## 12. Bottom line
 
 The pipeline is real and tested end-to-end in simulation and over a real MQTT
-broker. The explainable detector meets the gates (P=1.000, R=0.914, 0 false
+broker. The explainable detector meets the gates (P=1.000, R=0.918, 0 false
 alarms/min, 4-5 s delay on medium abrupt leaks). The ML model scores 0.98 macro
 F1 with group-aware validation, but that is a **simulation** result and must be
-re-proven on the bench. The divider math, raw-pulse window, pressure full scale
-and real-run onset labelling are now fixed and regression-tested. The remaining
-open items are physical: calibrate the gains/offset, compile the firmware, and
-collect the first real labelled runs.
+re-proven on the bench. The divider math (20k/10k, ratio 3.0), raw-pulse window,
+PT1/PT2 ranges and real-run onset labelling are now fixed and regression-tested.
+The remaining open items are physical: calibrate the flow gain, gauge-check
+PT1/PT2, compile the firmware, and collect the first real labelled runs. Rev 1
+has branch pressure sensors, not branch flow sensors, so live branch
+localisation still needs either extra flow sensors or retraining on PT1/PT2.

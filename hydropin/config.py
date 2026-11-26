@@ -84,15 +84,18 @@ def calibrate_flow(raw_lpm: float) -> float:
     return raw_lpm * FLOW_GAIN
 
 
-def adc_to_sensor_volts(adc_counts: float, divider: float = PRESSURE_DIVIDER) -> float:
+def adc_to_sensor_volts(adc_counts: float, divider: float | None = None) -> float:
+    divider = PRESSURE_DIVIDER if divider is None else divider
     return adc_counts / ADS_COUNTS * ADS_VOLTAGE_RANGE * divider
 
 
 def sensor_volts_to_bar(
     sensor_volts: float,
-    gain: float = PRESSURE_GAIN,
-    offset: float = PRESSURE_OFFSET_BAR,
+    gain: float | None = None,
+    offset: float | None = None,
 ) -> float:
+    gain = PRESSURE_GAIN if gain is None else gain
+    offset = PRESSURE_OFFSET_BAR if offset is None else offset
     return sensor_volts * gain + offset
 
 
