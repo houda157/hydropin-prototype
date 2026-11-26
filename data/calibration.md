@@ -18,6 +18,9 @@ Flow main: 5 V pulse, 10k/20k -> 3.33 V at GPIO27
 
 These live in `hydropin/config.py` and `firmware/include/config.h`. They must
 stay equal; `tests/test_firmware_config.py` guards the shared constants.
+`data/calibration.json` is a read-only mirror of `hydropin/config.py` (the brief's format); regenerate
+it after any change (command in `hydropin.config.calibration_dict`), `tests/test_calibration_json.py`
+checks they match.
 
 ## Flow sensor
 

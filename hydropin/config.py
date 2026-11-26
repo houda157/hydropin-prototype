@@ -126,3 +126,29 @@ def pressure_b_bar_to_adc(pressure_b_bar: float) -> int:
     sensor_volts = (pressure_b_bar - PRESSURE_B_OFFSET_BAR) / PRESSURE_B_GAIN
     adc = sensor_volts / (ADS_VOLTAGE_RANGE * PRESSURE_B_DIVIDER) * ADS_COUNTS
     return int(round(max(0.0, min(ADS_COUNTS, adc))))
+
+
+def calibration_dict() -> dict:
+    """The calibration constants above in the brief's data/calibration.json shape.
+
+    This module stays the source of truth; data/calibration.json is a read-only mirror for the
+    report and other tools. Regenerate it after any change:
+        python -c "import json, hydropin.config as c; open('data/calibration.json','w').write(json.dumps(c.calibration_dict(), indent=1) + '\n')"
+    tests/test_calibration_json.py fails if the two drift apart.
+    """
+    lsb_v = ADS_VOLTAGE_RANGE / ADS_COUNTS
+    return {
+        "version": "rev1",
+        "note": "Mirror of hydropin/config.py (source of truth) and firmware/include/config.h. "
+                "bar = offset_bar + slope_bar_per_v * (raw * lsb_v * divider). Flow gain is provisional.",
+        "pressure": {
+            "PT1": {"adc_channel": "A0", "branch": "A", "range_bar": list(PRESSURE_RANGE_BAR), "lsb_v": lsb_v,
+                    "divider": PRESSURE_DIVIDER, "offset_bar": PRESSURE_OFFSET_BAR,
+                    "slope_bar_per_v": PRESSURE_GAIN},
+            "PT2": {"adc_channel": "A1", "branch": "B", "range_bar": list(PRESSURE_B_RANGE_BAR), "lsb_v": lsb_v,
+                    "divider": PRESSURE_B_DIVIDER, "offset_bar": PRESSURE_B_OFFSET_BAR,
+                    "slope_bar_per_v": PRESSURE_B_GAIN},
+        },
+        "flow": {"F0": {"gpio": 27, "pulses_per_litre": FLOW_K_PULSES_PER_LITRE, "hz_per_lpm": FLOW_PULSES_PER_LPM,
+                        "gain": FLOW_GAIN, "window_s": FLOW_MEASURE_WINDOW_S, "provisional": True}},
+    }
