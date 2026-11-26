@@ -11,4 +11,5 @@ networkx==3.7
 matplotlib==3.11.2
 PyYAML==6.0.4
 pytest==9.2.0
-# Later (M3 CNN, GNN on bench): torch, torch_geometric
+torch==2.15.0        # M3 CNN (CPU build is enough). Windows/Linux: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Houda's digital twin has its own install: cd simulator && pip install -e ".[dev,ml]"
