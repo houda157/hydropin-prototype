@@ -63,6 +63,7 @@
             <div><span class="lbl">Flow base</span><b id="d-fbase">–</b></div>
             <div><span class="lbl">PT1 − PT2</span><b id="d-dp">–</b></div>
           </div>
+          <p class="note" id="d-farm" hidden></p>
         </div>
         <div class="pn">
           <div class="pn-h"><span class="sq"></span><span class="lbl">Methods</span><span class="idx">02</span></div>
@@ -139,6 +140,14 @@
       <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Per tap</span></div><table class="tbl" id="score-tap"></table></div>
       <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Per leak size</span></div><table class="tbl" id="score-size"></table></div>
     </div>
+    <div class="two">
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Each method alone vs fused</span></div><table class="tbl" id="score-methods"></table>
+        <p class="note">A method alone "fires" when its own score stays above the LEAK threshold as long as the fused rule requires.</p></div>
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Tap really opened vs detector's top tap</span></div><table class="tbl" id="score-confusion"></table>
+        <p class="note">L2 and L3 sit on branch B with one sensor: the promise is the branch.</p></div>
+    </div>
+    <div class="pn" id="score-blind-pn" hidden><div class="pn-h"><span class="sq"></span><span class="lbl">Blind test (misses included)</span><span class="idx" id="score-blind-n"></span></div>
+      <div class="scroll"><table class="tbl" id="score-blind"></table></div></div>
     <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Runs</span><span class="idx" id="score-n"></span></div>
       <div class="scroll"><table class="tbl" id="score-runs"></table></div></div>
   </section>
@@ -146,6 +155,66 @@
   <!-- ============================== FARM ============================== -->
   <section id="tab-farm" class="tab" hidden>
     <p class="banner sim">Simulation: a virtual 50 ha drip farm (WNTR), 2,070 simulated leaks. Not measured.</p>
+    <div class="pn bar">
+      <div class="seg" role="group" aria-label="Farm view">
+        <button type="button" id="fv-place" aria-pressed="true">Sensor placement</button>
+        <button type="button" id="fv-leak" aria-pressed="false">Leak + drone</button>
+      </div>
+      <div class="ctl" id="fc-place"><label class="lbl" for="f-n">Sensors</label><input type="range" id="f-n" min="1" max="10" value="6"><b class="mono" id="f-n-v">6</b></div>
+      <div class="ctl" id="fc-leak" hidden>
+        <select id="f-scen" aria-label="Leak scenario"></select>
+        <div class="seg" role="group" aria-label="Sensors"><button type="button" data-fs="3">3</button><button type="button" data-fs="6" aria-pressed="true">6</button><button type="button" data-fs="10">10</button></div>
+        <div class="seg" role="group" aria-label="Method"><button type="button" data-fm="m2">M2</button><button type="button" data-fm="m1">M1</button><button type="button" data-fm="fused" aria-pressed="true">Fused</button></div>
+        <label class="chk mono"><input type="checkbox" id="f-drone" checked> drone</label>
+      </div>
+    </div>
+    <div class="body farm-body">
+      <div class="col">
+        <section class="pn" id="fp-place">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Placement</span><span class="idx" id="fp-rec"></span></div>
+          <div class="big" id="fp-iso">–</div><span class="lbl">3 % leaks traced to the right branch</span>
+          <div class="kv">
+            <div><span class="lbl">Detected 3 %</span><b id="fp-det">–</b></div>
+            <div><span class="lbl">Detected 1 %</span><b id="fp-det1">–</b></div>
+            <div><span class="lbl">On 10 other farms</span><b id="fp-rob">–</b></div>
+            <div><span class="lbl">Kit cost</span><b id="fp-cost">–</b></div>
+          </div>
+          <p class="note" id="fp-note"></p>
+        </section>
+        <section class="pn" id="fp-meth" hidden>
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Test farms (never trained on)</span></div>
+          <table class="tbl" id="fp-mt"></table>
+          <p class="note">3–10 % leaks, 1-minute average. Right branch = main pipe or the right sector.</p>
+        </section>
+      </div>
+      <div class="col">
+        <section class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl" id="fm-title">Farm map</span></div>
+          <div id="farm-map" class="farm-map"></div>
+          <div class="legend" id="fm-legend"></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="pn" id="fp-scen" hidden>
+          <div class="pn-h"><span class="sq"></span><span class="lbl">This leak</span></div>
+          <div class="kv">
+            <div><span class="lbl">True leak</span><b id="fs-true">–</b></div>
+            <div><span class="lbl">Most likely</span><b id="fs-top">–</b></div>
+            <div><span class="lbl">Leak flow</span><b id="fs-q">–</b></div>
+            <div><span class="lbl">Open sectors</span><b id="fs-open">–</b></div>
+          </div>
+        </section>
+        <section class="pn" id="fp-drone" hidden>
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Drone check (simulated)</span></div>
+          <div class="kv">
+            <div><span class="lbl">Take-off</span><b id="fd-take">–</b></div>
+            <div><span class="lbl">Flight</span><b id="fd-time">–</b></div>
+            <div><span class="lbl">Route</span><b id="fd-len">–</b></div>
+            <div><span class="lbl">Leak pipe in route</span><b id="fd-hit">–</b></div>
+          </div>
+          <p class="note" id="fd-note"></p>
+        </section>
+      </div>
+    </div>
     <div class="pn frame-pn">
       <div class="pn-h"><span class="sq"></span><span class="lbl">Farm leak explorer</span><a class="idx" href="farm-explorer/index.html" target="_blank" rel="noopener">open full screen ↗</a></div>
       <iframe id="farm-frame" title="Farm leak explorer" loading="lazy"></iframe>
@@ -181,8 +250,9 @@
           <tr><td>Replays marked "simulation"</td><td><span class="pill sim">simulation</span></td><td>simulator/bench_rev1.py: starter physics, to be replaced by recorded runs.</td></tr>
           <tr><td>Virtual farm (50 ha)</td><td><span class="pill sim">simulation</span></td><td>WNTR model, assumed parameters listed in the report; leaks and sensor noise simulated.</td></tr>
           <tr><td>M3 pressure wave + time reversal</td><td><span class="pill sim">simulation</span></td><td>The bench cannot sample at kHz or close a valve in 25 ms; team decision 21 Nov.</td></tr>
-          <tr><td>M1 GNN</td><td><span class="pill sim">simulation</span></td><td>Trained and tested on the simulated farm.</td></tr>
-          <tr><td>Drone dispatch</td><td><span class="pill sim">simulation</span></td><td>Rule-based waypoints; real flights are next steps.</td></tr>
+          <tr><td>Sensor placement + kit cost</td><td><span class="pill sim">simulation</span></td><td>Greedy + swaps + genetic search on the simulated farm, re-tested on 10 perturbed farms; σ placeholder until the bench σ; 292 DT per node is an assumption.</td></tr>
+          <tr><td>M1 GNN, M2 and fusion on the farm</td><td><span class="pill sim">simulation</span></td><td>Trained on 7 simulated farm versions, scored on 3 others it never saw.</td></tr>
+          <tr><td>Drone dispatch</td><td><span class="pill sim">simulation</span></td><td>Rule-based: pipes holding 90 % of the fused probability, waypoints every 10 m at 30 m, sunrise take-off; real flights (vendor SDK / MAVLink) and permits are next steps.</td></tr>
         </tbody>
       </table>
     </div>

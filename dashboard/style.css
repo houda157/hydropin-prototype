@@ -118,6 +118,10 @@ select, input:not([type=checkbox]):not([type=range]) { background: var(--panel-2
 .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; display: grid; gap: 4px; }
 .tile b { font: 800 2rem/1 var(--font-display); font-stretch: 75%; font-variant-numeric: tabular-nums; }
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.farm-body { grid-template-columns: 260px minmax(0, 1fr) 260px; }
+.farm-map svg { width: 100%; height: min(64vh, 620px); display: block; }
+.farm-map text { font: 500 15px var(--font-mono); fill: var(--muted); }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 0.78rem; }
 .frame-pn iframe { width: 100%; height: min(78vh, 900px); border: 0; border-radius: 3px; background: var(--bg); }
 
 @media (max-width: 1100px) {

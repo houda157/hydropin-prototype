@@ -1,5 +1,7 @@
 // HydroPin dashboard: live mode (WebSocket from the laptop backend) and replay mode (recorded runs,
 // works on GitHub Pages). No build step, no external libraries; charts are plain SVG.
+import { FARM_SCALE } from "./config.js";
+
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -104,6 +106,20 @@ function updateSchematic(fr) {
 const bench = { frames: [], events: [], mode: null, replay: null, idx: 0, playing: false, timer: null, ws: null, runInfo: "" };
 const stateClass = (s) => s === "LEAK" ? "st-leak" : s === "WATCH" ? "st-watch" : s === "HEALTHY" ? "st-ok" : "st-idle";
 
+// "At farm scale": the same share of the flow lost on the reference farm (hidden until the market
+// lead fills dashboard/config.js).
+function farmScaleLine(fr) {
+  const c = FARM_SCALE || {}, el = $("d-farm");
+  const ok = c.area_ha && c.m3_per_ha_season && c.price_dt_per_m3 && fr && fr.leak_lpm > 0 && fr.flow_base_lpm > 0;
+  el.hidden = !ok;
+  if (!ok) return;
+  const share = fr.leak_lpm / fr.flow_base_lpm;
+  const m3 = share * c.area_ha * c.m3_per_ha_season;
+  el.textContent = `At farm scale (estimate): the same ${Math.round(100 * share)} % of the flow on a ${c.area_ha} ha farm ` +
+    `is ~${Math.round(m3).toLocaleString("en")} m³ and ~${Math.round(m3 * c.price_dt_per_m3).toLocaleString("en")} DT per season` +
+    (c.source ? ` (${c.source})` : "") + ".";
+}
+
 function renderFrame(fr) {
   const st = fr ? fr.state : "–";
   for (const id of ["h-state"]) { $(id).textContent = st; $(id).className = `cellv dot ${stateClass(st)}`; }
@@ -119,6 +135,7 @@ function renderFrame(fr) {
   $("h-branch").textContent = br; $("d-branch").textContent = fr && fr.branch ? fr.branch : "–";
   $("d-leak").textContent = fr && fr.leak_lpm ? `${fmt(fr.leak_lpm, 2)} L/min` : "–";
   $("d-lost").textContent = fr ? `${fmt(fr.lost_l, 2)} L` : "–";
+  farmScaleLine(fr);
   $("d-fbase").textContent = fr && fr.flow_base_lpm !== null ? `${fmt(fr.flow_base_lpm, 2)} L/min` : "–";
   $("d-dp").textContent = fr && fr.dp_bar !== null ? `${fmt(fr.dp_bar, 3)} bar` : "–";
   const tb = $("d-methods").tBodies[0];
@@ -319,23 +336,42 @@ async function loadScoreboard() {
   $("real-score").className = `pill ${sim ? "sim" : "ok"}`;
   const ban = $("score-banner");
   ban.className = `banner ${sim ? "is-sim" : "is-real"}`;
-  ban.textContent = (sim ? "Simulation: " : "Measured on the bench: ") + board.notes;
+  ban.textContent = (sim ? "Simulation: " : "Measured on the bench: ") + board.notes + (board.headline ? ` Headline: ${board.headline}.` : "");
   const s = board.summary;
   const pct = (v) => v === null ? "–" : `${Math.round(100 * v)}%`;
   const tiles = [["Leak runs", s.leak_runs], ["Detected (LEAK)", pct(s.detection_rate)], ["WATCH or LEAK", pct(s.watch_or_leak_rate)],
     ["Right branch", pct(s.branch_accuracy)], ["Median delay", s.median_delay_s === null ? "–" : `${s.median_delay_s} s`],
     ["False-alarm runs", `${s.false_alarm_runs} / ${s.leak_runs + s.clean_runs}`]];
+  if (s.false_alarms_per_hour !== undefined && s.false_alarms_per_hour !== null)
+    tiles.push(["False alarms / hour", `${s.false_alarms_per_hour}`]);
+  if (s.tap_accuracy !== undefined && s.tap_accuracy !== null) tiles.splice(4, 0, ["Right tap", pct(s.tap_accuracy)]);
   $("score-tiles").innerHTML = tiles.map(([k, v]) => `<div class="tile"><span class="lbl">${k}</span><b>${v}</b></div>`).join("");
   $("score-tap").innerHTML = `<thead><tr><th>Tap</th><th>Branch</th><th>Runs</th><th>Detected</th><th>Right branch</th></tr></thead><tbody>${
     Object.entries(board.per_tap).map(([t, d]) => `<tr><td>${t}</td><td>${TAP_BRANCH[t]}</td><td>${d.runs}</td><td>${d.detected}</td><td>${d.branch_ok}</td></tr>`).join("")}</tbody>`;
   $("score-size").innerHTML = `<thead><tr><th>Size</th><th>Runs</th><th>LEAK</th><th>WATCH or LEAK</th></tr></thead><tbody>${
     Object.entries(board.per_opening || {}).map(([t, d]) => `<tr><td>${t}</td><td>${d.runs}</td><td>${d.detected}</td><td>${d.watched}</td></tr>`).join("")}</tbody>`;
+  const pm = board.per_method || {};
+  const mname = { fused: "Fused (flow + M2)", flow: "Flow alone", m2: "M2 alone" };
+  $("score-methods").innerHTML = `<thead><tr><th>Method</th><th>Detected</th><th>Median delay</th><th>False alarms / h</th></tr></thead><tbody>${
+    Object.entries(pm).map(([m, d]) => `<tr><td>${mname[m] || m}</td><td>${pct(d.detection_rate)}</td><td>${d.median_delay_s ?? "–"}${d.median_delay_s != null ? " s" : ""}</td><td>${d.false_alarms_per_hour ?? "–"}</td></tr>`).join("")
+    || '<tr><td colspan="4">Not in this scoreboard.</td></tr>'}</tbody>`;
+  const cm = (board.confusion || {}).taps;
+  $("score-confusion").innerHTML = cm ? `<thead><tr><th>Opened</th>${["L1", "L2", "L3", "missed"].map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${
+    ["L1", "L2", "L3"].map((r) => `<tr><td>${r} (${TAP_BRANCH[r]})</td>${["L1", "L2", "L3", "missed"].map((c) => `<td${r === c ? ' style="font-weight:700"' : ""}>${cm[r][c]}</td>`).join("")}</tr>`).join("")}</tbody>`
+    : "<tbody><tr><td>Not in this scoreboard.</td></tr></tbody>";
+  const bl = board.blind || { runs: 0 };
+  $("score-blind-pn").hidden = !bl.runs;
+  if (bl.runs) {
+    $("score-blind-n").textContent = `${bl.runs} events`;
+    $("score-blind").innerHTML = `<thead><tr><th>Run</th><th>Truth</th><th>Result</th><th>Delay</th><th>Branch</th></tr></thead><tbody>${
+      bl.events.map((r) => `<tr><td>${r.id}</td><td>${r.label}</td><td>${r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>') : r.detected ? '<span class="pill ok">LEAK</span>' : '<span class="pill no">missed</span>'}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}</td></tr>`).join("")}</tbody>`;
+  }
   $("score-n").textContent = `${board.runs.length} runs`;
-  $("score-runs").innerHTML = `<thead><tr><th>Run</th><th>Label</th><th>Result</th><th>Delay</th><th>Branch</th><th>Faults</th></tr></thead><tbody>${
+  $("score-runs").innerHTML = `<thead><tr><th>Run</th><th>Label</th><th>Split</th><th>Result</th><th>Delay</th><th>Branch</th><th>Faults</th></tr></thead><tbody>${
     board.runs.map((r) => {
       const res = r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>')
         : r.detected ? '<span class="pill ok">LEAK</span>' : r.watched ? '<span class="pill">WATCH</span>' : '<span class="pill no">missed</span>';
-      return `<tr><td>${r.id}</td><td>${r.label}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${(r.faults || []).join(", ") || "–"}</td></tr>`;
+      return `<tr><td>${r.id}</td><td>${r.label}</td><td>${r.split || (r.blind ? "blind" : "–")}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${(r.faults || []).join(", ") || "–"}</td></tr>`;
     }).join("")}</tbody>`;
 }
 
@@ -369,6 +405,143 @@ async function showM3(file) {
   }<tr><td>True position</td><td>${fmt(c.leak.x_true_m, 1)}</td><td>–</td></tr></tbody>`;
 }
 
+
+// ------------------------------------------------------------------ farm (simulation)
+const farm = { lay: null, place: null, res: null, drone: null, view: "place", n: 6, set: "6", method: "fused", scen: 0, raf: 0 };
+async function loadFarm() {
+  const get = (u) => getJSON(u).catch(() => null);
+  [farm.lay, farm.place, farm.res, farm.drone] = await Promise.all([get("farm/layout.json"), get("farm/placement.json"),
+    get("farm/results.json"), get("farm/drone.json")]);
+  if (!farm.lay) { $("farm-map").textContent = "farm/layout.json not found."; return; }
+  if (farm.place) { $("f-n").value = farm.n = farm.place.recommended_n || 6; }
+  if (farm.res) {
+    $("f-scen").innerHTML = farm.res.scenarios.map((sc, i) => `<option value="${i}">${sc.title}</option>`).join("");
+    if (!farm.res.methods.includes("m1")) document.querySelector('[data-fm="m1"]').disabled = true;
+  } else $("fv-leak").disabled = true;
+  if (!farm.place) $("fv-place").disabled = true;
+  $("fv-place").addEventListener("click", () => setFarmView("place"));
+  $("fv-leak").addEventListener("click", () => setFarmView("leak"));
+  $("f-n").addEventListener("input", (e) => { farm.n = +e.target.value; renderFarm(); });
+  $("f-scen").addEventListener("change", (e) => { farm.scen = +e.target.value; renderFarm(); });
+  $("f-drone").addEventListener("change", renderFarm);
+  document.querySelectorAll("[data-fs]").forEach((b) => b.addEventListener("click", () => { farm.set = b.dataset.fs; renderFarm(); }));
+  document.querySelectorAll("[data-fm]").forEach((b) => b.addEventListener("click", () => { farm.method = b.dataset.fm; renderFarm(); }));
+  setFarmView(farm.place ? "place" : "leak");
+}
+function setFarmView(v) {
+  farm.view = v;
+  $("fv-place").setAttribute("aria-pressed", v === "place");
+  $("fv-leak").setAttribute("aria-pressed", v === "leak");
+  $("fc-place").hidden = v !== "place"; $("fc-leak").hidden = v !== "leak";
+  $("fp-place").hidden = v !== "place"; $("fp-meth").hidden = v !== "leak";
+  $("fp-scen").hidden = v !== "leak"; $("fp-drone").hidden = v !== "leak";
+  renderFarm();
+}
+function renderFarm() {
+  if (!farm.lay) return;
+  cancelAnimationFrame(farm.raf);
+  const L = farm.lay, W = L.farm.width_m, H = L.farm.length_m, pad = 30;
+  const X = (x) => pad + x, Y = (y) => pad + H - y;
+  const node = Object.fromEntries(L.nodes.map((n) => [n.id, n]));
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W + 2 * pad} ${H + 2 * pad + 10}`);
+  const add = (tag, attrs, text, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; parent.appendChild(e); return e; };
+  for (const sc of L.sectors) {
+    const [x0, y0, x1, y1] = sc.bbox;
+    add("rect", { x: X(x0), y: Y(y1), width: x1 - x0, height: y1 - y0, fill: css("--panel-2"), stroke: css("--line") });
+    add("text", { x: X((x0 + x1) / 2), y: Y(y1) + 14, "text-anchor": "middle" }, `sector ${sc.id}`);
+  }
+  // pipe probabilities (leak view)
+  let probs = {}, sensors = [], scen = null, by = null;
+  if (farm.view === "leak" && farm.res) {
+    document.querySelectorAll("[data-fs]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fs === farm.set));
+    document.querySelectorAll("[data-fm]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fm === farm.method));
+    scen = farm.res.scenarios[farm.scen]; by = scen.by_sensors[farm.set];
+    sensors = by.sensors;
+    for (const [pid, v] of Object.entries(by.pipes)) probs[pid] = v[farm.method] || 0;
+  } else if (farm.place) {
+    const set = farm.place.sets.find((x) => x.n === farm.n);
+    sensors = set ? set.nodes : [];
+  }
+  const pmax = Math.max(1e-9, ...Object.values(probs));
+  for (const p of L.pipes) {
+    if (p.kind === "pump") continue;
+    const a = node[p.from], b = node[p.to];
+    const base = p.kind === "main" ? 6 : 3.2;
+    add("line", { x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), stroke: css("--pipe"), "stroke-width": base, "stroke-linecap": "round", opacity: 0.85 });
+    const v = probs[p.id] || 0;
+    if (v > 0.005) add("line", { x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), stroke: css("--accent"), "stroke-width": base + 2 + 10 * v / pmax, "stroke-linecap": "round", opacity: 0.25 + 0.75 * v / pmax }).appendChild(Object.assign(document.createElementNS(NS, "title"), { textContent: `${p.id}: ${(100 * v).toFixed(1)} %` }));
+  }
+  if (scen) {
+    add("circle", { cx: X(scen.true.x), cy: Y(scen.true.y), r: 13, fill: "none", stroke: css("--ink"), "stroke-width": 2, "stroke-dasharray": "3 3" });
+  }
+  for (const n of L.nodes) {
+    if (!n.candidate) continue;
+    const on = sensors.includes(n.id);
+    if (on) add("rect", { x: X(n.x) - 6, y: Y(n.y) - 6, width: 12, height: 12, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2 });
+    else add("circle", { cx: X(n.x), cy: Y(n.y), r: 3.5, fill: css("--panel"), stroke: css("--muted") });
+  }
+  const pump = node[L.farm.pump_node];
+  add("text", { x: X(pump.x) + 10, y: Y(pump.y) + 16 }, "pump station");
+  // drone
+  let route = null;
+  if (farm.view === "leak" && farm.drone && $("f-drone").checked) {
+    route = farm.drone.routes.find((r) => r.scenario === scen.id && String(r.sensors_n) === farm.set);
+    if (route) {
+      add("polyline", { points: route.waypoints.map(([x, y]) => `${X(x)},${Y(y)}`).join(" "), fill: "none", stroke: css("--s1"), "stroke-width": 1.6, "stroke-dasharray": "6 4" });
+      const dot = add("circle", { r: 6, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2 });
+      const pts = route.waypoints, seg = [0];
+      for (let i = 1; i < pts.length; i++) seg.push(seg[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const total = seg[seg.length - 1] || 1, t0 = performance.now(), dur = 8000;
+      const step = (now) => {
+        const d = ((now - t0) % dur) / dur * total;
+        let i = seg.findIndex((v) => v >= d); i = Math.max(1, i);
+        const f = (d - seg[i - 1]) / Math.max(1e-9, seg[i] - seg[i - 1]);
+        dot.setAttribute("cx", X(pts[i - 1][0] + f * (pts[i][0] - pts[i - 1][0])));
+        dot.setAttribute("cy", Y(pts[i - 1][1] + f * (pts[i][1] - pts[i - 1][1])));
+        if (!$("tab-farm").hidden) farm.raf = requestAnimationFrame(step);
+      };
+      farm.raf = requestAnimationFrame(step);
+    }
+  }
+  $("farm-map").replaceChildren(svg);
+  // panels
+  const pct = (v) => v === null || v === undefined ? "–" : `${Math.round(v)} %`;
+  if (farm.view === "place" && farm.place) {
+    const set = farm.place.sets.find((x) => x.n === farm.n);
+    $("f-n-v").textContent = farm.n;
+    $("fm-title").textContent = `${farm.n} sensors: ${set.nodes.join(", ")}`;
+    $("fp-iso").textContent = pct(set.by_size["3"].isolated_pct);
+    $("fp-det").textContent = pct(set.by_size["3"].detected_pct);
+    $("fp-det1").textContent = pct(set.by_size["1"].detected_pct);
+    $("fp-rob").textContent = set.robust ? `${pct(set.robust.by_size["3"].isolated_pct)} traced` : "–";
+    $("fp-cost").textContent = `${set.cost_dt.toLocaleString("en")} DT`;
+    $("fp-rec").textContent = `best: ${farm.place.recommended_n}`;
+    $("fp-note").textContent = `k·σ = ${farm.place.k} × ${(1000 * farm.place.sigma_bar).toFixed(0)} mbar (${farm.place.sigma_note}). ${farm.place.cost_note}.`;
+    $("fm-legend").innerHTML = `<span style="--c:${css("--s1")}">chosen sensor</span><span style="--c:${css("--muted")}">possible spot</span>`;
+  } else if (scen) {
+    $("fm-title").textContent = `${scen.title}: ${farm.method === "fused" ? "fused" : farm.method.toUpperCase()} leak probability`;
+    $("fs-true").textContent = scen.true.site;
+    $("fs-top").textContent = by.detected ? by.top_site : "not detected";
+    $("fs-q").textContent = `${scen.true.leak_lps.toFixed(2)} L/s`;
+    $("fs-open").textContent = scen.open_sectors.join(" + ");
+    const m = farm.res.metrics[farm.res.showcase_case][farm.set];
+    $("fp-mt").innerHTML = `<thead><tr><th></th><th>Branch</th><th>Pipe ±1</th><th>Pipe</th></tr></thead><tbody>${
+      Object.entries(m).map(([k, v]) => `<tr><td>${k === "fused" ? "Fused" : k.toUpperCase()}</td><td>${pct(v["3+10"].right_branch_pct)}</td><td>${pct(v["3+10"].within_one_hop_pct)}</td><td>${pct(v["3+10"].right_site_pct)}</td></tr>`).join("")}</tbody>`;
+    if (route) {
+      $("fd-take").textContent = route.takeoff.split(" ")[1] + " sunrise";
+      $("fd-time").textContent = `${(route.flight_s / 60).toFixed(1)} min`;
+      $("fd-len").textContent = `${Math.round(route.length_m)} m, ${route.pipes.length} pipes`;
+      $("fd-hit").textContent = route.true_pipe_in_route ? "yes" : "no";
+      $("fd-note").textContent = `${farm.drone.rule}. Real flights: ${farm.drone.next_steps}.`;
+    } else {
+      ["fd-take", "fd-time", "fd-len", "fd-hit"].forEach((id) => { $(id).textContent = "–"; });
+      $("fd-note").textContent = by.detected ? "Drone off." : "Leak not detected: no flight.";
+    }
+    $("fm-legend").innerHTML = `<span style="--c:${css("--accent")}">leak probability</span><span style="--c:${css("--s1")}">sensor / drone route</span><span style="--c:${css("--ink")}">true leak (dashed ring)</span>`;
+  }
+}
+
 // ------------------------------------------------------------------ tabs + boot
 const loaded = {};
 function showTab(name) {
@@ -378,10 +551,11 @@ function showTab(name) {
     loaded[name] = true;
     if (name === "score") loadScoreboard();
     if (name === "m3") loadM3();
-    if (name === "farm") $("farm-frame").src = "farm-explorer/index.html";
+    if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html"; loadFarm(); }
   }
   if (name === "bench" && bench.mode === "replay") seek(bench.idx);
   if (name === "m3" && m3Index) showM3($("m3-pick").value);
+  if (name === "farm" && farm.lay) renderFarm();
   try { history.replaceState(null, "", `#${name}`); } catch (e) { /* file:// */ }
 }
 
