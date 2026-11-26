@@ -22,17 +22,19 @@ static void publish_snapshot(const SensorSnapshot& s) {
 
     JsonObject raw = doc["raw"].to<JsonObject>();
     raw["flow_main_pulses"] = s.pulses_main;
-    raw["flow_l1_pulses"] = s.pulses_l1;
-    raw["flow_l2_pulses"] = s.pulses_l2;
-    raw["flow_l3_pulses"] = s.pulses_l3;
+    raw["flow_l1_pulses"] = 0;
+    raw["flow_l2_pulses"] = 0;
+    raw["flow_l3_pulses"] = 0;
     raw["pressure_adc"] = s.pressure_adc;
+    raw["pressure_b_adc"] = s.pressure_b_adc;
 
     JsonObject values = doc["values"].to<JsonObject>();
     values["flow_main_lpm"] = roundf(s.flow_main_lpm * 100.0f) / 100.0f;
-    values["flow_l1_lpm"] = roundf(s.flow_l1_lpm * 100.0f) / 100.0f;
-    values["flow_l2_lpm"] = roundf(s.flow_l2_lpm * 100.0f) / 100.0f;
-    values["flow_l3_lpm"] = roundf(s.flow_l3_lpm * 100.0f) / 100.0f;
+    values["flow_l1_lpm"] = 0.0f;
+    values["flow_l2_lpm"] = 0.0f;
+    values["flow_l3_lpm"] = 0.0f;
     values["pressure_bar"] = roundf(s.pressure_bar * 100.0f) / 100.0f;
+    values["pressure_b_bar"] = roundf(s.pressure_b_bar * 100.0f) / 100.0f;
 
     JsonObject quality = doc["quality"].to<JsonObject>();
     quality["dropout"] = false;

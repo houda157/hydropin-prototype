@@ -6,17 +6,15 @@
 #define DEVICE_ID "esp32-bench-01"
 
 // ---- pins -----------------------------------------------------------------
-// 34/35 are input-only. For a 5 V push-pull flow sensor use a divider
-// (10k series / 18k shunt) and NO pull-up. For an open-collector sensor use a
-// 10k pull-up to 3.3 V and no divider. Never feed 5 V straight into an ESP32.
-#define PIN_FLOW_MAIN 34
-#define PIN_FLOW_L1 35
-#define PIN_FLOW_L2 32
-#define PIN_FLOW_L3 33
+// Rev 1 bench has ONE flow sensor (main) and TWO pressure sensors.
+// Flow: 5 V pulse through R5=10k series + R6=20k shunt -> ~3.33 V on GPIO27.
+// Do not add a pull-up on the divider node. Never feed 5 V into the ESP32.
+#define PIN_FLOW_MAIN 27
 #define PIN_I2C_SDA 21
 #define PIN_I2C_SCL 22
 #define ADS_ADDR 0x48
-#define ADS_CHANNEL 0
+#define ADS_CHANNEL_PT1 0   // PT1, branch A, 0..6 bar
+#define ADS_CHANNEL_PT2 1   // PT2, branch B, -1..1.6 bar
 
 // ---- timing ---------------------------------------------------------------
 static const uint32_t PUBLISH_PERIOD_MS = 500;   // 2 Hz
@@ -29,16 +27,26 @@ static const float FLOW_K_PULSES_PER_LITRE = 450.0f;
 static const float FLOW_PULSES_PER_LPM = FLOW_K_PULSES_PER_LITRE / 60.0f;  // 7.5
 static const float FLOW_GAIN = 1.5f;                                       // "flow * 3/2"
 
-// ---- pressure (0..5 V sensor -> 3.2 divider -> ADS1115 +/-4.096 V) --------
-// Divider: 22k series + 10k shunt -> V_ads = V_sensor * 10/32 = V_sensor/3.2.
+// ---- pressure (0-10 V sensors -> 20k/10k divider -> ADS1115 gain=1) -------
+// Divider: 20k series + 10k shunt -> V_ads = V_sensor * 10/30 = V_sensor/3.0.
+// At 10 V the ADS pin sees 3.333 V, inside the +/-4.096 V range.
 static const float ADS_VOLTAGE_RANGE = 4.096f;
 static const float ADS_COUNTS = 32767.0f;
-static const float PRESSURE_DIVIDER = 3.2f;
-static const float PRESSURE_GAIN = 3.0f;                                   // "pressure * 3"
-static const float PRESSURE_OFFSET_BAR = 0.0f;                             // fit on bench
+
+// PT1, branch A: 0..6 bar over 0-10 V.
+static const float PRESSURE_DIVIDER = 3.0f;
+static const float PRESSURE_GAIN = 0.6f;          // 6 bar / 10 V
+static const float PRESSURE_OFFSET_BAR = 0.0f;
+static const float PRESSURE_MIN_BAR = 0.0f;
+static const float PRESSURE_MAX_BAR = 6.0f;
+
+// PT2, branch B: -1..1.6 bar over 0-10 V.
+static const float PRESSURE_B_DIVIDER = 3.0f;
+static const float PRESSURE_B_GAIN = 0.26f;       // 2.6 bar / 10 V
+static const float PRESSURE_B_OFFSET_BAR = -1.0f;
+static const float PRESSURE_B_MIN_BAR = -1.0f;
+static const float PRESSURE_B_MAX_BAR = 1.6f;
 
 // ---- sanity ---------------------------------------------------------------
 static const float FLOW_MAX_LPM = 60.0f;
-// 0..5 V * 3.0 bar/V = 15 bar full scale; 16 bar cannot be represented.
-static const float PRESSURE_MAX_BAR = 15.0f;
 static const uint8_t PRESSURE_OVERSAMPLE = 8;

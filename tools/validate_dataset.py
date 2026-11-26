@@ -71,6 +71,19 @@ def validate_frame(df: pd.DataFrame, expected_hz: float = 2.0) -> Report:
     if out_p:
         rep.errors.append(f"{out_p} pressure values outside {config.PRESSURE_RANGE_BAR} bar")
 
+    pressure_b = None
+    if "pressure_b_bar" in df.columns:
+        pressure_b = pd.to_numeric(df["pressure_b_bar"], errors="coerce")
+        bad = int((~np.isfinite(pressure_b)).sum())
+        if bad:
+            rep.errors.append(f"pressure_b_bar: {bad} non-numeric/NaN values")
+        lo, hi = config.PRESSURE_B_RANGE_BAR
+        out_pb = int(((pressure_b < lo) | (pressure_b > hi)).sum())
+        if out_pb:
+            rep.errors.append(
+                f"{out_pb} pressure_b_bar values outside {config.PRESSURE_B_RANGE_BAR} bar"
+            )
+
     ts = pd.to_datetime(df["ts"], utc=True, errors="coerce")
     if ts.isna().any():
         rep.errors.append(f"{int(ts.isna().sum())} unparseable timestamps")
@@ -133,6 +146,19 @@ def validate_frame(df: pd.DataFrame, expected_hz: float = 2.0) -> Report:
         if mismatches:
             rep.warnings.append(
                 f"{mismatches} raw-ADC/pressure mismatches (divider, gain or offset drift)"
+            )
+
+    if pressure_b is not None and "raw_pressure_b_adc" in df.columns:
+        adc_b = pd.to_numeric(df["raw_pressure_b_adc"], errors="coerce")
+        expected_b = (
+            adc_b / config.ADS_COUNTS * config.ADS_VOLTAGE_RANGE * config.PRESSURE_B_DIVIDER
+        )
+        expected_b = expected_b * config.PRESSURE_B_GAIN + config.PRESSURE_B_OFFSET_BAR
+        tol_b = np.maximum(0.05, 0.02 * pressure_b.abs())
+        mismatches_b = int(((expected_b - pressure_b).abs() > tol_b).sum())
+        if mismatches_b:
+            rep.warnings.append(
+                f"{mismatches_b} raw-ADC/pressure_b mismatches (divider, gain or offset drift)"
             )
 
     return rep

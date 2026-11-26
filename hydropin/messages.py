@@ -30,6 +30,7 @@ def make_message(
     seq: int,
     flows_lpm: dict[str, float],
     pressure_bar: float,
+    pressure_b_bar: float | None = None,
     ts: str | None = None,
     ts_device_ms: int | None = None,
     label: str = "none",
@@ -55,11 +56,15 @@ def make_message(
 
     values: dict[str, float] = {f"flow_{c}_lpm": round(float(flows_lpm[c]), 4) for c in config.FLOW_CHANNELS}
     values["pressure_bar"] = round(float(pressure_bar), 4)
+    if pressure_b_bar is not None:
+        values["pressure_b_bar"] = round(float(pressure_b_bar), 4)
     if raw is None:
         raw = {
             f"flow_{c}_pulses": config.flow_lpm_to_pulses(float(flows_lpm[c]), dt_s) for c in config.FLOW_CHANNELS
         }
         raw["pressure_adc"] = config.pressure_bar_to_adc(float(pressure_bar))
+        if pressure_b_bar is not None:
+            raw["pressure_b_adc"] = config.pressure_b_bar_to_adc(float(pressure_b_bar))
 
     return {
         "schema": config.SCHEMA_VERSION,
@@ -105,6 +110,11 @@ def validate_message(msg: Any) -> dict[str, Any]:
     lo, hi = config.PRESSURE_RANGE_BAR
     if not (lo <= p <= hi):
         raise MessageError(f"pressure_bar out of physical range: {p}")
+    if "pressure_b_bar" in values:
+        pb = values["pressure_b_bar"]
+        lo, hi = config.PRESSURE_B_RANGE_BAR
+        if not (lo <= pb <= hi):
+            raise MessageError(f"pressure_b_bar out of physical range: {pb}")
     return msg
 
 
@@ -133,9 +143,11 @@ def to_row(msg: dict[str, Any]) -> dict[str, Any]:
     for ch in config.FLOW_CHANNELS:
         row[f"flow_{ch}_lpm"] = values[f"flow_{ch}_lpm"]
     row["pressure_bar"] = values["pressure_bar"]
+    row["pressure_b_bar"] = values.get("pressure_b_bar")
     for ch in config.FLOW_CHANNELS:
         row[f"raw_flow_{ch}_pulses"] = raw.get(f"flow_{ch}_pulses")
     row["raw_pressure_adc"] = raw.get("pressure_adc")
+    row["raw_pressure_b_adc"] = raw.get("pressure_b_adc")
     row["dropout"] = bool(quality.get("dropout", False))
     row["ripple"] = bool(quality.get("ripple", False))
     row["clipped"] = bool(quality.get("clipped", False))
@@ -150,8 +162,10 @@ CSV_COLUMNS = [
     "label",
     *[f"flow_{c}_lpm" for c in config.FLOW_CHANNELS],
     "pressure_bar",
+    "pressure_b_bar",
     *[f"raw_flow_{c}_pulses" for c in config.FLOW_CHANNELS],
     "raw_pressure_adc",
+    "raw_pressure_b_adc",
     "dropout",
     "ripple",
     "clipped",

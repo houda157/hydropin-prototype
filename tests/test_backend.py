@@ -49,7 +49,7 @@ def test_rest_ingest_query_export_and_runs(tmp_path):
         assert "1.7" in exported.text
         rows = list(csv.DictReader(io.StringIO(exported.text)))
         assert rows[0]["clipped"] == "0"
-        assert rows[0]["raw_pressure_adc"] == "1667"
+        assert rows[0]["raw_pressure_adc"] == "8889"
         assert rows[0]["raw_flow_main_pulses"] == "17"
 
         run = client.post("/api/runs", json={"label": "leak_L2", "notes": "unit"}).json()

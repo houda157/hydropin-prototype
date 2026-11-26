@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS readings (
     scenario TEXT,
     label TEXT,
     flow_main_lpm REAL, flow_l1_lpm REAL, flow_l2_lpm REAL, flow_l3_lpm REAL,
-    pressure_bar REAL,
+    pressure_bar REAL, pressure_b_bar REAL,
     raw_json TEXT,
     dropout INTEGER, ripple INTEGER, clipped INTEGER,
     received_ts TEXT NOT NULL,
@@ -59,6 +59,7 @@ RAW_FIELDS = {
     "raw_flow_l2_pulses": "flow_l2_pulses",
     "raw_flow_l3_pulses": "flow_l3_pulses",
     "raw_pressure_adc": "pressure_adc",
+    "raw_pressure_b_adc": "pressure_b_adc",
 }
 
 READING_COLUMNS = [
@@ -72,6 +73,7 @@ READING_COLUMNS = [
     "flow_l2_lpm",
     "flow_l3_lpm",
     "pressure_bar",
+    "pressure_b_bar",
     "dropout",
     "ripple",
     "clipped",
@@ -114,6 +116,8 @@ def init_db(path: str | Path | None = None) -> Path:
         rcols = {row["name"] for row in conn.execute("PRAGMA table_info(readings)")}
         if "clipped" not in rcols:
             conn.execute("ALTER TABLE readings ADD COLUMN clipped INTEGER")
+        if "pressure_b_bar" not in rcols:
+            conn.execute("ALTER TABLE readings ADD COLUMN pressure_b_bar REAL")
     return Path(path or DB_PATH)
 
 
@@ -125,8 +129,9 @@ def insert_reading(conn: sqlite3.Connection, msg: dict[str, Any]) -> bool:
         """
         INSERT OR IGNORE INTO readings
         (device, seq, ts, scenario, label, flow_main_lpm, flow_l1_lpm, flow_l2_lpm,
-         flow_l3_lpm, pressure_bar, raw_json, dropout, ripple, clipped, received_ts)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         flow_l3_lpm, pressure_bar, pressure_b_bar, raw_json, dropout, ripple,
+         clipped, received_ts)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             msg["device"],
@@ -139,6 +144,7 @@ def insert_reading(conn: sqlite3.Connection, msg: dict[str, Any]) -> bool:
             values["flow_l2_lpm"],
             values["flow_l3_lpm"],
             values["pressure_bar"],
+            values.get("pressure_b_bar"),
             raw,
             int(bool(quality.get("dropout", False))),
             int(bool(quality.get("ripple", False))),

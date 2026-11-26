@@ -3,14 +3,18 @@
 Mirror of firmware/include/config.h. If you change a constant here, change it
 there too (the contract test asserts the two stay compatible).
 
-Calibration (provisional, MUST be verified on the bench):
-    flow_lpm       = (pulses / dt_s) / 7.5 * 1.5      # user: "flow * 3/2"
-    sensor_volts   = adc_counts / 32767 * 4.096 * 3.2 # ADS1115 + 3.2 divider
-    pressure_bar   = sensor_volts * 3.0 + 0.0         # user: "pressure * 3"
+Calibration (bench wiring rev 1, 2026-11-23):
+    flow_lpm     = (pulses / dt_s) / 7.5 * 1.5       # provisional, calibrate
+    PT1 (branch A): 0..6 bar, 0-10 V, R1=20k series + R2=10k shunt
+        V_sensor = V_ads * 3.0
+        pressure_bar = 0.0 + 0.6 * V_sensor
+    PT2 (branch B): -1..1.6 bar, 0-10 V, R3=20k series + R4=10k shunt
+        V_sensor = V_ads * 3.0
+        pressure_b_bar = -1.0 + 0.26 * V_sensor
+    Flow main: 5 V pulse, R5=10k series + R6=20k shunt -> 3.33 V at GPIO27.
 
-The pressure offset is 0 for a true 0..5 V sensor. If the sensor idles at
-0.5 V (common for ratiometric transmitters), fit the offset on the bench with
-`python -m tools.calibrate pressure ...` and set PRESSURE_OFFSET_BAR.
+The flow gain is still provisional; fit it with a measured volume. The pressure
+fits above are from the sensor datasheet range + the actual 20k/10k divider.
 """
 from __future__ import annotations
 
@@ -43,14 +47,23 @@ FLOW_K_PULSES_PER_LITRE = 450.0                       # datasheet nominal
 FLOW_PULSES_PER_LPM = FLOW_K_PULSES_PER_LITRE / 60.0  # 7.5 Hz per L/min
 FLOW_GAIN = 1.5                                       # "flow * 3/2"
 
-# --- pressure sensor (analog 0..5 V through 3.2 divider into ADS1115) ------
-# Divider: 22k series + 10k shunt -> V_ads = V_sensor * 10/32 = V_sensor / 3.2.
-# At 5 V the ADS pin sees 1.5625 V, safely inside the +/-4.096 V PGA range.
+# --- pressure sensors (0-10 V through 20k/10k into ADS1115) ----------------
+# Divider: 20k series + 10k shunt -> V_ads = V_sensor * 10/30 = V_sensor / 3.0.
+# At 10 V the ADS pin sees 3.333 V, inside the +/-4.096 V PGA range (gain=1).
 ADS_VOLTAGE_RANGE = 4.096
 ADS_COUNTS = 32767.0
-PRESSURE_DIVIDER = 3.2
-PRESSURE_GAIN = 3.0                                   # "pressure * 3" (bar per volt)
-PRESSURE_OFFSET_BAR = 0.0                             # fit on the bench; 0 for 0..5 V
+
+# PT1, branch A: 0..6 bar over 0-10 V.
+PRESSURE_DIVIDER = 3.0
+PRESSURE_GAIN = 0.6                                   # 6 bar / 10 V
+PRESSURE_OFFSET_BAR = 0.0
+PRESSURE_RANGE_BAR = (0.0, 6.0)
+
+# PT2, branch B: -1..1.6 bar over 0-10 V.
+PRESSURE_B_DIVIDER = 3.0
+PRESSURE_B_GAIN = 0.26                                # 2.6 bar / 10 V
+PRESSURE_B_OFFSET_BAR = -1.0
+PRESSURE_B_RANGE_BAR = (-1.0, 1.6)
 
 FLOW_CHANNELS = ("main", "l1", "l2", "l3")
 BRANCH_CHANNELS = ("l1", "l2", "l3")
@@ -58,9 +71,6 @@ LABELS = ("none", "leak_L1", "leak_L2", "leak_L3")
 
 # Physical sanity ranges used by validation (not hard clamps).
 FLOW_RANGE_LPM = (0.0, 60.0)
-# 0..5 V sensor * 3.0 bar/V = 15 bar full scale. A 16 bar reading is physically
-# impossible on this divider/sensor, so do not accept it.
-PRESSURE_RANGE_BAR = (0.0, 15.0)
 
 
 def pulses_to_flow_lpm(pulses: float, dt_s: float = SAMPLE_PERIOD_S) -> float:
@@ -74,16 +84,25 @@ def calibrate_flow(raw_lpm: float) -> float:
     return raw_lpm * FLOW_GAIN
 
 
-def adc_to_sensor_volts(adc_counts: float) -> float:
-    return adc_counts / ADS_COUNTS * ADS_VOLTAGE_RANGE * PRESSURE_DIVIDER
+def adc_to_sensor_volts(adc_counts: float, divider: float = PRESSURE_DIVIDER) -> float:
+    return adc_counts / ADS_COUNTS * ADS_VOLTAGE_RANGE * divider
 
 
-def sensor_volts_to_bar(sensor_volts: float) -> float:
-    return sensor_volts * PRESSURE_GAIN + PRESSURE_OFFSET_BAR
+def sensor_volts_to_bar(
+    sensor_volts: float,
+    gain: float = PRESSURE_GAIN,
+    offset: float = PRESSURE_OFFSET_BAR,
+) -> float:
+    return sensor_volts * gain + offset
 
 
 def adc_to_pressure_bar(adc_counts: float) -> float:
     return sensor_volts_to_bar(adc_to_sensor_volts(adc_counts))
+
+
+def adc_to_pressure_b_bar(adc_counts: float) -> float:
+    volts = adc_to_sensor_volts(adc_counts, PRESSURE_B_DIVIDER)
+    return sensor_volts_to_bar(volts, PRESSURE_B_GAIN, PRESSURE_B_OFFSET_BAR)
 
 
 def flow_lpm_to_pulses(flow_lpm: float, dt_s: float = SAMPLE_PERIOD_S) -> int:
@@ -93,7 +112,14 @@ def flow_lpm_to_pulses(flow_lpm: float, dt_s: float = SAMPLE_PERIOD_S) -> int:
 
 
 def pressure_bar_to_adc(pressure_bar: float) -> int:
-    """Inverse of the calibration chain; used by the simulator."""
+    """Inverse of the PT1 calibration chain; used by the simulator."""
     sensor_volts = (pressure_bar - PRESSURE_OFFSET_BAR) / PRESSURE_GAIN
     adc = sensor_volts / (ADS_VOLTAGE_RANGE * PRESSURE_DIVIDER) * ADS_COUNTS
+    return int(round(max(0.0, min(ADS_COUNTS, adc))))
+
+
+def pressure_b_bar_to_adc(pressure_b_bar: float) -> int:
+    """Inverse of the PT2 calibration chain."""
+    sensor_volts = (pressure_b_bar - PRESSURE_B_OFFSET_BAR) / PRESSURE_B_GAIN
+    adc = sensor_volts / (ADS_VOLTAGE_RANGE * PRESSURE_B_DIVIDER) * ADS_COUNTS
     return int(round(max(0.0, min(ADS_COUNTS, adc))))

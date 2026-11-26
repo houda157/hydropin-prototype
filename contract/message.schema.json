@@ -23,7 +23,8 @@
         "flow_l1_pulses": { "type": "integer", "minimum": 0 },
         "flow_l2_pulses": { "type": "integer", "minimum": 0 },
         "flow_l3_pulses": { "type": "integer", "minimum": 0 },
-        "pressure_adc": { "type": "integer", "minimum": 0, "maximum": 32767 }
+        "pressure_adc": { "type": "integer", "minimum": 0, "maximum": 32767 },
+        "pressure_b_adc": { "type": "integer", "minimum": 0, "maximum": 32767 }
       }
     },
     "values": {
@@ -35,7 +36,8 @@
         "flow_l1_lpm": { "type": "number" },
         "flow_l2_lpm": { "type": "number" },
         "flow_l3_lpm": { "type": "number" },
-        "pressure_bar": { "type": "number" }
+        "pressure_bar": { "type": "number" },
+        "pressure_b_bar": { "type": "number" }
       }
     },
     "quality": {

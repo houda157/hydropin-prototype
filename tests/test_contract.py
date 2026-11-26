@@ -73,9 +73,15 @@ def test_flow_calibration_is_three_halves():
     assert config.calibrate_flow(raw) == pytest.approx(1.5)
 
 
-def test_pressure_calibration_is_times_three():
+def test_pressure_calibration_pt1_roundtrip():
     counts = config.pressure_bar_to_adc(6.0)
     assert config.adc_to_pressure_bar(counts) == pytest.approx(6.0, abs=1e-3)
+
+
+def test_pressure_calibration_pt2_roundtrip():
+    for bar in (-1.0, 0.0, 1.6):
+        counts = config.pressure_b_bar_to_adc(bar)
+        assert config.adc_to_pressure_b_bar(counts) == pytest.approx(bar, abs=1e-3)
 
 
 def test_pulse_quantization_is_documented_not_hidden():
@@ -107,10 +113,10 @@ def test_pressure_offset_roundtrip(monkeypatch):
     assert config.adc_to_pressure_bar(adc) == pytest.approx(2.0, abs=1e-3)
 
 
-def test_pressure_sensor_full_scale_is_15_bar():
-    # 0..5 V sensor * 3.0 bar/V = 15 bar; that is only 12500 ADS counts, not
-    # 32767, because the 3.2 divider keeps the ADS pin at <= 1.5625 V.
-    assert config.PRESSURE_RANGE_BAR == (0.0, 15.0)
-    adc = config.pressure_bar_to_adc(15.0)
-    assert adc == pytest.approx(12500, abs=2)
-    assert config.adc_to_pressure_bar(adc) == pytest.approx(15.0, abs=1e-3)
+def test_pressure_sensor_full_scale_is_6_bar():
+    # PT1: 0..6 bar over 0-10 V through 20k/10k -> 3.333 V at the ADS.
+    # That is ~26667 counts, not 32767.
+    assert config.PRESSURE_RANGE_BAR == (0.0, 6.0)
+    adc = config.pressure_bar_to_adc(6.0)
+    assert adc == pytest.approx(26667, abs=2)
+    assert config.adc_to_pressure_bar(adc) == pytest.approx(6.0, abs=1e-3)
