@@ -1,4 +1,4 @@
-"""SQLite persistence: readings, alerts and labelled runs.
+"""SQLite persistence: readings, alerts, labelled runs, events and processed frames.
 
 Idempotent ingestion is enforced by PRIMARY KEY(device, seq), so MQTT QoS 1
 redelivery cannot duplicate rows.
@@ -51,7 +51,30 @@ CREATE TABLE IF NOT EXISTS runs (
     label TEXT NOT NULL,
     notes TEXT
 );
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT NOT NULL,
+    type TEXT NOT NULL,
+    tap TEXT,
+    run_id INTEGER,
+    notes TEXT
+);
+CREATE TABLE IF NOT EXISTS frames (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT NOT NULL,
+    device TEXT,
+    seq INTEGER,
+    run_id INTEGER,
+    state TEXT,
+    p_leak REAL,
+    branch TEXT,
+    frame_json TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_frames_run ON frames(run_id);
 """
+
+EVENT_TYPES = ("leak_on", "leak_off", "valve_change", "pump_on", "pump_off")
+RUN_META = {"opening": "TEXT", "measured_leak_lpm": "REAL", "blind": "INTEGER"}
 
 RAW_FIELDS = {
     "raw_flow_main_pulses": "flow_main_pulses",
@@ -113,6 +136,9 @@ def init_db(path: str | Path | None = None) -> Path:
         cols = {row["name"] for row in conn.execute("PRAGMA table_info(runs)")}
         if "onset_ts" not in cols:
             conn.execute("ALTER TABLE runs ADD COLUMN onset_ts TEXT")
+        for name, kind in RUN_META.items():
+            if name not in cols:
+                conn.execute(f"ALTER TABLE runs ADD COLUMN {name} {kind}")
         rcols = {row["name"] for row in conn.execute("PRAGMA table_info(readings)")}
         if "clipped" not in rcols:
             conn.execute("ALTER TABLE readings ADD COLUMN clipped INTEGER")
@@ -204,12 +230,84 @@ def query_alerts(conn: sqlite3.Connection, limit: int = 50) -> list[dict[str, An
     return [dict(r) for r in rows]
 
 
-def create_run(conn: sqlite3.Connection, label: str, notes: str = "") -> int:
+def create_run(
+    conn: sqlite3.Connection,
+    label: str,
+    notes: str = "",
+    opening: str | None = None,
+    measured_leak_lpm: float | None = None,
+    blind: bool = False,
+) -> int:
     cur = conn.execute(
-        "INSERT INTO runs (started_ts, label, notes) VALUES (?,?,?)",
-        (utc_now(), label, notes),
+        "INSERT INTO runs (started_ts, label, notes, opening, measured_leak_lpm, blind) VALUES (?,?,?,?,?,?)",
+        (utc_now(), label, notes, opening, measured_leak_lpm, int(bool(blind))),
     )
     return int(cur.lastrowid)
+
+
+def get_run(conn: sqlite3.Connection, run_id: int) -> dict[str, Any] | None:
+    row = conn.execute("SELECT * FROM runs WHERE id = ?", (int(run_id),)).fetchone()
+    return dict(row) if row else None
+
+
+def update_run(conn: sqlite3.Connection, run_id: int, **fields: Any) -> bool:
+    allowed = {k: v for k, v in fields.items() if k in ("label", "notes", *RUN_META)}
+    if not allowed:
+        return False
+    sets = ", ".join(f"{k} = ?" for k in allowed)
+    cur = conn.execute(f"UPDATE runs SET {sets} WHERE id = ?", (*allowed.values(), int(run_id)))
+    return cur.rowcount > 0
+
+
+# --- events (ground truth for scoring; never read by the detector) ----------
+def insert_event(conn: sqlite3.Connection, type_: str, ts: str | None = None, tap: str | None = None,
+                 run_id: int | None = None, notes: str = "") -> int:
+    if type_ not in EVENT_TYPES:
+        raise ValueError(f"event type must be one of {EVENT_TYPES}")
+    cur = conn.execute(
+        "INSERT INTO events (ts, type, tap, run_id, notes) VALUES (?,?,?,?,?)",
+        (ts or utc_now(), type_, tap, run_id, notes),
+    )
+    return int(cur.lastrowid)
+
+
+def list_events(conn: sqlite3.Connection, run_id: int | None = None, limit: int = 500) -> list[dict[str, Any]]:
+    if run_id is None:
+        rows = conn.execute("SELECT * FROM events ORDER BY id DESC LIMIT ?", (max(1, int(limit)),))
+    else:
+        rows = conn.execute("SELECT * FROM events WHERE run_id = ? ORDER BY ts ASC", (int(run_id),))
+    return [dict(r) for r in rows.fetchall()]
+
+
+# --- processed frames (detector output; the unit of a replay) ---------------
+def insert_frame(conn: sqlite3.Connection, frame: dict[str, Any]) -> int:
+    cur = conn.execute(
+        "INSERT INTO frames (ts, device, seq, run_id, state, p_leak, branch, frame_json) VALUES (?,?,?,?,?,?,?,?)",
+        (str(frame.get("ts")), frame.get("device"), frame.get("seq"), frame.get("run_id"), frame.get("state"),
+         frame.get("p_leak"), frame.get("branch"), json.dumps(frame, separators=(",", ":"))),
+    )
+    return int(cur.lastrowid)
+
+
+def query_frames(conn: sqlite3.Connection, since_id: int = 0, limit: int = 600,
+                 run_id: int | None = None) -> list[dict[str, Any]]:
+    """Frames with id > since_id (ascending); with no since_id, the latest ``limit``."""
+    where, params = ["id > ?"], [int(since_id)]
+    if run_id is not None:
+        where.append("run_id = ?")
+        params.append(int(run_id))
+    clause = " AND ".join(where)
+    order = "ASC" if since_id or run_id is not None else "DESC"
+    rows = conn.execute(
+        f"SELECT id, frame_json FROM frames WHERE {clause} ORDER BY id {order} LIMIT ?",
+        (*params, max(1, int(limit))),
+    ).fetchall()
+    out = []
+    for r in rows:
+        fr = json.loads(r["frame_json"])
+        fr["id"] = r["id"]
+        out.append(fr)
+    return out if order == "ASC" else out[::-1]
 
 
 def stop_run(conn: sqlite3.Connection, run_id: int) -> bool:

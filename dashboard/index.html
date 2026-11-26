@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HydroPin Bench</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="HydroPin leak detection: live bench monitor, recorded replays, scoreboard and simulations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="strip">
+    <div class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.5c3.5 4.6 6 8 6 11.2a6 6 0 0 1-12 0C6 10.5 8.5 7.1 12 2.5z"/></svg>HYDROPIN</div>
+    <div class="title"><span class="lbl">Leak detection prototype</span><b>Bench <i>monitor</i></b></div>
+    <div><span class="lbl">Source</span><span class="cellv" id="h-source">–</span></div>
+    <div><span class="lbl">State</span><span class="cellv dot st-idle" id="h-state">–</span></div>
+    <div><span class="lbl">P(leak)</span><span class="cellv" id="h-p">–</span></div>
+    <div><span class="lbl">Branch</span><span class="cellv" id="h-branch">–</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="bench" aria-selected="true">Bench</button>
+    <button role="tab" data-tab="score">Scoreboard</button>
+    <button role="tab" data-tab="farm">Farm <em>sim</em></button>
+    <button role="tab" data-tab="m3">M3 <em>sim</em></button>
+    <button role="tab" data-tab="real">What's real</button>
+  </nav>
+
+  <!-- ============================== BENCH ============================== -->
+  <section id="tab-bench" class="tab">
+    <div class="bar pn">
+      <div class="seg" role="group" aria-label="Mode">
+        <button id="mode-live" data-mode="live">Live</button>
+        <button id="mode-replay" data-mode="replay">Replay</button>
+      </div>
+      <div id="replay-ctl" class="ctl" hidden>
+        <select id="replay-pick" aria-label="Recorded run"></select>
+        <button id="rp-play" class="btn">Play</button>
+        <select id="rp-speed" aria-label="Speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="16">16×</option></select>
+        <input id="rp-scrub" type="range" min="0" max="0" value="0" aria-label="Position">
+        <span class="mono" id="rp-time">0 s</span>
+      </div>
+      <div id="live-ctl" class="ctl" hidden>
+        <span class="mono" id="live-conn">connecting…</span>
+      </div>
+    </div>
+    <p class="banner" id="bench-banner" hidden></p>
+
+    <div class="body">
+      <div class="col">
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Detector</span><span class="idx">01</span></div>
+          <div class="big" id="d-state">–</div>
+          <div class="meter"><div id="d-pbar"></div><i style="left:50%"></i><i style="left:90%"></i></div>
+          <div class="kv">
+            <div><span class="lbl">P(leak)</span><b id="d-p">–</b></div>
+            <div><span class="lbl">Branch</span><b id="d-branch">–</b></div>
+            <div><span class="lbl">Leak</span><b id="d-leak">–</b></div>
+            <div><span class="lbl">Lost</span><b id="d-lost">–</b></div>
+            <div><span class="lbl">Flow base</span><b id="d-fbase">–</b></div>
+            <div><span class="lbl">PT1 − PT2</span><b id="d-dp">–</b></div>
+          </div>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Methods</span><span class="idx">02</span></div>
+          <table class="tbl" id="d-methods"><tbody></tbody></table>
+          <p class="note">Flow: F0 above its learned baseline. M2: pressure change off the healthy (common-mode) subspace. Fusion: weighted log-odds; WATCH above 0.5, LEAK above 0.9 for 5 s.</p>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Sensor faults</span><span class="idx">03</span></div>
+          <div id="d-faults" class="chips"><span class="note">none</span></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Bench rev 1</span><span class="idx">F0 · PT1 · PT2 · taps L1–L3</span></div>
+          <svg id="schematic" viewBox="0 0 640 210" role="img" aria-label="Bench schematic with leak probability per tap"></svg>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Pressures</span><span class="idx">bar</span></div>
+          <div class="chart" id="c-p"></div>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Flow F0</span><span class="idx">L/min</span></div>
+          <div class="chart" id="c-f"></div>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">P(leak)</span><span class="idx">τ1 0.5 · τ2 0.9</span></div>
+          <div class="chart short" id="c-pl"></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="pn" id="run-panel">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Run</span><span class="idx">04</span></div>
+          <div id="run-info" class="note">–</div>
+          <div id="live-forms" hidden>
+            <form id="f-run" class="form">
+              <label><span class="lbl">Label</span><select name="label"><option>none</option><option>leak_L1</option><option>leak_L2</option><option>leak_L3</option></select></label>
+              <label><span class="lbl">Opening</span><input name="opening" placeholder="0.5 mm cap"></label>
+              <label><span class="lbl">Measured leak L/min</span><input name="measured_leak_lpm" inputmode="decimal" placeholder="cup + stopwatch"></label>
+              <label class="chk"><input type="checkbox" name="blind"> blind test</label>
+              <label><span class="lbl">Notes</span><input name="notes"></label>
+              <div class="row"><button class="btn primary" type="submit">Start run</button><button class="btn" type="button" id="b-stop">Stop run</button></div>
+            </form>
+            <div class="lbl">Events (ground truth, not used by the detector)</div>
+            <div class="grid-btns">
+              <button class="btn" data-ev="leak_on" data-tap="L1">Open L1</button>
+              <button class="btn" data-ev="leak_on" data-tap="L2">Open L2</button>
+              <button class="btn" data-ev="leak_on" data-tap="L3">Open L3</button>
+              <button class="btn" data-ev="leak_off">Tap closed</button>
+              <button class="btn" data-ev="pump_on">Pump on</button>
+              <button class="btn" data-ev="pump_off">Pump off</button>
+              <button class="btn" data-ev="valve_change">Valve moved</button>
+              <button class="btn" id="b-reset">Re-baseline</button>
+            </div>
+            <a class="btn" href="api/export.csv" download>Export CSV</a>
+            <p class="note" id="live-msg"></p>
+          </div>
+        </div>
+        <div class="pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Where</span><span class="idx">per tap</span></div>
+          <div id="d-loc" class="loc"></div>
+          <p class="note">The promise is the branch (A or B). L2 and L3 share branch B and one sensor, so they split B's probability.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== SCOREBOARD ============================== -->
+  <section id="tab-score" class="tab" hidden>
+    <p class="banner" id="score-banner"></p>
+    <div class="tiles" id="score-tiles"></div>
+    <div class="two">
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Per tap</span></div><table class="tbl" id="score-tap"></table></div>
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Per leak size</span></div><table class="tbl" id="score-size"></table></div>
+    </div>
+    <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Runs</span><span class="idx" id="score-n"></span></div>
+      <div class="scroll"><table class="tbl" id="score-runs"></table></div></div>
+  </section>
+
+  <!-- ============================== FARM ============================== -->
+  <section id="tab-farm" class="tab" hidden>
+    <p class="banner sim">Simulation: a virtual 50 ha drip farm (WNTR), 2,070 simulated leaks. Not measured.</p>
+    <div class="pn frame-pn">
+      <div class="pn-h"><span class="sq"></span><span class="lbl">Farm leak explorer</span><a class="idx" href="farm-explorer/index.html" target="_blank" rel="noopener">open full screen ↗</a></div>
+      <iframe id="farm-frame" title="Farm leak explorer" loading="lazy"></iframe>
+    </div>
+    <div class="pn">
+      <div class="pn-h"><span class="sq"></span><span class="lbl">Digital twin viewer</span></div>
+      <p class="note">The team's digital twin (farm, M1 GNN, M2 PCA, M3 time reversal, fusion) has its own viewer.</p>
+      <a class="btn" href="twin/hydropin_viewer.html" target="_blank" rel="noopener">Open the twin viewer ↗</a>
+    </div>
+  </section>
+
+  <!-- ============================== M3 ============================== -->
+  <section id="tab-m3" class="tab" hidden>
+    <p class="banner sim" id="m3-banner">Simulation: M3 pressure-wave method on a 150 m PE pipe. Not measured on the bench.</p>
+    <div class="bar pn"><select id="m3-pick" aria-label="M3 case"></select><span class="note" id="m3-story"></span></div>
+    <div class="two">
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Pressure at the sensor</span><span class="idx">head, m</span></div><div class="chart" id="m3-trace"></div></div>
+      <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Time reversal: energy along the pipe</span><span class="idx">peak = leak</span></div><div class="chart" id="m3-tr"></div></div>
+    </div>
+    <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Estimates</span></div><table class="tbl" id="m3-est"></table></div>
+  </section>
+
+  <!-- ============================== WHAT'S REAL ============================== -->
+  <section id="tab-real" class="tab" hidden>
+    <div class="pn">
+      <div class="pn-h"><span class="sq"></span><span class="lbl">Measured vs simulated</span></div>
+      <table class="tbl real">
+        <thead><tr><th>Part</th><th>Status</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Bench readings (F0, PT1, PT2)</td><td><span class="pill ok">measured</span></td><td>Live mode and replays marked "bench": ESP32 + ADS1115 on the real bench.</td></tr>
+          <tr><td>Flow + M2 detection, fusion</td><td><span class="pill ok">runs on real data</span></td><td>The same detector code runs live, in scoring and in the replay export. It never reads labels or events.</td></tr>
+          <tr><td>Scoreboard</td><td><span class="pill" id="real-score">–</span></td><td>Scored only on runs the detector was not tuned on. Until the campaign is exported, the scoreboard is from the bench simulator and says so.</td></tr>
+          <tr><td>Replays marked "simulation"</td><td><span class="pill sim">simulation</span></td><td>simulator/bench_rev1.py: starter physics, to be replaced by recorded runs.</td></tr>
+          <tr><td>Virtual farm (50 ha)</td><td><span class="pill sim">simulation</span></td><td>WNTR model, assumed parameters listed in the report; leaks and sensor noise simulated.</td></tr>
+          <tr><td>M3 pressure wave + time reversal</td><td><span class="pill sim">simulation</span></td><td>The bench cannot sample at kHz or close a valve in 25 ms; team decision 21 Nov.</td></tr>
+          <tr><td>M1 GNN</td><td><span class="pill sim">simulation</span></td><td>Trained and tested on the simulated farm.</td></tr>
+          <tr><td>Drone dispatch</td><td><span class="pill sim">simulation</span></td><td>Rule-based waypoints; real flights are next steps.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -35,6 +35,35 @@ python -m pytest -q
 The simulator also emits a dark Plotly report:
 `data/raw/<scenario>_seed<seed>.html`.
 
+## Bench rev 1 demo (F0 + PT1 + PT2, taps L1-L3)
+
+The bench as built has one flow meter (F0) and two pressure sensors (PT1 on branch A, PT2 on
+branch B). This chain runs next to the 4-flow pieces above without changing them:
+
+```powershell
+# backend + static dashboard (http://localhost:8000): live mode, replays, scoreboard, farm, M3
+uvicorn backend.main:app
+$env:HYDROPIN_MQTT="1"; uvicorn backend.main:app        # with the broker / real ESP32
+
+# no bench at hand: stream a simulated run into the backend (scenarios: --list)
+python -m simulator.bench_rev1 --scenario leak_L2 --realtime --post http://localhost:8000
+python -m simulator.bench_rev1 --scenario baseline --realtime --publish       # over MQTT
+
+# replays + scoreboard for the static site (GitHub Pages)
+python -m tools.export_replays --sim                    # simulated, labelled "simulation"
+python -m tools.export_replays --db data/hydropin.db    # the recorded bench campaign
+```
+
+- `detection/bench_detector.py`: quality gate -> pump states -> `flow` + `m2` -> log-odds fusion ->
+  `HEALTHY | WATCH | LEAK` (+ `PUMP_OFF`, `SETTLING`, `LEARNING`, `OFFLINE`), branch A/B, per-tap
+  probabilities, leak size, litres lost. Same code live, in scoring and in the replay export; it
+  never reads labels or events. Thresholds: `BenchConfig` (or `data/bench_detector.json`).
+- Campaign in the dashboard: **Start run** (label, opening, measured leak, blind) -> press the event
+  buttons when you open/close a tap, move a valve or switch the pump -> **Re-baseline** after any
+  valve change -> **Stop run**. Each run is then a replay: `GET /api/runs/{id}/replay`.
+- GitHub Pages: `.github/workflows/pages.yml` publishes `dashboard/` (+ the farm explorer and the
+  twin viewer) on every push to `main`. Pages has replay mode only; live mode needs the laptop.
+
 ## Real bench data
 
 ```powershell
@@ -63,11 +92,15 @@ flag, so the validator and calibration fitter can run on exported runs too.
 - `hydropin/` shared Python: config, units, message parsing
 - `simulator/` digital twin `hydropin_sim/` (physics, sensors, M1/M2/M3, prototype bench; see simulator/README.md)
   + bench data generator `sim.py` / `scenarios.py` (scenarios, quantization, dropout)
-- `detection/` explainable M0 detector (normalized shares + CUSUM) and evaluation
+  + rev 1 bench simulator `bench_rev1.py` (F0 + PT1 + PT2, taps L1-L3, stress and fault scenarios)
+- `detection/` explainable M0 detector (normalized shares + CUSUM) and evaluation;
+  rev 1 bench detector `bench_detector.py` and replay/scoring `replay.py`
 - `ml/` features, training, prediction (scikit-learn)
-- `backend/` FastAPI + SQLite + MQTT listener + REST/WebSocket
-- `dashboard/` live Streamlit dashboard
-- `tools/` real-data validator, onset labeller, calibration fitter
+- `backend/` FastAPI + SQLite + MQTT listener + REST/WebSocket; serves the static dashboard at `/`
+- `dashboard/` static dashboard (`index.html`, live + replay, no build step; published on Pages),
+  its data (`replays/`, `scoreboard*.json`, `farm/`, `m3/`) and the older Streamlit `app.py`
+- `farm/`, `m3/` virtual farm + leak dataset, M3 pressure-wave method (simulation; see their READMEs)
+- `tools/` real-data validator, onset labeller, calibration fitter, replay/scoreboard export
 - `data/` runs, database, calibration notes
 - `docs/` wiring, test protocol, research + plan
 - `models/` fitted baseline and trained model (generated)

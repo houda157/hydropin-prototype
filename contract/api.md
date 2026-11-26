@@ -15,19 +15,51 @@ Base URL: `http://localhost:8000` (uvicorn `backend.main:app`).
 | GET | `/api/export.csv` | CSV export with calibrated values, quality flags, and raw pulses/ADC |
 | WS | `/ws/live` | pushes new readings + latest alert every 0.5 s |
 
-**Planned for the demo (Role 2, not implemented yet):**
+**Bench rev 1 (F0 + PT1 + PT2), detector `detection/bench_detector.py`:**
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/state` | latest processed frame (below) |
-| POST / GET | `/api/events` | record / list `leak_on, leak_off, valve_change, pump_on, pump_off` (see `labels.md`) |
-| POST | `/api/baseline/reset` | re-learn the healthy baseline (after any valve change) |
+| GET | `/api/state` | `{"state", "frame"}`: latest processed frame; `OFFLINE` when no message for 3 s |
+| GET | `/api/frames?since_id=&limit=&run_id=` | processed frames (ascending); each has an `id` |
+| POST | `/api/events` | `{"type", "tap"?, "ts"?, "notes"?}`; type in `leak_on, leak_off, valve_change, pump_on, pump_off`, tap in `L1..L3`; attached to the active run. A `leak_on` also sets the run's onset if not set |
+| GET | `/api/events?run_id=` | events (newest first, or one run's in time order) |
+| POST | `/api/baseline/reset` | re-learn the healthy baseline (after any valve change): SETTLING -> LEARNING -> HEALTHY |
+| POST | `/api/runs` | also takes `opening`, `measured_leak_lpm`, `blind` (run metadata, `labels.md`) |
+| POST | `/api/runs/{id}/meta` | fill in metadata later, e.g. the label of a blind run |
+| GET | `/api/runs/{id}/replay` | one recorded run in the replay format below |
+| WS | `/ws` | `{"type": "frames" \| "tick", "frames": [...], "state"}` every 0.5 s (last 240 frames on connect) |
+| GET | `/` | static dashboard (`dashboard/index.html`); `/farm-explorer/`, `/twin/` simulation viewers |
 
-Processed frame (what the dashboard shows; pushed on the WebSocket and stored for replays):
-`ts, run_id, pt1_bar, pt2_bar, dp_bar (PT1 − PT2), flow_lpm, flow_base_lpm,
-state (PUMP_OFF | SETTLING | LEARNING | HEALTHY | WATCH | LEAK | OFFLINE), p_leak,
-methods {flow, m2: {score, quality, excluded}}, faults [], branch ("A" | "B" | null),
-loc {L1, L2, L3}, leak_lpm, lost_l`.
+### Processed frame
+
+What the dashboard shows; pushed on `/ws`, stored in the `frames` table, the unit of a replay.
+
+| Field | Meaning |
+|---|---|
+| `ts`, `device`, `seq`, `run_id` | from the message; `run_id` = active run or null |
+| `pt1_bar`, `pt2_bar`, `dp_bar` | PT1 (branch A), PT2 (branch B), PT1 − PT2 |
+| `flow_lpm`, `flow_base_lpm` | F0 and its learned baseline (null until learned) |
+| `state` | `PUMP_OFF \| SETTLING \| LEARNING \| HEALTHY \| WATCH \| LEAK` (`OFFLINE` from `/api/state` and `/ws`) |
+| `p_leak` | fused probability, 0..1 |
+| `methods` | `{"flow": {...}, "m2": {...}}`, each `{"score" 0..1, "z", "quality" 0/1, "excluded"}` |
+| `faults` | e.g. `PT1_unplugged`, `PT2_unplugged`, `PT1_stuck`, `PT2_out_of_range`, `PT1_suspect` (moving alone), `data_gap`, `PT2_missing` |
+| `branch` | `"A"`, `"B"` or null (only in WATCH/LEAK, and only when M2 passes the gate) |
+| `loc` | `{"L1", "L2", "L3"}` probabilities; L2 and L3 share branch B's |
+| `leak_lpm`, `lost_l` | F0 above baseline (WATCH/LEAK), litres lost while in LEAK |
+
+### Replay file (`dashboard/replays/<id>.json`, `GET /api/runs/{id}/replay`)
+
+```json
+{"version": "1.0", "id": "bench_run_12", "simulation": false, "source": "bench rev 1",
+ "label": "leak_L1", "meta": {"opening": "0.5 mm cap", "measured_leak_lpm": 0.31, "blind": 0, "notes": "..."},
+ "events": [{"t_s": 80.0, "type": "leak_on", "tap": "L1"}],
+ "frames": [{"t_s": 0.0, "...": "processed frame fields"}]}
+```
+
+`dashboard/replays/index.json` lists them (`id, kind (sim|bench), simulation, label, opening, detected, delay_s, branch, false_alarm, file`).
+`dashboard/scoreboard.json` (bench) / `scoreboard_sim.json` (simulation): `summary` (detection rate, WATCH-or-LEAK
+rate, branch accuracy, median delay, false-alarm runs), `per_tap`, `per_opening`, `runs`. Built by
+`python -m tools.export_replays`; scoring uses the events, never the detector.
 
 The export includes `dropout`, `ripple`, `clipped`, `raw_flow_*_pulses`, and
 `raw_pressure_adc`, so `tools.validate_dataset` and `tools.calibrate` can run

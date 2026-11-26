@@ -24,7 +24,7 @@ meters: what the detector can promise is the **branch** (A or B); L2 vs L3 is a 
 
 Run metadata (with the label): `opening` (e.g. `small`, `large`, cap size), `measured_leak_lpm`
 (cup + stopwatch), `blind` (true for the blind test: label filled in after), `notes`.
-Storage and the `/api/events` endpoint: see `api.md` (planned).
+Storage and the `/api/events` endpoint: see `api.md`. The dashboard's event buttons post them.
 
 Rules:
 

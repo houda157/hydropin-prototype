@@ -16,6 +16,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from detection.baseline import Baseline
 from hydropin import config
@@ -23,6 +24,7 @@ from hydropin.messages import MessageError, parse_message
 
 from . import storage
 from .api import router
+from .bench_live import BenchLive
 from .ingest import ingest_message
 from .live_detect import LiveDetector
 
@@ -85,6 +87,7 @@ class MQTTListener:
                 db_path=self.app.state.db_path,
                 detector=self.app.state.detector,
                 detector_lock=self.app.state.detector_lock,
+                bench=self.app.state.bench,
             )
             self.received += 1
             self.app.state.mqtt_received = self.received
@@ -99,6 +102,8 @@ def create_app(
     mqtt_host: str | None = None,
     mqtt_port: int | None = None,
     notify: bool | None = None,
+    bench: bool = True,
+    static_dir: str | Path | None = Path(__file__).resolve().parents[1] / "dashboard",
 ) -> FastAPI:
     db = storage.init_db(db_path)
     app = FastAPI(title="hydropin prototype", version="0.2.0")
@@ -112,6 +117,8 @@ def create_app(
         baseline = Baseline.load(baseline_path)
     app.state.detector = LiveDetector(baseline) if baseline is not None else None
     app.state.baseline = baseline
+    # rev 1 bench detector: processed frames, /api/state, /ws (Telegram via the same notify switch)
+    app.state.bench = BenchLive(send_notifications=app.state.notify) if bench else None
 
     app.add_middleware(
         CORSMiddleware,
@@ -120,6 +127,14 @@ def create_app(
         allow_headers=["*"],
     )
     app.include_router(router)
+    # static dashboard at / (mounted last so the API routes win), with the two simulation viewers
+    # at the same paths the GitHub Pages site uses
+    root = Path(__file__).resolve().parents[1]
+    if static_dir and Path(static_dir).is_dir() and (Path(static_dir) / "index.html").exists():
+        for url, folder in (("/farm-explorer", root / "farm" / "explorer"), ("/twin", root / "simulator" / "demo")):
+            if folder.is_dir():
+                app.mount(url, StaticFiles(directory=str(folder), html=True), name=url.strip("/"))
+        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="dashboard")
 
     listener = (
         MQTTListener(app, mqtt_host or config.MQTT_HOST, int(mqtt_port or config.MQTT_PORT))

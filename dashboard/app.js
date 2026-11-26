@@ -1,0 +1,407 @@
+// HydroPin dashboard: live mode (WebSocket from the laptop backend) and replay mode (recorded runs,
+// works on GitHub Pages). No build step, no external libraries; charts are plain SVG.
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const fmt = (v, d = 2, unit = "") => (v === null || v === undefined || Number.isNaN(v)) ? "–" : `${Number(v).toFixed(d)}${unit}`;
+const getJSON = (url) => fetch(url, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+const TAP_BRANCH = { L1: "A", L2: "B", L3: "B" };
+
+// ------------------------------------------------------------------ SVG line chart
+function lineChart(el, { series, x0, x1, yMin, yMax, hlines = [], vlines = [], xlabel = "", yfmt = (v) => v.toFixed(2), legend = true }) {
+  const w = el.clientWidth || 600, h = el.clientHeight || 180;
+  const m = { l: 44, r: 10, t: legend ? 18 : 8, b: 22 };
+  const pts = series.flatMap((s) => s.y.filter((v) => v !== null && Number.isFinite(v)));
+  let lo = yMin ?? Math.min(...pts), hi = yMax ?? Math.max(...pts);
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) { lo = 0; hi = 1; }
+  if (hi - lo < 1e-9) { lo -= 0.05; hi += 0.05; }
+  const pad = (yMin === undefined || yMax === undefined) ? (hi - lo) * 0.08 : 0;
+  if (yMin === undefined) lo -= pad;
+  if (yMax === undefined) hi += pad;
+  const X = (x) => m.l + (x - x0) / Math.max(1e-9, x1 - x0) * (w - m.l - m.r);
+  const Y = (y) => m.t + (1 - (y - lo) / (hi - lo)) * (h - m.t - m.b);
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const add = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; svg.appendChild(e); return e; };
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4;
+    add("line", { x1: m.l, x2: w - m.r, y1: Y(v), y2: Y(v), stroke: css("--grid"), "stroke-width": 1 });
+    add("text", { x: m.l - 6, y: Y(v) + 3, "text-anchor": "end" }, yfmt(v));
+  }
+  const xt = niceStep((x1 - x0) / 6);
+  for (let v = Math.ceil(x0 / xt) * xt; v <= x1 + 1e-9; v += xt) add("text", { x: X(v), y: h - 6, "text-anchor": "middle" }, `${+v.toFixed(3)}${xlabel}`);
+  for (const hl of hlines) add("line", { x1: m.l, x2: w - m.r, y1: Y(hl.y), y2: Y(hl.y), stroke: hl.color || css("--muted"), "stroke-dasharray": "4 4", "stroke-width": 1 });
+  for (const vl of vlines) {
+    if (vl.x < x0 || vl.x > x1) continue;
+    add("line", { x1: X(vl.x), x2: X(vl.x), y1: m.t, y2: h - m.b, stroke: vl.color || css("--accent"), "stroke-width": 1, "stroke-dasharray": vl.dash || "" });
+    if (vl.label) add("text", { x: X(vl.x) + 4, y: m.t + 10 }, vl.label);
+  }
+  series.forEach((s) => {
+    let d = "", pen = false;
+    for (let i = 0; i < s.x.length; i++) {
+      const y = s.y[i];
+      if (y === null || !Number.isFinite(y) || s.x[i] < x0 || s.x[i] > x1) { pen = false; continue; }
+      d += `${pen ? "L" : "M"}${X(s.x[i]).toFixed(1)},${Y(Math.min(hi, Math.max(lo, y))).toFixed(1)}`;
+      pen = true;
+    }
+    add("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 1.6, "stroke-dasharray": s.dash || "", "stroke-linejoin": "round" });
+  });
+  if (legend) {
+    let lx = m.l;
+    series.forEach((s) => {
+      add("line", { x1: lx, x2: lx + 12, y1: 7, y2: 7, stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dash || "" });
+      const t = add("text", { x: lx + 16, y: 10 }, s.label);
+      lx += 26 + s.label.length * 6.2;
+    });
+  }
+  el.replaceChildren(svg);
+}
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(Math.max(raw, 1e-9)));
+  const n = raw / p;
+  return (n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10) * p;
+}
+
+// ------------------------------------------------------------------ bench schematic
+const TAP_POS = { L1: [300, 58], L2: [260, 152], L3: [440, 152] };
+function drawSchematic() {
+  const s = $("schematic");
+  s.innerHTML = `
+    <g fill="none" stroke="var(--pipe)" stroke-width="3" stroke-linecap="round">
+      <path d="M30 105 H150"/><path d="M150 105 V58 H560 V105"/><path d="M150 105 V152 H560 V105"/><path d="M560 105 H610"/>
+    </g>
+    <g font-family="var(--font-mono)">
+      <rect x="18" y="88" width="36" height="34" rx="4" fill="var(--panel-2)" stroke="var(--pipe)" stroke-width="1.5"/>
+      <text x="36" y="109" text-anchor="middle" style="fill:var(--ink);font-weight:600">PUMP</text>
+      <circle cx="100" cy="105" r="13" fill="var(--panel-2)" stroke="var(--s1)" stroke-width="2"/>
+      <text x="100" y="109" text-anchor="middle" style="fill:var(--ink);font-weight:600">F0</text>
+      <text x="100" y="135" text-anchor="middle" id="sv-f">–</text>
+      <text x="190" y="48">BRANCH A</text><text x="190" y="176">BRANCH B</text>
+      <circle cx="380" cy="58" r="13" fill="var(--panel-2)" stroke="var(--s1)" stroke-width="2"/>
+      <text x="380" y="62" text-anchor="middle" style="fill:var(--ink);font-weight:600">PT1</text>
+      <text x="380" y="88" text-anchor="middle" id="sv-p1">–</text>
+      <circle cx="350" cy="152" r="13" fill="var(--panel-2)" stroke="var(--s2)" stroke-width="2"/>
+      <text x="350" y="156" text-anchor="middle" style="fill:var(--ink);font-weight:600">PT2</text>
+      <text x="350" y="130" text-anchor="middle" id="sv-p2">–</text>
+      <text x="600" y="95" text-anchor="end">bucket</text>
+      ${Object.entries(TAP_POS).map(([k, [x, y]]) => `
+        <g id="tap-${k}"><circle cx="${x}" cy="${y}" r="16" fill="var(--accent)" opacity="0" class="halo"/>
+        <rect x="${x - 7}" y="${y - 7}" width="14" height="14" transform="rotate(45 ${x} ${y})" fill="var(--panel-2)" stroke="var(--pipe)" stroke-width="1.5"/>
+        <text x="${x}" y="${y + (y < 100 ? -16 : 28)}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${k}</text></g>`).join("")}
+    </g>`;
+}
+function updateSchematic(fr) {
+  $("sv-f").textContent = fr ? `${fmt(fr.flow_lpm, 2)} L/min` : "–";
+  $("sv-p1").textContent = fr ? `${fmt(fr.pt1_bar, 3)} bar` : "–";
+  $("sv-p2").textContent = fr ? `${fmt(fr.pt2_bar, 3)} bar` : "–";
+  for (const k of Object.keys(TAP_POS)) {
+    const v = fr && fr.loc ? fr.loc[k] || 0 : 0;
+    document.querySelector(`#tap-${k} .halo`).setAttribute("opacity", (0.85 * v).toFixed(2));
+  }
+}
+
+// ------------------------------------------------------------------ bench view
+const bench = { frames: [], events: [], mode: null, replay: null, idx: 0, playing: false, timer: null, ws: null, runInfo: "" };
+const stateClass = (s) => s === "LEAK" ? "st-leak" : s === "WATCH" ? "st-watch" : s === "HEALTHY" ? "st-ok" : "st-idle";
+
+function renderFrame(fr) {
+  const st = fr ? fr.state : "–";
+  for (const id of ["h-state"]) { $(id).textContent = st; $(id).className = `cellv dot ${stateClass(st)}`; }
+  $("d-state").textContent = st;
+  $("d-state").style.color = st === "LEAK" ? "var(--accent)" : st === "WATCH" ? "var(--warn)" : "";
+  const p = fr ? fr.p_leak : null;
+  $("h-p").textContent = fmt(p, 2);
+  $("d-p").textContent = fmt(p, 3);
+  const bar = $("d-pbar");
+  bar.style.width = `${Math.round(100 * (p || 0))}%`;
+  bar.style.background = p > 0.9 ? "var(--accent)" : p > 0.5 ? "var(--warn)" : "var(--ok)";
+  const br = fr && fr.branch ? `Branch ${fr.branch}` : "–";
+  $("h-branch").textContent = br; $("d-branch").textContent = fr && fr.branch ? fr.branch : "–";
+  $("d-leak").textContent = fr && fr.leak_lpm ? `${fmt(fr.leak_lpm, 2)} L/min` : "–";
+  $("d-lost").textContent = fr ? `${fmt(fr.lost_l, 2)} L` : "–";
+  $("d-fbase").textContent = fr && fr.flow_base_lpm !== null ? `${fmt(fr.flow_base_lpm, 2)} L/min` : "–";
+  $("d-dp").textContent = fr && fr.dp_bar !== null ? `${fmt(fr.dp_bar, 3)} bar` : "–";
+  const tb = $("d-methods").tBodies[0];
+  tb.innerHTML = "";
+  if (fr) for (const [name, m] of Object.entries(fr.methods)) {
+    const tr = tb.insertRow();
+    tr.innerHTML = `<td>${name === "m2" ? "M2" : "Flow"}</td><td>z ${fmt(m.z, 1)}</td><td>${m.score === null ? "–" : fmt(m.score, 2)}</td>
+      <td>${m.excluded ? '<span class="pill no">excluded</span>' : '<span class="pill ok">ok</span>'}</td>`;
+  }
+  const faults = fr ? fr.faults || [] : [];
+  $("d-faults").innerHTML = faults.length ? faults.map((f) => `<span class="chip">${f}</span>`).join("") : '<span class="note">none</span>';
+  $("d-loc").innerHTML = ["L1", "L2", "L3"].map((k) => {
+    const v = fr && fr.loc ? fr.loc[k] || 0 : 0;
+    return `<div class="r"><span>${k}</span><div class="t"><div style="width:${Math.round(100 * v)}%"></div></div><small>${Math.round(100 * v)}%</small></div>`;
+  }).join("");
+  updateSchematic(fr);
+}
+
+function renderCharts(frames, x0, x1, tOf) {
+  const x = frames.map(tOf);
+  const ev = bench.events.map((e) => ({ x: e.t_s, label: e.type + (e.tap ? ` ${e.tap}` : ""), color: css("--accent"), dash: "3 3" }));
+  lineChart($("c-p"), { x0, x1, xlabel: " s", yfmt: (v) => v.toFixed(2), vlines: ev, series: [
+    { label: "PT1 (A)", x, y: frames.map((f) => f.pt1_bar), color: css("--s1") },
+    { label: "PT2 (B)", x, y: frames.map((f) => f.pt2_bar), color: css("--s2") }] });
+  lineChart($("c-f"), { x0, x1, xlabel: " s", vlines: ev, series: [
+    { label: "F0", x, y: frames.map((f) => f.flow_lpm), color: css("--s1") },
+    { label: "baseline", x, y: frames.map((f) => f.flow_base_lpm), color: css("--base"), dash: "5 4" }] });
+  lineChart($("c-pl"), { x0, x1, yMin: 0, yMax: 1, xlabel: " s", yfmt: (v) => v.toFixed(1), vlines: ev,
+    hlines: [{ y: 0.5, color: css("--warn") }, { y: 0.9, color: css("--accent") }],
+    series: [{ label: "P(leak)", x, y: frames.map((f) => f.p_leak), color: css("--accent") }] });
+}
+
+function setSource(kind) {
+  const el = $("h-source");
+  el.textContent = kind === "sim" ? "SIMULATION" : kind === "bench" ? "MEASURED (bench)" : kind === "live" ? "LIVE (bench)" : "–";
+  el.style.color = kind === "sim" ? "var(--accent)" : kind ? "var(--ok)" : "";
+}
+
+// --- replay
+async function loadReplayIndex() {
+  try {
+    const idx = await getJSON("replays/index.json");
+    const pick = $("replay-pick");
+    const runs = idx.runs.slice().sort((a, b) => (a.kind === b.kind ? a.id.localeCompare(b.id) : a.kind === "bench" ? -1 : 1));
+    pick.innerHTML = runs.map((r) => `<option value="${r.file}">${r.simulation ? "[sim] " : "[bench] "}${r.label}${r.opening ? ` · ${r.opening}` : ""} · ${r.id}</option>`).join("");
+    const first = runs.find((r) => r.label === "leak_L1" && r.opening === "medium") || runs[0];
+    if (first) pick.value = first.file;
+    return runs.length > 0;
+  } catch (e) {
+    $("replay-pick").innerHTML = "<option>no replays found</option>";
+    return false;
+  }
+}
+async function openReplay(file) {
+  stopPlay();
+  const rep = await getJSON(`replays/${file}`);
+  bench.replay = rep; bench.events = rep.events; bench.idx = 0;
+  setSource(rep.simulation ? "sim" : "bench");
+  const b = $("bench-banner");
+  b.hidden = false;
+  b.className = `banner ${rep.simulation ? "is-sim" : "is-real"}`;
+  b.textContent = rep.simulation
+    ? `Simulation (${rep.source}): ${rep.meta.notes || ""} Detector output is real code; the readings are simulated.`
+    : `Recorded on the bench: ${rep.meta.notes || rep.id}${rep.meta.measured_leak_lpm ? `, measured leak ${rep.meta.measured_leak_lpm} L/min` : ""}.`;
+  $("run-info").innerHTML = `<b>${rep.label}</b>${rep.meta.opening ? ` · ${rep.meta.opening}` : ""}<br>${rep.events.map((e) => `${e.type}${e.tap ? " " + e.tap : ""} @ ${e.t_s} s`).join("<br>") || "no events"}`;
+  const sc = $("rp-scrub"); sc.max = rep.frames.length - 1; sc.value = rep.frames.length - 1;
+  seek(rep.frames.length - 1);
+}
+function seek(i) {
+  const rep = bench.replay; if (!rep) return;
+  bench.idx = Math.max(0, Math.min(rep.frames.length - 1, i));
+  const shown = rep.frames.slice(0, bench.idx + 1);
+  renderFrame(shown[shown.length - 1]);
+  renderCharts(shown, 0, rep.frames[rep.frames.length - 1].t_s, (f) => f.t_s);
+  $("rp-scrub").value = bench.idx;
+  $("rp-time").textContent = `${shown[shown.length - 1].t_s.toFixed(1)} s`;
+}
+function stopPlay() { bench.playing = false; clearInterval(bench.timer); $("rp-play").textContent = "Play"; }
+function togglePlay() {
+  if (bench.playing) return stopPlay();
+  const rep = bench.replay; if (!rep) return;
+  if (bench.idx >= rep.frames.length - 1) bench.idx = 0;
+  bench.playing = true; $("rp-play").textContent = "Pause";
+  const tick = 100; // ms
+  bench.timer = setInterval(() => {
+    const speed = +$("rp-speed").value;
+    const tNow = rep.frames[bench.idx].t_s + speed * tick / 1000;
+    let j = bench.idx;
+    while (j < rep.frames.length - 1 && rep.frames[j + 1].t_s <= tNow) j++;
+    if (j === bench.idx && j < rep.frames.length - 1) j++;
+    seek(j);
+    if (j >= rep.frames.length - 1) stopPlay();
+  }, tick);
+}
+
+// --- live
+const LIVE_WINDOW_S = 180;
+const tsSec = (ts) => Date.parse(ts) / 1000;
+function liveRender() {
+  const fr = bench.frames;
+  if (!fr.length) { renderFrame(null); return; }
+  const first = tsSec(fr[0].ts);
+  const t1 = Math.max(tsSec(fr[fr.length - 1].ts), first + 30), t0 = Math.max(first, t1 - LIVE_WINDOW_S);
+  const shown = fr.filter((f) => tsSec(f.ts) >= t0);
+  bench.events = bench.liveEvents.map((e) => ({ ...e, t_s: tsSec(e.ts) - first }));
+  renderFrame(shown[shown.length - 1]);
+  renderCharts(shown, t0 - first, t1 - first, (f) => tsSec(f.ts) - first);
+}
+function startLive() {
+  bench.frames = []; bench.liveEvents = [];
+  setSource("live");
+  $("bench-banner").hidden = false;
+  $("bench-banner").className = "banner is-real";
+  $("bench-banner").textContent = "Live from the bench via the laptop backend (MQTT → detector → WebSocket).";
+  const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
+  bench.ws = ws;
+  ws.onopen = () => { $("live-conn").textContent = "connected"; };
+  ws.onclose = () => { $("live-conn").textContent = "disconnected"; };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.frames && msg.frames.length) {
+      bench.frames.push(...msg.frames);
+      if (bench.frames.length > 4000) bench.frames.splice(0, bench.frames.length - 4000);
+    }
+    $("live-conn").textContent = `connected · ${msg.state}`;
+    if (msg.state === "OFFLINE") { $("h-state").textContent = "OFFLINE"; $("h-state").className = "cellv dot st-idle"; }
+    liveRender();
+    if (msg.state === "OFFLINE") $("d-state").textContent = "OFFLINE";
+  };
+  refreshRuns();
+}
+function stopLive() { if (bench.ws) { bench.ws.onclose = null; bench.ws.close(); bench.ws = null; } }
+async function refreshRuns() {
+  try {
+    const runs = await getJSON("api/runs?limit=1");
+    const r = runs[0];
+    $("run-info").innerHTML = r ? `Run #${r.id} <b>${r.label}</b>${r.opening ? ` · ${r.opening}` : ""} ${r.stopped_ts ? "(stopped)" : "(recording)"}` : "No run yet";
+    if (r && !r.stopped_ts) bench.liveEvents = (await getJSON(`api/events?run_id=${r.id}`)) || [];
+  } catch (e) { /* backend without runs */ }
+}
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || r.status);
+  return j;
+}
+function wireLiveForms() {
+  const msg = (t) => { $("live-msg").textContent = t; };
+  $("f-run").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      const r = await post("api/runs", { label: fd.get("label"), opening: fd.get("opening") || null,
+        measured_leak_lpm: fd.get("measured_leak_lpm") || null, blind: fd.get("blind") === "on", notes: fd.get("notes") });
+      msg(`Run #${r.id} started`); refreshRuns();
+    } catch (err) { msg(`Error: ${err.message}`); }
+  });
+  $("b-stop").addEventListener("click", async () => {
+    try { const runs = await getJSON("api/runs?limit=1"); if (runs[0]) { await post(`api/runs/${runs[0].id}/stop`); msg(`Run #${runs[0].id} stopped`); refreshRuns(); } }
+    catch (err) { msg(`Error: ${err.message}`); }
+  });
+  document.querySelectorAll("[data-ev]").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      const ev = await post("api/events", { type: b.dataset.ev, tap: b.dataset.tap || null });
+      bench.liveEvents.push(ev); msg(`${ev.type}${ev.tap ? " " + ev.tap : ""} recorded`);
+      if (ev.type === "valve_change") msg("Valve moved: press Re-baseline once the flow is steady.");
+    } catch (err) { msg(`Error: ${err.message}`); }
+  }));
+  $("b-reset").addEventListener("click", async () => {
+    try { await post("api/baseline/reset"); msg("Baseline reset: settling, then learning for 30 s."); } catch (err) { msg(`Error: ${err.message}`); }
+  });
+}
+
+async function setMode(mode) {
+  if (bench.mode === mode) return;
+  bench.mode = mode;
+  $("mode-live").setAttribute("aria-pressed", mode === "live");
+  $("mode-replay").setAttribute("aria-pressed", mode === "replay");
+  $("replay-ctl").hidden = mode !== "replay";
+  $("live-ctl").hidden = mode !== "live";
+  $("live-forms").hidden = mode !== "live";
+  if (mode === "live") { stopPlay(); startLive(); }
+  else { stopLive(); const f = $("replay-pick").value; if (f && f.endsWith(".json")) await openReplay(f); }
+}
+
+async function backendAvailable() {
+  if (location.protocol === "file:" || location.hostname.endsWith("github.io")) return false;
+  try { const h = await getJSON("health"); return !!h.ok; } catch (e) { return false; }
+}
+
+// ------------------------------------------------------------------ scoreboard
+async function loadScoreboard() {
+  let board, real = true;
+  try { board = await getJSON("scoreboard.json"); } catch (e) { real = false; }
+  if (!board) { try { board = await getJSON("scoreboard_sim.json"); } catch (e) { $("score-banner").textContent = "No scoreboard exported yet."; return; } }
+  const sim = board.simulation;
+  $("real-score").textContent = sim ? "simulation for now" : "measured";
+  $("real-score").className = `pill ${sim ? "sim" : "ok"}`;
+  const ban = $("score-banner");
+  ban.className = `banner ${sim ? "is-sim" : "is-real"}`;
+  ban.textContent = (sim ? "Simulation: " : "Measured on the bench: ") + board.notes;
+  const s = board.summary;
+  const pct = (v) => v === null ? "–" : `${Math.round(100 * v)}%`;
+  const tiles = [["Leak runs", s.leak_runs], ["Detected (LEAK)", pct(s.detection_rate)], ["WATCH or LEAK", pct(s.watch_or_leak_rate)],
+    ["Right branch", pct(s.branch_accuracy)], ["Median delay", s.median_delay_s === null ? "–" : `${s.median_delay_s} s`],
+    ["False-alarm runs", `${s.false_alarm_runs} / ${s.leak_runs + s.clean_runs}`]];
+  $("score-tiles").innerHTML = tiles.map(([k, v]) => `<div class="tile"><span class="lbl">${k}</span><b>${v}</b></div>`).join("");
+  $("score-tap").innerHTML = `<thead><tr><th>Tap</th><th>Branch</th><th>Runs</th><th>Detected</th><th>Right branch</th></tr></thead><tbody>${
+    Object.entries(board.per_tap).map(([t, d]) => `<tr><td>${t}</td><td>${TAP_BRANCH[t]}</td><td>${d.runs}</td><td>${d.detected}</td><td>${d.branch_ok}</td></tr>`).join("")}</tbody>`;
+  $("score-size").innerHTML = `<thead><tr><th>Size</th><th>Runs</th><th>LEAK</th><th>WATCH or LEAK</th></tr></thead><tbody>${
+    Object.entries(board.per_opening || {}).map(([t, d]) => `<tr><td>${t}</td><td>${d.runs}</td><td>${d.detected}</td><td>${d.watched}</td></tr>`).join("")}</tbody>`;
+  $("score-n").textContent = `${board.runs.length} runs`;
+  $("score-runs").innerHTML = `<thead><tr><th>Run</th><th>Label</th><th>Result</th><th>Delay</th><th>Branch</th><th>Faults</th></tr></thead><tbody>${
+    board.runs.map((r) => {
+      const res = r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>')
+        : r.detected ? '<span class="pill ok">LEAK</span>' : r.watched ? '<span class="pill">WATCH</span>' : '<span class="pill no">missed</span>';
+      return `<tr><td>${r.id}</td><td>${r.label}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${(r.faults || []).join(", ") || "–"}</td></tr>`;
+    }).join("")}</tbody>`;
+}
+
+// ------------------------------------------------------------------ M3
+let m3Index = null;
+async function loadM3() {
+  try { m3Index = await getJSON("m3/index.json"); } catch (e) { $("m3-story").textContent = "M3 data not found."; return; }
+  $("m3-banner").textContent = m3Index.label;
+  $("m3-pick").innerHTML = m3Index.cases.map((c) => `<option value="${c.file}">${c.title}</option>`).join("");
+  $("m3-pick").addEventListener("change", (e) => showM3(e.target.value));
+  showM3(m3Index.cases[0].file);
+}
+async function showM3(file) {
+  const c = await getJSON(`m3/${file}`);
+  $("m3-story").textContent = c.story || "";
+  const s = c.sensor;
+  const t = s.H_m.map((_, i) => s.t0_s + i * s.dt_s);
+  const xs = { series: [{ label: "measured (simulated, with noise)", x: t, y: s.H_m, color: css("--s1"), width: 1.2 },
+    ...(s.model_H_m ? [{ label: "intact-pipe model", x: t, y: s.model_H_m, color: css("--base"), dash: "5 4" }] : [])] };
+  const vl = [];
+  if (c.timing && c.timing.echo_expected_s) vl.push({ x: c.timing.echo_expected_s, label: "leak echo" });
+  lineChart($("m3-trace"), { ...xs, x0: t[0], x1: t[t.length - 1], xlabel: " s", yfmt: (v) => v.toFixed(0), vlines: vl });
+  const trMax = Math.max(...c.tr.energy);
+  const ser = [{ label: "time reversal", x: c.tr.x_m, y: c.tr.energy.map((v) => v / trMax), color: css("--accent") }];
+  if (c.mfp) { const mm = Math.max(...c.mfp.match); ser.push({ label: "matched-field", x: c.mfp.x_m, y: c.mfp.match.map((v) => v / mm), color: css("--s2"), dash: "5 4" }); }
+  lineChart($("m3-tr"), { series: ser, x0: c.tr.x_m[0], x1: c.tr.x_m[c.tr.x_m.length - 1], yMin: 0, yMax: 1.05, xlabel: " m",
+    yfmt: (v) => v.toFixed(1), vlines: [{ x: c.leak.x_true_m, label: "true leak", color: css("--ok") }] });
+  const names = { tr: "Time reversal", mfp: "Matched-field", echo: "Echo timing", cnn: "1D CNN" };
+  $("m3-est").innerHTML = `<thead><tr><th>Method</th><th>Estimate (m)</th><th>Error (m)</th></tr></thead><tbody>${
+    Object.keys(c.estimates_m).map((k) => `<tr><td>${names[k] || k}</td><td>${fmt(c.estimates_m[k], 1)}</td><td>${fmt(c.error_m[k], 2)}</td></tr>`).join("")
+  }<tr><td>True position</td><td>${fmt(c.leak.x_true_m, 1)}</td><td>–</td></tr></tbody>`;
+}
+
+// ------------------------------------------------------------------ tabs + boot
+const loaded = {};
+function showTab(name) {
+  document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
+  document.querySelectorAll(".tab").forEach((s) => { s.hidden = s.id !== `tab-${name}`; });
+  if (!loaded[name]) {
+    loaded[name] = true;
+    if (name === "score") loadScoreboard();
+    if (name === "m3") loadM3();
+    if (name === "farm") $("farm-frame").src = "farm-explorer/index.html";
+  }
+  if (name === "bench" && bench.mode === "replay") seek(bench.idx);
+  if (name === "m3" && m3Index) showM3($("m3-pick").value);
+  try { history.replaceState(null, "", `#${name}`); } catch (e) { /* file:// */ }
+}
+
+async function boot() {
+  drawSchematic();
+  renderFrame(null);
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  $("rp-play").addEventListener("click", togglePlay);
+  $("rp-scrub").addEventListener("input", (e) => { stopPlay(); seek(+e.target.value); });
+  $("replay-pick").addEventListener("change", (e) => openReplay(e.target.value));
+  $("mode-live").addEventListener("click", () => setMode("live"));
+  $("mode-replay").addEventListener("click", () => setMode("replay"));
+  wireLiveForms();
+  const [live, hasReplays] = await Promise.all([backendAvailable(), loadReplayIndex()]);
+  if (!live) { $("mode-live").disabled = true; $("mode-live").title = "Live mode needs the laptop backend (not available on GitHub Pages)"; }
+  const tab = (location.hash || "#bench").slice(1);
+  showTab(["bench", "score", "farm", "m3", "real"].includes(tab) ? tab : "bench");
+  await setMode(live ? "live" : "replay");
+  if (!live && !hasReplays) $("bench-banner").hidden = false, $("bench-banner").textContent = "No replays exported yet: python -m tools.export_replays --sim";
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (bench.mode === "replay") seek(bench.idx); else liveRender(); if (!$("tab-m3").hidden && m3Index) showM3($("m3-pick").value); }, 150); });
+}
+boot();
