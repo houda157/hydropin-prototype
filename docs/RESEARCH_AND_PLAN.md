@@ -319,7 +319,8 @@ This is the concrete path from bench to model, not a promise:
 1. **Calibrate before collecting labels.**
    ```powershell
    python -m tools.calibrate flow --pulses 900 --litres 2.0 --seconds 60
-   python -m tools.calibrate pressure --point 1667:2.0 --point 3333:4.0 --point 5000:6.0
+python -m tools.calibrate pressure --point 0:0 --point 8889:2 --point 17778:4 --point 26667:6
+# PT2: use raw_pressure_b_adc and the -1..1.6 bar gauge points
    ```
    Copy the printed constants into `hydropin/config.py` **and**
    `firmware/include/config.h`; the test suite fails if they drift.
@@ -456,10 +457,15 @@ not by assuming.
 ## 9. Risks and limitations
 
 - **Simulation ≠ reality.** All detector/ML numbers are on simulated data.
-- **No real calibration data yet.** The `*1.5` and `*3` gains are provisional,
-  and the pressure offset is 0 until fitted with a gauge.
-- **Pressure hardware assumption.** 22k/10k divider + 0..5 V sensor = 15 bar
-  full scale; a 0.5..4.5 V sensor needs a non-zero offset.
+- **No real calibration data yet.** The flow gain `1.5` is provisional; the PT1
+  and PT2 pressure fits come from the 0-10 V datasheet ranges and 20k/10k
+  dividers, but still need a gauge check.
+- **Pressure hardware.** PT1 is 0..6 bar on A0, PT2 is -1..1.6 bar on A1, both
+  through 20k/10k (ratio 3.0). A 4-20 mA PT2 variant needs a different input.
+- **Branch-flow mismatch.** The detector/ML expect branch flow shares
+  (L1/L2/L3); rev 1 has branch pressure sensors only, so live localisation is
+  not validated until branch flow sensors are added or the models are retrained
+  on PT1/PT2.
 - **Firmware not compiled.** The C++ is written but PlatformIO is absent; the
   ms timestamp and NTP path have not run on hardware.
 - **QoS 0 on the device, no offline buffering.** MQTT outages drop samples;

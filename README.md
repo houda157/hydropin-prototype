@@ -40,7 +40,7 @@ The simulator also emits a dark Plotly report:
 ```powershell
 # calibrate first (prints the constants to copy into both config files)
 python -m tools.calibrate flow --pulses 900 --litres 2.0 --seconds 60
-python -m tools.calibrate pressure --point 1667:2.0 --point 3333:4.0 --point 5000:6.0
+python -m tools.calibrate pressure --point 0:0 --point 8889:2 --point 17778:4 --point 26667:6
 
 # after collecting runs: validate, fix a missed onset, fit baseline, train
 python -m tools.validate_dataset --dir data/real --strict
@@ -73,11 +73,12 @@ flag, so the validator and calibration fitter can run on exported runs too.
 
 ## Calibration warning
 
-The bench gains `flow * 3/2` and `pressure * 3` are **provisional**. Verify them
-against a measured volume and a pressure gauge before trusting any leak size.
-The pressure divider is **22k series + 10k shunt** (3.2:1); if the sensor idles
-at 0.5 V, fit and set `PRESSURE_OFFSET_BAR`. See `data/calibration.md` and
-`python -m tools.calibrate --help`.
+The flow gain `1.5` is **provisional**; verify it with a measured volume before
+trusting any leak size. The pressure fits use the real rev 1 sensors:
+**PT1 0..6 bar on A0**, **PT2 -1..1.6 bar on A1**, both through
+**20k series + 10k shunt** (ratio 3.0, not 3.2). The bench has one main flow
+sensor, not branch flow sensors, so live branch localisation is not validated
+yet. See `data/calibration.md` and `python -m tools.calibrate --help`.
 
 ## Firmware
 

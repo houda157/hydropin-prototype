@@ -37,21 +37,25 @@ See `contract/message.schema.json`. Example:
     "flow_l1_pulses": 6,
     "flow_l2_pulses": 4,
     "flow_l3_pulses": 8,
-    "pressure_adc": 1667
+    "pressure_adc": 8889,
+    "pressure_b_adc": 0
   },
   "values": {
     "flow_main_lpm": 1.80,
     "flow_l1_lpm": 0.60,
     "flow_l2_lpm": 0.45,
     "flow_l3_lpm": 0.75,
-    "pressure_bar": 2.00
+    "pressure_bar": 2.00,
+    "pressure_b_bar": -1.00
   },
   "quality": {"dropout": false, "ripple": false, "clipped": false}
 }
 ```
 
 Units: flow in L/min (calibrated), pressure in bar (calibrated), raw pulses are
-counts over the 2 s flow window, `pressure_adc` is ADS1115 counts. During the
+counts over the 2 s flow window, `pressure_adc`/`pressure_b_adc` are ADS1115
+counts. `pressure_b_bar` is optional and only sent by rev 1 firmware with PT2.
+During the
 first three samples after boot the flow window is only partially filled, so the
 raw count is over a shorter interval; the calibrated value is still correct for
 that interval.
