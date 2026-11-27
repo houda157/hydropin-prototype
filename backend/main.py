@@ -10,6 +10,7 @@ The MQTT listener is optional: without a broker the REST API still works and
 """
 from __future__ import annotations
 
+import logging
 import os
 import threading
 from contextlib import asynccontextmanager
@@ -29,6 +30,8 @@ from .api import router
 from .bench_live import BenchLive
 from .ingest import ingest_message
 from .live_detect import LiveDetector
+
+log = logging.getLogger("hydropin.mqtt")
 
 try:  # pragma: no cover - paho is installed in the project env
     import paho.mqtt.client as mqtt
@@ -93,8 +96,12 @@ class MQTTListener:
             )
             self.received += 1
             self.app.state.mqtt_received = self.received
-        except (MessageError, ValueError, KeyError):
+        except (MessageError, ValueError, KeyError) as exc:
             self.errors += 1
+            log.warning("MQTT message rejected on %s: %s", getattr(message, "topic", "?"), exc)
+        except Exception:  # noqa: BLE001 - an exception escaping a paho callback kills the loop thread
+            self.errors += 1
+            log.exception("MQTT message failed on %s", getattr(message, "topic", "?"))
 
 
 def create_app(

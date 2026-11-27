@@ -9,7 +9,7 @@ on the real bench (see "Status" at the end).*
 ![Software chain](../figures/software_chain.png)
 
 The ESP32 on the bench reads the two pressure transmitters through an ADS1115 and counts the
-flow meter's pulses. Twice a second it publishes one JSON message on MQTT (`hydropin/bench`,
+flow meter's pulses. Twice a second it publishes one JSON message on MQTT (`hydropin/bench/<device>/telemetry`,
 with an `offline` last-will message so a dead node shows up at once). On the laptop, one Python
 process (FastAPI + paho-mqtt + SQLite) does five things for every message:
 
@@ -118,5 +118,7 @@ permits are next steps.
   a phone, the real scoreboard. The current scoreboard is from 160 simulated runs: medium and
   large leaks 60/60 on the right branch in about 9 s; small leaks (0.15 L/min, about 1.5 flow
   pulses per window) reach LEAK in 6/30 runs and at least WATCH in 25/30, the flow-meter
-  resolution limit; no false alarms. In the fusion, M2 is not allowed to vote against a leak
+  resolution limit; no false alarms. The branch score is partly circular: the simulator and the
+  detector's tap fingerprints come from the same twin assumptions, so it shows the chain works,
+  not that the real bench localises; only the bench campaign can show that. In the fusion, M2 is not allowed to vote against a leak
   just because the pressures did not move (they barely do for a small leak).

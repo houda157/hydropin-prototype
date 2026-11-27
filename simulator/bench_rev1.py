@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import time
 from collections import deque
 from dataclasses import dataclass, replace
@@ -204,6 +205,12 @@ def main(argv=None) -> int:
         return 0
     sc = build(a.scenario, leak_size=a.leak_size, duration_s=a.duration, seed=a.seed)
     start = datetime.now(timezone.utc) if (a.now or a.post or a.publish) and a.realtime else None
+    if start is not None and a.speed != 1.0:
+        # the detector's timers (settle, learn, N samples) run on message time, so a fast-forward
+        # keeps the simulated spacing and the timestamps run ahead of the wall clock
+        print(f"warning: --speed {a.speed:g}: timestamps run ahead of the clock (the live state shows no "
+              "OFFLINE until the clock catches up, and a dashboard run stopped early keeps only the "
+              "messages before Stop). Use --speed 1 to record a run.", file=sys.stderr)
     msgs = [m for m in simulate(sc, a.device, start=start) if m["ts_device_ms"] >= a.start * 1000]
     if a.out:
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)

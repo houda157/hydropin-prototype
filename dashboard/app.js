@@ -8,6 +8,9 @@ const css = (name) => getComputedStyle(document.documentElement).getPropertyValu
 const fmt = (v, d = 2, unit = "") => (v === null || v === undefined || Number.isNaN(v)) ? "–" : `${Number(v).toFixed(d)}${unit}`;
 const getJSON = (url) => fetch(url, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
 const TAP_BRANCH = { L1: "A", L2: "B", L3: "B" };
+// text typed into the dashboard (run label, opening, notes) or read from data files goes into
+// innerHTML only through esc(), so it can never become markup or script
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 // ------------------------------------------------------------------ SVG line chart
 function lineChart(el, { series, x0, x1, yMin, yMax, hlines = [], vlines = [], xlabel = "", yfmt = (v) => v.toFixed(2), legend = true }) {
@@ -146,7 +149,7 @@ function renderFrame(fr) {
       <td>${m.excluded ? '<span class="pill no">excluded</span>' : '<span class="pill ok">ok</span>'}</td>`;
   }
   const faults = fr ? fr.faults || [] : [];
-  $("d-faults").innerHTML = faults.length ? faults.map((f) => `<span class="chip">${f}</span>`).join("") : '<span class="note">none</span>';
+  $("d-faults").innerHTML = faults.length ? faults.map((f) => `<span class="chip">${esc(f)}</span>`).join("") : '<span class="note">none</span>';
   $("d-loc").innerHTML = ["L1", "L2", "L3"].map((k) => {
     const v = fr && fr.loc ? fr.loc[k] || 0 : 0;
     return `<div class="r"><span>${k}</span><div class="t"><div style="width:${Math.round(100 * v)}%"></div></div><small>${Math.round(100 * v)}%</small></div>`;
@@ -190,7 +193,7 @@ async function loadReplayIndex() {
     const idx = await getJSON("replays/index.json");
     const pick = $("replay-pick");
     const runs = idx.runs.slice().sort((a, b) => (a.kind === b.kind ? a.id.localeCompare(b.id) : a.kind === "bench" ? -1 : 1));
-    pick.innerHTML = runs.map((r) => `<option value="${r.file}">${r.simulation ? "[sim] " : "[bench] "}${r.label}${r.opening ? ` · ${r.opening}` : ""} · ${r.id}</option>`).join("");
+    pick.innerHTML = runs.map((r) => `<option value="${esc(r.file)}">${r.simulation ? "[sim] " : "[bench] "}${esc(r.label)}${r.opening ? ` · ${esc(r.opening)}` : ""} · ${esc(r.id)}</option>`).join("");
     const first = runs.find((r) => r.label === "leak_L1" && r.opening === "medium") || runs[0];
     if (first) pick.value = first.file;
     setRealPills(runs.some((r) => r.kind === "bench" && !r.simulation));
@@ -211,7 +214,7 @@ async function openReplay(file) {
   b.textContent = rep.simulation
     ? `Simulation (${rep.source}): ${rep.meta.notes || ""} Detector output is real code; the readings are simulated.`
     : `Recorded on the bench: ${rep.meta.notes || rep.id}${rep.meta.measured_leak_lpm ? `, measured leak ${rep.meta.measured_leak_lpm} L/min` : ""}.`;
-  $("run-info").innerHTML = `<b>${rep.label}</b>${rep.meta.opening ? ` · ${rep.meta.opening}` : ""}<br>${rep.events.map((e) => `${e.type}${e.tap ? " " + e.tap : ""} @ ${e.t_s} s`).join("<br>") || "no events"}`;
+  $("run-info").innerHTML = `<b>${esc(rep.label)}</b>${rep.meta.opening ? ` · ${esc(rep.meta.opening)}` : ""}<br>${rep.events.map((e) => `${esc(e.type)}${e.tap ? " " + esc(e.tap) : ""} @ ${esc(e.t_s)} s`).join("<br>") || "no events"}`;
   const sc = $("rp-scrub"); sc.max = rep.frames.length - 1; sc.value = rep.frames.length - 1;
   seek(rep.frames.length - 1);
 }
@@ -283,7 +286,7 @@ async function refreshRuns() {
   try {
     const runs = await getJSON("api/runs?limit=1");
     const r = runs[0];
-    $("run-info").innerHTML = r ? `Run #${r.id} <b>${r.label}</b>${r.opening ? ` · ${r.opening}` : ""} ${r.stopped_ts ? "(stopped)" : "(recording)"}` : "No run yet";
+    $("run-info").innerHTML = r ? `Run #${esc(r.id)} <b>${esc(r.label)}</b>${r.opening ? ` · ${esc(r.opening)}` : ""} ${r.stopped_ts ? "(stopped)" : "(recording)"}` : "No run yet";
     if (r && !r.stopped_ts) bench.liveEvents = (await getJSON(`api/events?run_id=${r.id}`)) || [];
   } catch (e) { /* backend without runs */ }
 }
@@ -375,14 +378,14 @@ async function loadScoreboard() {
   if (bl.runs) {
     $("score-blind-n").textContent = `${bl.runs} events`;
     $("score-blind").innerHTML = `<thead><tr><th>Run</th><th>Truth</th><th>Result</th><th>Delay</th><th>Branch</th></tr></thead><tbody>${
-      bl.events.map((r) => `<tr><td>${r.id}</td><td>${r.label}</td><td>${r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>') : r.detected ? '<span class="pill ok">LEAK</span>' : '<span class="pill no">missed</span>'}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}</td></tr>`).join("")}</tbody>`;
+      bl.events.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.label)}</td><td>${r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>') : r.detected ? '<span class="pill ok">LEAK</span>' : '<span class="pill no">missed</span>'}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}</td></tr>`).join("")}</tbody>`;
   }
   $("score-n").textContent = `${board.runs.length} runs`;
   $("score-runs").innerHTML = `<thead><tr><th>Run</th><th>Label</th><th>Split</th><th>Result</th><th>Delay</th><th>Branch</th><th>Faults</th></tr></thead><tbody>${
     board.runs.map((r) => {
       const res = r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>')
         : r.detected ? '<span class="pill ok">LEAK</span>' : r.watched ? '<span class="pill">WATCH</span>' : '<span class="pill no">missed</span>';
-      return `<tr><td>${r.id}</td><td>${r.label}</td><td>${r.split || (r.blind ? "blind" : "–")}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${(r.faults || []).join(", ") || "–"}</td></tr>`;
+      return `<tr><td>${esc(r.id)}</td><td>${esc(r.label)}</td><td>${esc(r.split || (r.blind ? "blind" : "–"))}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${esc((r.faults || []).join(", ")) || "–"}</td></tr>`;
     }).join("")}</tbody>`;
 }
 
