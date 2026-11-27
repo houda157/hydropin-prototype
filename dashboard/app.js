@@ -677,7 +677,7 @@ function showTab(name) {
     loaded[name] = true;
     if (name === "score") loadScoreboard();
     if (name === "m3") loadM3();
-    if (name === "farm") loadFarm();
+    if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html?embed"; loadFarm(); }
   }
   if (b3.h) b3.h.pause(name !== "bench" || b3.view !== "3d");   // no WebGL work on hidden tabs
   if (name === "bench" && bench.mode === "replay") seek(bench.idx);
@@ -686,7 +686,20 @@ function showTab(name) {
   try { history.replaceState(null, "", `#${name}`); } catch (e) { /* file:// */ }
 }
 
+// the embedded farm explorer is same-origin: size its frame to its content, so it never scrolls inside
+function fitFarmFrame() {
+  const ff = $("farm-frame");
+  ff.addEventListener("load", () => {
+    try {
+      // body height, not the document's: a document is never shorter than its frame, so it could not shrink
+      const d = ff.contentDocument, fit = () => { ff.style.height = `${Math.ceil(d.body.getBoundingClientRect().height)}px`; };
+      fit(); new ResizeObserver(fit).observe(d.body);
+    } catch (e) { /* not same-origin: keep the CSS height */ }
+  });
+}
+
 async function boot() {
+  fitFarmFrame();
   drawSchematic();
   renderFrame(null);
   $("bv-3d").addEventListener("click", () => setBenchView("3d"));

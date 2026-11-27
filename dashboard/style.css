@@ -196,6 +196,9 @@ input[type=checkbox] { accent-color: var(--primary); }
 .farm-map svg { width: 100%; height: min(64vh, 620px); display: block; }
 .farm-map text { font: 500 15px var(--font-mono); fill: var(--muted); }
 .chk { display: inline-flex; gap: 6px; align-items: center; font-size: 0.84rem; }
+/* the embedded explorer brings its own cards: its panel is flat, on the page background */
+.frame-pn { background: transparent; border: 0; padding: 6px 0 0; }
+.frame-pn iframe { width: 100%; height: min(88vh, 980px); border: 0; background: var(--bg); }
 
 @media (max-width: 1100px) {
   .body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

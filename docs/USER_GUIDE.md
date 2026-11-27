@@ -28,7 +28,7 @@ alerts, the bench-day tools, and the simulations (farm, placement, drone, M3).
 | Interface | Where | What it is for |
 |---|---|---|
 | **Dashboard (website)** | Laptop: http://localhost:8000. Public: GitHub Pages link | The main screen. 5 tabs: Bench, Scoreboard, Farm, M3, What's real |
-| **Farm explorer** | Its own page: `farm/explorer/index.html` (laptop: http://localhost:8000/farm-explorer/) | Interactive virtual farm: leaks, sensor spots, optimiser |
+| **Farm explorer** | Bottom of the Farm tab, or its own page: `farm/explorer/index.html` (laptop: http://localhost:8000/farm-explorer/) | Interactive virtual farm: leaks, sensor spots, optimiser |
 | **Twin viewer** | Its own page: `simulator/demo/hydropin_viewer.html` (laptop: http://localhost:8000/twin/hydropin_viewer.html) | The team's digital twin (farm, M1, M2, M3, fusion) |
 | **Telegram** | Your phone | Messages on LEAK, sensor fault, resolved |
 
@@ -189,8 +189,8 @@ The farm is a virtual 50 ha drip farm: 6 sectors, 2,070 simulated leaks.
    route length, and whether the leaking pipe is on the route.
 5. The small table shows how M2, M1 and Fused score on farm versions they never trained on.
 
-The farm explorer and the twin viewer are no longer embedded in this tab; open them on their own pages
-(see section 1).
+**Further down the tab:** the **farm explorer** (also opens full screen). The twin viewer is not linked
+from the dashboard; open it on its own page (see section 1).
 
 ### M3 (simulation)
 
