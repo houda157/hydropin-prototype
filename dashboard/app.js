@@ -38,7 +38,7 @@ function lineChart(el, { series, x0, x1, yMin, yMax, hlines = [], vlines = [], x
   for (const hl of hlines) add("line", { x1: m.l, x2: w - m.r, y1: Y(hl.y), y2: Y(hl.y), stroke: hl.color || css("--muted"), "stroke-dasharray": "4 4", "stroke-width": 1 });
   for (const vl of vlines) {
     if (vl.x < x0 || vl.x > x1) continue;
-    add("line", { x1: X(vl.x), x2: X(vl.x), y1: m.t, y2: h - m.b, stroke: vl.color || css("--accent"), "stroke-width": 1, "stroke-dasharray": vl.dash || "" });
+    add("line", { x1: X(vl.x), x2: X(vl.x), y1: m.t, y2: h - m.b, stroke: vl.color || css("--muted"), "stroke-width": 1, "stroke-dasharray": vl.dash || "" });
     if (vl.label) add("text", { x: X(vl.x) + 4, y: m.t + 10 }, vl.label);
   }
   series.forEach((s) => {
@@ -76,26 +76,108 @@ function drawSchematic() {
       <path d="M30 105 H150"/><path d="M150 105 V58 H560 V105"/><path d="M150 105 V152 H560 V105"/><path d="M560 105 H610"/>
     </g>
     <g font-family="var(--font-mono)">
-      <rect x="18" y="88" width="36" height="34" rx="4" fill="var(--panel-2)" stroke="var(--pipe)" stroke-width="1.5"/>
-      <text x="36" y="109" text-anchor="middle" style="fill:var(--ink);font-weight:600">PUMP</text>
-      <circle cx="100" cy="105" r="13" fill="var(--panel-2)" stroke="var(--s1)" stroke-width="2"/>
+      <rect x="16" y="88" width="40" height="34" rx="8" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+      <text x="36" y="109" text-anchor="middle" style="fill:var(--ink);font-weight:600">Pump</text>
+      <circle cx="100" cy="105" r="13" fill="var(--panel)" stroke="var(--s1)" stroke-width="2"/>
       <text x="100" y="109" text-anchor="middle" style="fill:var(--ink);font-weight:600">F0</text>
       <text x="100" y="135" text-anchor="middle" id="sv-f">–</text>
-      <text x="190" y="48">BRANCH A</text><text x="190" y="176">BRANCH B</text>
-      <circle cx="380" cy="58" r="13" fill="var(--panel-2)" stroke="var(--s1)" stroke-width="2"/>
+      <text x="190" y="48">Branch A</text><text x="190" y="176">Branch B</text>
+      <circle cx="380" cy="58" r="13" fill="var(--panel)" stroke="var(--s1)" stroke-width="2"/>
       <text x="380" y="62" text-anchor="middle" style="fill:var(--ink);font-weight:600">PT1</text>
       <text x="380" y="88" text-anchor="middle" id="sv-p1">–</text>
-      <circle cx="350" cy="152" r="13" fill="var(--panel-2)" stroke="var(--s2)" stroke-width="2"/>
+      <circle cx="350" cy="152" r="13" fill="var(--panel)" stroke="var(--s2)" stroke-width="2"/>
       <text x="350" y="156" text-anchor="middle" style="fill:var(--ink);font-weight:600">PT2</text>
       <text x="350" y="130" text-anchor="middle" id="sv-p2">–</text>
       <text x="600" y="95" text-anchor="end">bucket</text>
       ${Object.entries(TAP_POS).map(([k, [x, y]]) => `
-        <g id="tap-${k}"><circle cx="${x}" cy="${y}" r="16" fill="var(--accent)" opacity="0" class="halo"/>
-        <rect x="${x - 7}" y="${y - 7}" width="14" height="14" transform="rotate(45 ${x} ${y})" fill="var(--panel-2)" stroke="var(--pipe)" stroke-width="1.5"/>
+        <g id="tap-${k}"><circle cx="${x}" cy="${y}" r="16" fill="var(--leak)" opacity="0" class="halo"/>
+        <rect x="${x - 7}" y="${y - 7}" width="14" height="14" rx="2" transform="rotate(45 ${x} ${y})" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
         <text x="${x}" y="${y + (y < 100 ? -16 : 28)}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${k}</text></g>`).join("")}
     </g>`;
 }
+// ------------------------------------------------------------------ 3D bench
+// Houda's 3D bench (simulator/run/viewer3d) fed with THIS backend's frames: readings, state and the
+// per-tap leak chance come from the frame; the twin (bench3d/board.json, tools/export_bench3d.py) only
+// adds the pipe pressures and the flow split the bench does not measure.
+const b3 = { view: "3d", h: null, bd: null, loading: null, last: null };
+try { b3.view = localStorage.getItem("hp-bench-view") === "2d" ? "2d" : "3d"; } catch (e) { /* storage blocked */ }
+const loadScript = (src) => new Promise((ok, ko) => {
+  const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(`${src} not found`));
+  document.head.appendChild(s);
+});
+function webglOK() {
+  try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
+}
+async function ensure3d() {
+  if (b3.h) return true;
+  if (!b3.loading) b3.loading = (async () => {
+    if (!webglOK()) throw new Error("this browser has no WebGL");
+    const [bd] = await Promise.all([getJSON("bench3d/board.json"), window.HP3D ? null : loadScript("bench3d/hp3d.bundle.js")]);
+    b3.bd = bd;
+    b3.h = window.HP3D.init(bd, $("bench3d"), { colours: () => true, labels: () => true, rotate: () => false },
+      { bg: css("--panel"), floor: css("--panel-2") });
+    b3.h.view("board");          // close-up on the board: the panel is smaller than the twin viewer's
+  })();
+  try { await b3.loading; return true; }
+  catch (e) {
+    b3.loading = null;
+    const m = $("bench3d-msg"); m.hidden = false; m.textContent = `3D view unavailable (${e.message}): showing the 2D drawing.`;
+    return false;
+  }
+}
+const FLOWING = new Set(["SETTLING", "LEARNING", "HEALTHY", "WATCH", "LEAK"]);
+// twin row for a tap whose leak flow is closest to the measured one
+function twinFor(tap, leakLpm) {
+  const S = b3.bd.states;
+  let best = null, err = Infinity;
+  for (const d of b3.bd.D) {
+    const row = S[`${tap}|${d}`];
+    if (row && Math.abs(row[3] - (leakLpm || 0)) < err) { err = Math.abs(row[3] - (leakLpm || 0)); best = row; }
+  }
+  return best || S["none|0"];
+}
+function liveArgs(fr) {
+  if (!fr) return null;
+  const st = fr.state, alarm = st === "LEAK" || st === "WATCH", loc = fr.loc || {};
+  const ranked = ["L1", "L2", "L3"].map((t) => [t, loc[t] || 0]).sort((a, b) => b[1] - a[1]);
+  // a tap is drawn open only when the detector is sure of it; a branch-B split (L2 ≈ L3) stays "suspected"
+  const open = st === "LEAK" && ranked[0][1] >= 0.6 ? ranked[0][0] : null;
+  const taps = {};
+  for (const [t, p] of ranked) taps[t] = { p, open: t === open, suspect: alarm && t !== open && p >= 0.25 };
+  const nN = b3.bd.nodes.length;
+  let twin = b3.bd.states["none|0"];
+  if (open) twin = twinFor(open, fr.leak_lpm);
+  else {
+    const sus = ranked.filter(([t]) => taps[t].suspect).map(([t]) => twinFor(t, fr.leak_lpm));
+    if (sus.length) twin = sus[0].map((_, i) => sus.reduce((a, r) => a + r[i], 0) / sus.length);
+  }
+  if (!FLOWING.has(st)) twin = twin.map((v, i) => (i >= 6 && i < 6 + nN ? 0 : v));   // pump off: no pressure
+  const cls = $("status-card").className;
+  const kind = cls.includes("is-leak") ? "leak" : cls.includes("is-watch") ? "watch" : cls.includes("is-ok") ? "ok" : "idle";
+  return { p1: fr.pt1_bar, p2: fr.pt2_bar, f0: FLOWING.has(st) ? fr.flow_lpm : 0, leakLpm: fr.leak_lpm || 0, twin, taps,
+    setting: b3.bd.setting, status: { kind, text: $("status-title").textContent } };
+}
+function update3d(fr) {
+  b3.last = fr;
+  if (b3.h && b3.view === "3d") b3.h.setLive(liveArgs(fr));
+}
+function benchVisible() { return !$("tab-bench").hidden; }
+async function setBenchView(v) {
+  b3.view = v;
+  try { localStorage.setItem("hp-bench-view", v); } catch (e) { /* storage blocked */ }
+  $("bv-3d").setAttribute("aria-pressed", v === "3d");
+  $("bv-2d").setAttribute("aria-pressed", v === "2d");
+  $("schematic").toggleAttribute("hidden", v === "3d");   // an <svg> has no .hidden property
+  $("bench3d").hidden = v !== "3d";
+  $("b3-home").hidden = $("bench3d-details").hidden = v !== "3d";
+  if (v !== "3d") { if (b3.h) b3.h.pause(true); return; }
+  if (!(await ensure3d())) { $("bv-3d").disabled = true; return setBenchView("2d"); }
+  b3.h.pause(!benchVisible());
+  update3d(b3.last);
+}
+
 function updateSchematic(fr) {
+  update3d(fr);
   $("sv-f").textContent = fr ? `${fmt(fr.flow_lpm, 2)} L/min` : "–";
   $("sv-p1").textContent = fr ? `${fmt(fr.pt1_bar, 3)} bar` : "–";
   $("sv-p2").textContent = fr ? `${fmt(fr.pt2_bar, 3)} bar` : "–";
@@ -108,6 +190,32 @@ function updateSchematic(fr) {
 // ------------------------------------------------------------------ bench view
 const bench = { frames: [], events: [], mode: null, replay: null, idx: 0, playing: false, timer: null, ws: null, runInfo: "" };
 const stateClass = (s) => s === "LEAK" ? "st-leak" : s === "WATCH" ? "st-watch" : s === "HEALTHY" ? "st-ok" : "st-idle";
+
+// Status card at the top of the Bench tab: one sentence, in the farmer app's words.
+const ICONS = {
+  ok: '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.2 9.5"/>',
+  leak: '<path d="M10.3 4 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17v.01"/>',
+  watch: '<path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>',
+  wait: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+  off: '<path d="M12 3.5v8"/><path d="M6.6 7a7.5 7.5 0 1 0 10.8 0"/>',
+};
+function renderStatus(st, fr) {
+  const pct = fr && fr.p_leak !== null ? `${Math.round(100 * fr.p_leak)} %` : "–";
+  const br = fr && fr.branch ? fr.branch : null;
+  const [cls, icon, title, sub] =
+    st === "HEALTHY" ? ["is-ok", "ok", "Everything is fine", "No leak on the bench"]
+    : st === "WATCH" ? ["is-watch", "watch", "Watching a possible leak", br ? `Branch ${br}, P(leak) ${pct}` : `P(leak) ${pct}`]
+    : st === "LEAK" ? ["is-leak", "leak", br ? `Leak in branch ${br}` : "Leak detected",
+      fr && fr.leak_lpm ? `About ${fmt(fr.leak_lpm, 2)} L/min lost` : "Water is escaping"]
+    : st === "PUMP_OFF" ? ["", "off", "Pump off", "Turn the pump on to start watching"]
+    : st === "SETTLING" ? ["", "wait", "Settling", "The water is settling after the pump started"]
+    : st === "LEARNING" ? ["", "wait", "Learning normal", "Learning what a healthy bench looks like"]
+    : ["", "wait", "Waiting for bench data", "Start the ESP32 or the simulator"];
+  $("status-card").className = `status ${cls}`;
+  $("status-ic").innerHTML = ICONS[icon];
+  $("status-title").textContent = title;
+  $("status-sub").textContent = sub;
+}
 
 // "At farm scale": the same share of the flow lost on the reference farm (hidden until the market
 // lead fills dashboard/config.js).
@@ -126,14 +234,15 @@ function farmScaleLine(fr) {
 function renderFrame(fr) {
   const st = fr ? fr.state : "–";
   for (const id of ["h-state"]) { $(id).textContent = st; $(id).className = `cellv dot ${stateClass(st)}`; }
+  renderStatus(st, fr);
   $("d-state").textContent = st;
-  $("d-state").style.color = st === "LEAK" ? "var(--accent)" : st === "WATCH" ? "var(--warn)" : "";
+  $("d-state").style.color = st === "LEAK" ? "var(--leak)" : st === "WATCH" ? "var(--watch)" : st === "HEALTHY" ? "var(--ok)" : "";
   const p = fr ? fr.p_leak : null;
   $("h-p").textContent = fmt(p, 2);
   $("d-p").textContent = fmt(p, 3);
   const bar = $("d-pbar");
   bar.style.width = `${Math.round(100 * (p || 0))}%`;
-  bar.style.background = p > 0.9 ? "var(--accent)" : p > 0.5 ? "var(--warn)" : "var(--ok)";
+  bar.style.background = p > 0.9 ? "var(--leak)" : p > 0.5 ? "var(--watch)" : "var(--ok)";
   const br = fr && fr.branch ? `Branch ${fr.branch}` : "–";
   $("h-branch").textContent = br; $("d-branch").textContent = fr && fr.branch ? fr.branch : "–";
   $("d-leak").textContent = fr && fr.leak_lpm ? `${fmt(fr.leak_lpm, 2)} L/min` : "–";
@@ -159,7 +268,7 @@ function renderFrame(fr) {
 
 function renderCharts(frames, x0, x1, tOf) {
   const x = frames.map(tOf);
-  const ev = bench.events.map((e) => ({ x: e.t_s, label: e.type + (e.tap ? ` ${e.tap}` : ""), color: css("--accent"), dash: "3 3" }));
+  const ev = bench.events.map((e) => ({ x: e.t_s, label: e.type + (e.tap ? ` ${e.tap}` : ""), color: css("--muted"), dash: "3 3" }));
   lineChart($("c-p"), { x0, x1, xlabel: " s", yfmt: (v) => v.toFixed(2), vlines: ev, series: [
     { label: "PT1 (A)", x, y: frames.map((f) => f.pt1_bar), color: css("--s1") },
     { label: "PT2 (B)", x, y: frames.map((f) => f.pt2_bar), color: css("--s2") }] });
@@ -167,14 +276,14 @@ function renderCharts(frames, x0, x1, tOf) {
     { label: "F0", x, y: frames.map((f) => f.flow_lpm), color: css("--s1") },
     { label: "baseline", x, y: frames.map((f) => f.flow_base_lpm), color: css("--base"), dash: "5 4" }] });
   lineChart($("c-pl"), { x0, x1, yMin: 0, yMax: 1, xlabel: " s", yfmt: (v) => v.toFixed(1), vlines: ev,
-    hlines: [{ y: 0.5, color: css("--warn") }, { y: 0.9, color: css("--accent") }],
-    series: [{ label: "P(leak)", x, y: frames.map((f) => f.p_leak), color: css("--accent") }] });
+    hlines: [{ y: 0.5, color: css("--watch") }, { y: 0.9, color: css("--leak") }],
+    series: [{ label: "P(leak)", x, y: frames.map((f) => f.p_leak), color: css("--leak") }] });
 }
 
 function setSource(kind) {
   const el = $("h-source");
-  el.textContent = kind === "sim" ? "SIMULATION" : kind === "bench" ? "MEASURED (bench)" : kind === "live" ? "LIVE (bench)" : "–";
-  el.style.color = kind === "sim" ? "var(--accent)" : kind ? "var(--ok)" : "";
+  el.textContent = kind === "sim" ? "Simulation" : kind === "bench" ? "Measured (bench)" : kind === "live" ? "Live (bench)" : "–";
+  el.style.color = kind === "sim" ? "var(--sim-ink)" : kind ? "var(--ok)" : "";
 }
 
 // "What's real" tab: claim measured bench data only when a recorded bench run is published
@@ -275,9 +384,12 @@ function startLive() {
       if (bench.frames.length > 4000) bench.frames.splice(0, bench.frames.length - 4000);
     }
     $("live-conn").textContent = `connected · ${msg.state}`;
-    if (msg.state === "OFFLINE") { $("h-state").textContent = "OFFLINE"; $("h-state").className = "cellv dot st-idle"; }
     liveRender();
-    if (msg.state === "OFFLINE") $("d-state").textContent = "OFFLINE";
+    // the last frame still carries its old state: OFFLINE must win everywhere, after the render
+    if (msg.state === "OFFLINE") {
+      $("h-state").textContent = "OFFLINE"; $("h-state").className = "cellv dot st-idle";
+      $("d-state").textContent = "OFFLINE"; $("d-state").style.color = ""; renderStatus("OFFLINE", null);
+    }
   };
   refreshRuns();
 }
@@ -378,12 +490,12 @@ async function loadScoreboard() {
   if (bl.runs) {
     $("score-blind-n").textContent = `${bl.runs} events`;
     $("score-blind").innerHTML = `<thead><tr><th>Run</th><th>Truth</th><th>Result</th><th>Delay</th><th>Branch</th></tr></thead><tbody>${
-      bl.events.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.label)}</td><td>${r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>') : r.detected ? '<span class="pill ok">LEAK</span>' : '<span class="pill no">missed</span>'}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}</td></tr>`).join("")}</tbody>`;
+      bl.events.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.label)}</td><td>${r.detected === null ? (r.false_alarm ? '<span class="pill">false alarm</span>' : '<span class="pill ok">quiet</span>') : r.detected ? '<span class="pill ok">LEAK</span>' : '<span class="pill no">missed</span>'}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}</td></tr>`).join("")}</tbody>`;
   }
   $("score-n").textContent = `${board.runs.length} runs`;
   $("score-runs").innerHTML = `<thead><tr><th>Run</th><th>Label</th><th>Split</th><th>Result</th><th>Delay</th><th>Branch</th><th>Faults</th></tr></thead><tbody>${
     board.runs.map((r) => {
-      const res = r.detected === null ? (r.false_alarm ? '<span class="pill sim">false alarm</span>' : '<span class="pill ok">quiet</span>')
+      const res = r.detected === null ? (r.false_alarm ? '<span class="pill">false alarm</span>' : '<span class="pill ok">quiet</span>')
         : r.detected ? '<span class="pill ok">LEAK</span>' : r.watched ? '<span class="pill">WATCH</span>' : '<span class="pill no">missed</span>';
       return `<tr><td>${esc(r.id)}</td><td>${esc(r.label)}</td><td>${esc(r.split || (r.blind ? "blind" : "–"))}</td><td>${res}</td><td>${r.delay_s ?? "–"}</td><td>${r.branch ?? "–"}${r.branch_ok === false && r.detected ? " ✗" : ""}</td><td>${esc((r.faults || []).join(", ")) || "–"}</td></tr>`;
     }).join("")}</tbody>`;
@@ -409,10 +521,10 @@ async function showM3(file) {
   if (c.timing && c.timing.echo_expected_s) vl.push({ x: c.timing.echo_expected_s, label: "leak echo" });
   lineChart($("m3-trace"), { ...xs, x0: t[0], x1: t[t.length - 1], xlabel: " s", yfmt: (v) => v.toFixed(0), vlines: vl });
   const trMax = Math.max(...c.tr.energy);
-  const ser = [{ label: "time reversal", x: c.tr.x_m, y: c.tr.energy.map((v) => v / trMax), color: css("--accent") }];
+  const ser = [{ label: "time reversal", x: c.tr.x_m, y: c.tr.energy.map((v) => v / trMax), color: css("--primary") }];
   if (c.mfp) { const mm = Math.max(...c.mfp.match); ser.push({ label: "matched-field", x: c.mfp.x_m, y: c.mfp.match.map((v) => v / mm), color: css("--s2"), dash: "5 4" }); }
   lineChart($("m3-tr"), { series: ser, x0: c.tr.x_m[0], x1: c.tr.x_m[c.tr.x_m.length - 1], yMin: 0, yMax: 1.05, xlabel: " m",
-    yfmt: (v) => v.toFixed(1), vlines: [{ x: c.leak.x_true_m, label: "true leak", color: css("--ok") }] });
+    yfmt: (v) => v.toFixed(1), vlines: [{ x: c.leak.x_true_m, label: "true leak", color: css("--leak") }] });
   const names = { tr: "Time reversal", mfp: "Matched-field", echo: "Echo timing", cnn: "1D CNN" };
   $("m3-est").innerHTML = `<thead><tr><th>Method</th><th>Estimate (m)</th><th>Error (m)</th></tr></thead><tbody>${
     Object.keys(c.estimates_m).map((k) => `<tr><td>${names[k] || k}</td><td>${fmt(c.estimates_m[k], 1)}</td><td>${fmt(c.error_m[k], 2)}</td></tr>`).join("")
@@ -484,7 +596,7 @@ function renderFarm() {
     const base = p.kind === "main" ? 6 : 3.2;
     add("line", { x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), stroke: css("--pipe"), "stroke-width": base, "stroke-linecap": "round", opacity: 0.85 });
     const v = probs[p.id] || 0;
-    if (v > 0.005) add("line", { x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), stroke: css("--accent"), "stroke-width": base + 2 + 10 * v / pmax, "stroke-linecap": "round", opacity: 0.25 + 0.75 * v / pmax }).appendChild(Object.assign(document.createElementNS(NS, "title"), { textContent: `${p.id}: ${(100 * v).toFixed(1)} %` }));
+    if (v > 0.005) add("line", { x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), stroke: css("--leak"), "stroke-width": base + 2 + 10 * v / pmax, "stroke-linecap": "round", opacity: 0.25 + 0.75 * v / pmax }).appendChild(Object.assign(document.createElementNS(NS, "title"), { textContent: `${p.id}: ${(100 * v).toFixed(1)} %` }));
   }
   if (scen) {
     add("circle", { cx: X(scen.true.x), cy: Y(scen.true.y), r: 13, fill: "none", stroke: css("--ink"), "stroke-width": 2, "stroke-dasharray": "3 3" });
@@ -492,7 +604,7 @@ function renderFarm() {
   for (const n of L.nodes) {
     if (!n.candidate) continue;
     const on = sensors.includes(n.id);
-    if (on) add("rect", { x: X(n.x) - 6, y: Y(n.y) - 6, width: 12, height: 12, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2 });
+    if (on) add("circle", { cx: X(n.x), cy: Y(n.y), r: 8, fill: css("--primary"), stroke: css("--panel"), "stroke-width": 2.5 });
     else add("circle", { cx: X(n.x), cy: Y(n.y), r: 3.5, fill: css("--panel"), stroke: css("--muted") });
   }
   const pump = node[L.farm.pump_node];
@@ -502,8 +614,8 @@ function renderFarm() {
   if (farm.view === "leak" && farm.drone && $("f-drone").checked) {
     route = farm.drone.routes.find((r) => r.scenario === scen.id && String(r.sensors_n) === farm.set);
     if (route) {
-      add("polyline", { points: route.waypoints.map(([x, y]) => `${X(x)},${Y(y)}`).join(" "), fill: "none", stroke: css("--s1"), "stroke-width": 1.6, "stroke-dasharray": "6 4" });
-      const dot = add("circle", { r: 6, fill: css("--s1"), stroke: css("--panel"), "stroke-width": 2 });
+      add("polyline", { points: route.waypoints.map(([x, y]) => `${X(x)},${Y(y)}`).join(" "), fill: "none", stroke: css("--ink"), "stroke-width": 1.6, "stroke-dasharray": "6 4" });
+      const dot = add("circle", { r: 6, fill: css("--ink"), stroke: css("--panel"), "stroke-width": 2 });
       const pts = route.waypoints, seg = [0];
       for (let i = 1; i < pts.length; i++) seg.push(seg[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
       const total = seg[seg.length - 1] || 1, t0 = performance.now(), dur = 8000;
@@ -532,7 +644,7 @@ function renderFarm() {
     $("fp-cost").textContent = `${set.cost_dt.toLocaleString("en")} DT`;
     $("fp-rec").textContent = `best: ${farm.place.recommended_n}`;
     $("fp-note").textContent = `k·σ = ${farm.place.k} × ${(1000 * farm.place.sigma_bar).toFixed(0)} mbar (${farm.place.sigma_note}). ${farm.place.cost_note}.`;
-    $("fm-legend").innerHTML = `<span style="--c:${css("--s1")}">chosen sensor</span><span style="--c:${css("--muted")}">possible spot</span>`;
+    $("fm-legend").innerHTML = `<span style="--c:${css("--primary")}">chosen sensor</span><span style="--c:${css("--muted")}">possible spot</span><span style="--c:${css("--pipe")}">pipes</span>`;
   } else if (scen) {
     $("fm-title").textContent = `${scen.title}: ${farm.method === "fused" ? "fused" : farm.method.toUpperCase()} leak probability`;
     $("fs-true").textContent = scen.true.site;
@@ -552,7 +664,7 @@ function renderFarm() {
       ["fd-take", "fd-time", "fd-len", "fd-hit"].forEach((id) => { $(id).textContent = "–"; });
       $("fd-note").textContent = by.detected ? "Drone off." : "Leak not detected: no flight.";
     }
-    $("fm-legend").innerHTML = `<span style="--c:${css("--accent")}">leak probability</span><span style="--c:${css("--s1")}">sensor / drone route</span><span style="--c:${css("--ink")}">true leak (dashed ring)</span>`;
+    $("fm-legend").innerHTML = `<span style="--c:${css("--leak")}">leak probability</span><span style="--c:${css("--primary")}">sensor</span><span style="--c:${css("--ink")}">drone route</span><span style="--c:${css("--ink")}">true leak (dashed ring)</span>`;
   }
 }
 
@@ -565,17 +677,35 @@ function showTab(name) {
     loaded[name] = true;
     if (name === "score") loadScoreboard();
     if (name === "m3") loadM3();
-    if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html"; loadFarm(); }
+    if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html?embed"; loadFarm(); }
   }
+  if (b3.h) b3.h.pause(name !== "bench" || b3.view !== "3d");   // no WebGL work on hidden tabs
   if (name === "bench" && bench.mode === "replay") seek(bench.idx);
   if (name === "m3" && m3Index) showM3($("m3-pick").value);
   if (name === "farm" && farm.lay) renderFarm();
   try { history.replaceState(null, "", `#${name}`); } catch (e) { /* file:// */ }
 }
 
+// the embedded farm explorer is same-origin: size its frame to its content, so it never scrolls inside
+function fitFarmFrame() {
+  const ff = $("farm-frame");
+  ff.addEventListener("load", () => {
+    try {
+      // body height, not the document's: a document is never shorter than its frame, so it could not shrink
+      const d = ff.contentDocument, fit = () => { ff.style.height = `${Math.ceil(d.body.getBoundingClientRect().height)}px`; };
+      fit(); new ResizeObserver(fit).observe(d.body);
+    } catch (e) { /* not same-origin: keep the CSS height */ }
+  });
+}
+
 async function boot() {
+  fitFarmFrame();
   drawSchematic();
   renderFrame(null);
+  $("bv-3d").addEventListener("click", () => setBenchView("3d"));
+  $("bv-2d").addEventListener("click", () => setBenchView("2d"));
+  $("b3-home").addEventListener("click", () => { if (b3.h) b3.h.view("board"); });
+  setBenchView(b3.view);
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("rp-play").addEventListener("click", togglePlay);
   $("rp-scrub").addEventListener("input", (e) => { stopPlay(); seek(+e.target.value); });

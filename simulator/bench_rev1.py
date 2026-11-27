@@ -190,6 +190,8 @@ def main(argv=None) -> int:
     ap.add_argument("--start", type=float, default=0.0, help="skip the first N seconds")
     ap.add_argument("--speed", type=float, default=1.0, help="real-time factor with --realtime")
     ap.add_argument("--seed", type=int)
+    ap.add_argument("--leak-stop", type=float, metavar="SECONDS",
+                    help="close the tap again at this time (to film the repair in the farmer app)")
     ap.add_argument("--out", help="write the messages as a JSON array")
     ap.add_argument("--realtime", action="store_true")
     ap.add_argument("--publish", action="store_true", help="publish over MQTT")
@@ -203,7 +205,7 @@ def main(argv=None) -> int:
         for k, v in SCENARIOS.items():
             print(f"{k:14s} {v.notes}")
         return 0
-    sc = build(a.scenario, leak_size=a.leak_size, duration_s=a.duration, seed=a.seed)
+    sc = build(a.scenario, leak_size=a.leak_size, duration_s=a.duration, seed=a.seed, leak_stop_s=a.leak_stop)
     start = datetime.now(timezone.utc) if (a.now or a.post or a.publish) and a.realtime else None
     if start is not None and a.speed != 1.0:
         # the detector's timers (settle, learn, N samples) run on message time, so a fast-forward

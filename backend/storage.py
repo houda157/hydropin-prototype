@@ -80,6 +80,17 @@ CREATE TABLE IF NOT EXISTS frames (
     frame_json TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_frames_run ON frames(run_id);
+CREATE TABLE IF NOT EXISTS leaks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_ts TEXT NOT NULL,
+    ended_ts TEXT,
+    branch TEXT,
+    base_lpm REAL,
+    max_leak_lpm REAL NOT NULL DEFAULT 0,
+    lost_l REAL NOT NULL DEFAULT 0,
+    pump_stopped INTEGER NOT NULL DEFAULT 0,
+    user_fixed_ts TEXT
+);
 """
 
 # created after the readings migration (an old table has no device_ts column yet)
@@ -446,3 +457,62 @@ def readings_csv(conn: sqlite3.Connection, limit: int = 100000) -> str:
             [row[c] for c in DB_COLUMNS] + [raw.get(RAW_FIELDS[c]) for c in RAW_FIELDS]
         )
     return buf.getvalue()
+
+
+# --- leak episodes (farmer app: alert -> "I fixed it" -> confirmed by the sensors) ----
+def leak_status(row: dict[str, Any]) -> str:
+    """fixed: sensors back to normal, or the farmer fixed it after a pump stop (the detector
+    re-learned its baseline with the leak inside, so it cannot confirm); checking: the farmer
+    said fixed, sensors not yet back to normal; open: otherwise."""
+    if row.get("ended_ts") or (row.get("pump_stopped") and row.get("user_fixed_ts")):
+        return "fixed"
+    if row.get("user_fixed_ts"):
+        return "checking"
+    return "open"
+
+
+def _leak_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if row is None:
+        return None
+    d = dict(row)
+    d["status"] = leak_status(d)
+    return d
+
+
+def open_leak(conn: sqlite3.Connection, started_ts: str, branch: str | None, base_lpm: float | None) -> int:
+    cur = conn.execute("INSERT INTO leaks (started_ts, branch, base_lpm) VALUES (?,?,?)",
+                       (started_ts, branch, base_lpm))
+    return int(cur.lastrowid)
+
+
+def update_leak(conn: sqlite3.Connection, leak_id: int, branch: str | None, leak_lpm: float, lost_l: float) -> None:
+    conn.execute(
+        "UPDATE leaks SET max_leak_lpm = MAX(max_leak_lpm, ?), lost_l = ?, branch = COALESCE(?, branch) WHERE id = ?",
+        (float(leak_lpm or 0.0), float(lost_l or 0.0), branch, int(leak_id)),
+    )
+
+
+def mark_pump_stopped(conn: sqlite3.Connection, leak_id: int) -> None:
+    conn.execute("UPDATE leaks SET pump_stopped = 1 WHERE id = ?", (int(leak_id),))
+
+
+def close_leak(conn: sqlite3.Connection, leak_id: int, ended_ts: str) -> None:
+    conn.execute("UPDATE leaks SET ended_ts = ? WHERE id = ? AND ended_ts IS NULL", (ended_ts, int(leak_id)))
+
+
+def get_open_leak(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM leaks WHERE ended_ts IS NULL AND (user_fixed_ts IS NULL OR pump_stopped = 0) "
+        "ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    return _leak_row(row)
+
+
+def mark_leak_fixed(conn: sqlite3.Connection, leak_id: int, ts: str) -> dict[str, Any] | None:
+    conn.execute("UPDATE leaks SET user_fixed_ts = ? WHERE id = ? AND user_fixed_ts IS NULL", (ts, int(leak_id)))
+    return _leak_row(conn.execute("SELECT * FROM leaks WHERE id = ?", (int(leak_id),)).fetchone())
+
+
+def list_leaks(conn: sqlite3.Connection, limit: int = 20) -> list[dict[str, Any]]:
+    rows = conn.execute("SELECT * FROM leaks ORDER BY id DESC LIMIT ?", (max(1, int(limit)),)).fetchall()
+    return [_leak_row(r) for r in rows]

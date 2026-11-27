@@ -114,3 +114,14 @@ def test_config_roundtrip(tmp_path):
     p = tmp_path / "cfg.json"
     p.write_text(json.dumps(BenchConfig(tau2=0.95).to_dict()))
     assert BenchConfig.from_json(p).tau2 == 0.95
+
+
+def test_leak_stop_flag_closes_the_tap(tmp_path):
+    """--leak-stop SECONDS: the tap is closed again, to film the repair in the farmer app."""
+    import json
+    from simulator.bench_rev1 import main
+    out = tmp_path / "r.json"
+    assert main(["--scenario", "leak_L2", "--duration", "200", "--leak-stop", "150", "--out", str(out)]) == 0
+    msgs = json.loads(out.read_text(encoding="utf-8"))
+    assert {m["label"] for m in msgs if 80_000 <= m["ts_device_ms"] < 150_000} == {"leak_L2"}
+    assert {m["label"] for m in msgs if m["ts_device_ms"] >= 150_000} == {"none"}

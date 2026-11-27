@@ -18,7 +18,8 @@ const BOX = { x: 56, z: 20, w: 14, d: 10, h: 4.5 };
 
 const bp = (bx, by, y = YP) => new THREE.Vector3(BOARD.x0 + bx, y, BOARD.z0 - by);
 
-export function init(BD, host, ui) {
+// theme (optional, used by the dashboard): { bg, floor } colours of the room
+export function init(BD, host, ui, theme = {}) {
   const W = () => host.clientWidth, H = () => host.clientHeight;
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -31,8 +32,9 @@ export function init(BD, host, ui) {
   host.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f4f3ef');
-  scene.fog = new THREE.Fog('#f4f3ef', 420, 900);
+  const BG = theme.bg || '#f4f3ef';
+  scene.background = new THREE.Color(BG);
+  scene.fog = new THREE.Fog(BG, 420, 900);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.22;
@@ -60,7 +62,7 @@ export function init(BD, host, ui) {
   // ── materials ──
   const M = (o) => new THREE.MeshStandardMaterial(o);
   const mat = {
-    floor: M({ color: '#e9e6de', roughness: 0.95 }),
+    floor: M({ color: theme.floor || '#e9e6de', roughness: 0.95 }),
     wood: M({ color: '#c8a77a', roughness: 0.8 }),
     tableTop: M({ color: '#f1efe9', roughness: 0.7 }),
     leg: M({ color: '#9a9890', roughness: 0.5, metalness: 0.4 }),
@@ -375,6 +377,65 @@ export function init(BD, host, ui) {
     scrTex.needsUpdate = true;
   }
 
+  // ── live mode (dashboard): the readings and the detector come from the backend's frames; the twin
+  //    only supplies what the bench does not measure (pressure along each pipe, how the flow splits).
+  //    L = null (no data) or { p1, p2, f0, leakLpm, twin: twin state row, setting: {r, v},
+  //    taps: { L1: { p, open, suspect }, ... }, status: { text, kind: 'ok'|'watch'|'leak'|'idle' } }
+  const num = (x, d) => (x === null || x === undefined || !Number.isFinite(x)) ? '–' : x.toFixed(d);
+  function setLive(L) {
+    wave = null;
+    const ang = (deg) => -THREE.MathUtils.degToRad(Math.min(90, deg));
+    if (!L) {
+      cur = null; leak = 'none'; flows = [];
+      pipes.forEach(({ mesh, ss }) => paint(mesh, () => (ss ? steelC : blackC)));
+      lP1.d.textContent = 'P1 –'; lP2.d.textContent = 'P2 –'; lF0.d.textContent = 'F0 –';
+      for (const t of ['L1', 'L2', 'L3']) {
+        taps[t].lever.rotation.y = -Math.PI / 2; taps[t].cap.visible = false;
+        lT[t].d.textContent = t; lT[t].d.classList.remove('alert');
+      }
+      drawLive(null);
+      return;
+    }
+    const s = L.twin.slice();
+    const k = s[2] > 1e-6 && L.f0 > 0 ? L.f0 / s[2] : 0;      // twin flows scaled to the measured F0
+    cur = s; cur[3] = L.leakLpm || 0; cur[4] = Math.max(0, (L.f0 || 0) - cur[3]);
+    flows = s.slice(6 + nN).map((q) => q * k);
+    paintSteady(s);
+    leak = 'none';
+    for (const t of ['L1', 'L2', 'L3']) {
+      const T = L.taps[t] || {}, on = !!T.open;
+      if (on) leak = t;
+      taps[t].lever.rotation.y = on ? 0 : -Math.PI / 2;
+      taps[t].cap.visible = on;
+      lT[t].d.textContent = on ? `${t} leaking ${num(L.leakLpm, 2)} L/min`
+        : T.suspect ? `${t} suspected ${Math.round(100 * T.p)} %` : t;
+      lT[t].d.classList.toggle('alert', on || !!T.suspect);
+    }
+    if (L.setting) {
+      levers.R1.rotation.y = ang(L.setting.r); levers.R2.rotation.y = ang(L.setting.r);
+      levers.V1.rotation.y = ang(L.setting.v); levers.V2.rotation.y = ang(L.setting.v);
+    }
+    for (const v of ['R1', 'R2', 'V1', 'V2']) lV[v].d.textContent = v;   // valve angles are not measured live
+    lP1.d.textContent = `P1 ${num(L.p1, 3)} bar`;
+    lP2.d.textContent = `P2 ${num(L.p2, 3)} bar`;
+    lF0.d.textContent = `F0 ${num(L.f0, 2)} L/min`;
+    drawLive(L);
+  }
+  function drawLive(L) {
+    const g = scr.getContext('2d');
+    g.fillStyle = '#0f1a15'; g.fillRect(0, 0, 640, 400);
+    g.fillStyle = '#e6efe9'; g.font = '600 26px system-ui,sans-serif'; g.fillText('HydroPin bench', 28, 46);
+    g.font = '15px system-ui,sans-serif'; g.fillStyle = '#93a59b'; g.fillText(L ? 'live from the backend' : 'waiting for data', 28, 72);
+    const card = (x, y, lab, val, unit) => { g.fillStyle = '#15231c'; g.fillRect(x, y, 180, 96); g.fillStyle = '#93a59b'; g.font = '15px system-ui'; g.fillText(lab, x + 14, y + 26); g.fillStyle = '#ffffff'; g.font = '600 34px system-ui'; g.fillText(val, x + 14, y + 68); g.fillStyle = '#93a59b'; g.font = '15px system-ui'; g.fillText(unit, x + 14, y + 88); };
+    card(28, 96, 'P1', L ? num(L.p1, 3) : '–', 'bar'); card(230, 96, 'P2', L ? num(L.p2, 3) : '–', 'bar'); card(432, 96, 'F0', L ? num(L.f0, 2) : '–', 'L/min');
+    const kind = L && L.status ? L.status.kind : 'idle';
+    const [bgc, fgc] = { ok: ['#173826', '#86efac'], watch: ['#3a2c14', '#fcd34d'], leak: ['#4a1d1d', '#fca5a5'], idle: ['#1d2b24', '#93a59b'] }[kind];
+    g.fillStyle = bgc; g.fillRect(28, 222, 584, 64);
+    g.fillStyle = fgc; g.font = '600 24px system-ui';
+    g.fillText(L && L.status ? L.status.text : 'Waiting for bench data', 46, 263);
+    scrTex.needsUpdate = true;
+  }
+
   // ── loop ──
   let last = performance.now(), running = true;
   function frame(now) {
@@ -387,7 +448,7 @@ export function init(BD, host, ui) {
       const A = Math.PI * 0.68 * 0.68;
       pipes.forEach(({ tex, k }) => { const v = flows[k] * 16.667 / A; tex.offset.y -= v * dt / 3; });
       for (const t of ['L1', 'L2', 'L3']) if (t === leak) emit(taps[t].end, 60 + 900 * cur[3], dt);
-      emit(retEnd, 40 + 260 * cur[4], dt);
+      if (cur[4] > 0.01) emit(retEnd, 40 + 260 * cur[4], dt);     // no return stream with the pump off
     }
     stepParticles(dt);
     renderer.render(scene, camera);
@@ -399,6 +460,7 @@ export function init(BD, host, ui) {
 
   return {
     setState,
+    setLive,
     initWaves,
     setWave(ev, fi, scale) {          // ev = null leaves wave mode; scale in mm of water
       wave = ev;

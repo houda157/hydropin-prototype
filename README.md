@@ -52,6 +52,27 @@ The research suites (`simulator/tests`, `m3/tests`, `farm/tests`) need `requirem
 - GitHub Pages: `.github/workflows/pages.yml` publishes `dashboard/` (+ the farm explorer and the
   twin viewer) on every push to `main`. Pages has replay mode only; live mode needs the laptop.
 
+## Farmer app (the product, `dashboard/app/`)
+
+What a farmer sees when a buried pipe leaks: the alert, where it is, how serious, the repair confirmed
+by the sensors, and the money saved. Installable mobile web app (no build step), Français / العربية /
+English. Design: `docs/superpowers/specs/2026-11-27-farmer-app-design.md`.
+
+- **Live (the test bench):** open `http://localhost:8001/app/` (or `:8000`) while the backend runs. The
+  bench is shown as what it is, "HydroPin test bench · 2 sectors" (branch A = Sector A, B = Sector B);
+  money lines are projections ("If this leak happened on a 50 ha farm: about X DT").
+- **Demo (GitHub Pages, no backend):** `<pages link>/app/`, always labelled "Demo farm".
+- **For filming:** `?demo=leak` (starts on the leak), `?demo=fixed`, `?source=demo` (demo even on the
+  laptop), `?lang=fr|ar|en`. Repair on the bench: `python -m simulator.bench_rev1 --scenario leak_L2
+  --duration 220 --leak-stop 170 --realtime --post http://localhost:8001` (to a scratch backend, never
+  into the campaign database).
+- **Money saved** = (what the leak would lose unnoticed − what it lost) × price, from `FARM_SCALE` in
+  `dashboard/config.js`: farm flow (m³/h), irrigation hours per day, days a buried leak runs before anyone
+  sees it, price per m³. They are **example figures (placeholders)** until the market lead's figures; a
+  null value shows "—". Severity: share of the pumped water lost (< 5 % small, < 15 % medium, else large).
+- Backend support: `GET /api/leaks`, `POST /api/leaks/{id}/fixed` (leak episodes, `backend/leaks.py`).
+- Tests: `node --test "dashboard/app/tests/*.test.js"` (Node 22) and `pytest tests`.
+
 ## Legacy: 4-flow pipeline (simulation only)
 
 An earlier design had a flow sensor on every branch. The bench as built has only the main flow
