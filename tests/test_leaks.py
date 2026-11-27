@@ -1,5 +1,5 @@
 """Leak episodes: opened by the detector, closed when the sensors are back to normal, and
-"I fixed it" from the farmer app (docs/superpowers/specs/2026-11-27-farmer-app-design.md)."""
+"I fixed it" from the farmer app (docs/design/2026-11-27-farmer-app-design.md)."""
 from fastapi.testclient import TestClient
 
 from backend import storage
@@ -15,7 +15,7 @@ def _frame(state, ts, branch="B", base=1.5, leak=0.3, lost=0.1):
 
 
 def _app(db):
-    return create_app(db_path=db, baseline_path=None, start_mqtt=False, static_dir=None)
+    return create_app(db_path=db, start_mqtt=False, static_dir=None)
 
 
 def test_episode_opens_on_leak_and_closes_on_healthy(tmp_path):

@@ -1,5 +1,5 @@
 // Farm reference figures (market lead). Used by the dashboard's "at farm scale" line and by the
-// farmer app's money-saved formula (docs/superpowers/specs/2026-11-27-farmer-app-design.md).
+// farmer app's money-saved formula (docs/design/2026-11-27-farmer-app-design.md).
 // placeholder: true = example figures until the market lead's real ones (with a source) arrive;
 // the app labels every money figure "estimate". Set a value to null to hide the money ("—").
 export const FARM_SCALE = {

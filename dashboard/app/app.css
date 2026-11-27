@@ -1,5 +1,5 @@
 /* HydroPin farmer app. Tokens and components from the approved mockups
-   (.superpowers/brainstorm/.../farmer-app-hifi.html). Logical properties so Arabic mirrors. */
+   (docs/design/2026-11-27-farmer-app-design.md). Logical properties so Arabic mirrors. */
 :root {
   --primary: #15803D; --primary-tint: rgba(21, 128, 61, .10); --danger: #DC2626; --danger-tint: rgba(220, 38, 38, .09);
   --warning: #A16207; --water: #1D5FA8; --bg: #F0FDF4; --card: #FFFFFF; --fg: #14532D; --muted: #475569; --border: #D7EFDF;

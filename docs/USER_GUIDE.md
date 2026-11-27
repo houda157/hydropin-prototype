@@ -226,9 +226,9 @@ Only when the page is opened from the laptop.
    - **blind** if someone else opens the tap;
    - notes.
 2. Wait for **HEALTHY** (about 50 s after the pump starts).
-3. Open the tap and **press "Leak on" at the same moment**. Close it and press **"Leak off"**.
+3. Open the tap and press **Open L1** (or L2, L3) at the same moment. Close it and press **Tap closed**.
 4. Use **Pump on / Pump off** when you switch the pump.
-5. After **any valve change**, press **Valve change**, then **Re-baseline**. Otherwise the change
+5. After **any valve change**, press **Valve moved**, then **Re-baseline**. Otherwise the change
    looks like a leak.
 6. **Stop run.** The run becomes a replay; **Export CSV** downloads the raw data.
 
@@ -464,7 +464,7 @@ python -m pytest tests -q -o addopts=""
 | "Live" button greyed out | The page isn't served by the laptop backend, or `/health` fails. Start `uvicorn` and open http://localhost:8000 |
 | Dashboard shows OFFLINE | No data for 3 s. Check that the simulator/ESP32 is running, `HYDROPIN_MQTT=1` (for MQTT), the broker is up, and the firewall allows 1883 |
 | Phone can't open the page | Use the laptop's IP, start uvicorn with `--host 0.0.0.0`, allow port 8000 in the firewall |
-| False alarm right after moving a valve | Press **Valve change** then **Re-baseline** after any valve change |
+| False alarm right after moving a valve | Press **Valve moved** then **Re-baseline** after any valve change |
 | Small leaks only reach WATCH | Expected: the flow meter sees 0.1 L/min steps. Use a bigger opening or a drilled cap |
 | No Telegram message | Token and chat id in `.env`, `HYDROPIN_NOTIFY=1`, backend restarted, you sent the bot a message first |
 | Serial bridge prints nothing | Wrong COM port, or the board is still booting. Check with `pio device monitor` first |

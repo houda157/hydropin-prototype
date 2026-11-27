@@ -1,4 +1,4 @@
-// Severity, money saved and the view model of the farmer app (spec: docs/superpowers/specs/2026-11-27-farmer-app-design.md).
+// Severity, money saved and the view model of the farmer app (spec: docs/design/2026-11-27-farmer-app-design.md).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 

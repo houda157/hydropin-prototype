@@ -62,16 +62,14 @@ rate, branch accuracy, median delay, false-alarm runs), `per_tap`, `per_opening`
 `python -m tools.export_replays`; scoring uses the events, never the detector.
 
 The export includes `dropout`, `ripple`, `clipped`, `raw_flow_*_pulses`, and
-`raw_pressure_adc`, so `tools.validate_dataset` and `tools.calibrate` can run
-directly on an exported real run.
+`raw_pressure_adc`, so `tools.calibrate` can run directly on an exported real run.
 
 ## Telemetry message (frozen for the demo, bench rev 1)
 
 See `contract/message.schema.json`. On the bench as built only **`flow_main`** (F0),
 **`pressure`** (PT1, branch A, 0–6 bar) and **`pressure_b`** (PT2, branch B, −1…1.6 bar) carry data.
-`flow_l1/l2/l3` are **always 0**: kept in the schema so the current detector, ML and tests keep working;
-they are removed together with the detector update for the 2-pressure bench. Example
-(the branch flows below are from the older 4-flow simulator; on the real bench they are 0):
+`flow_l1/l2/l3` are **always 0**: they stay in the frozen schema (an earlier design had a flow sensor
+on every branch). Example (illustrative values; on the real bench the branch flows are 0):
 
 ```json
 {
@@ -119,22 +117,21 @@ that interval.
   safe. A **gap in `seq`** means samples were lost (Wi-Fi, broker, reboot).
   Offline buffering on the device is not implemented yet; do not claim
   lossless delivery.
-- For training/evaluation, reject or explicitly handle runs with large seq gaps
-  (`python -m tools.validate_dataset --dir data/real`).
+- For training/evaluation, reject or explicitly handle runs with large seq gaps.
 
 ## Labelled real runs
 
 1. `POST /api/runs` with the intended label (e.g. `leak_L1`) before opening the
    leak valve.
-2. When the valve opens, `POST /api/runs/{id}/onset` (or press **Mark leak
-   onset** in the dashboard).
+2. When the valve opens, press **Open L1/L2/L3** in the dashboard (`POST /api/events` with
+   `leak_on`, which also sets the run onset; `POST /api/runs/{id}/onset` does the same).
 3. Live firmware samples (`scenario="live"`) with `label="none"` at or after
    the onset inherit the run label. Samples before onset stay `none`.
    Simulator/replay messages keep whatever label they already carry.
 4. `POST /api/runs/{id}/stop` when the run ends, then export the CSV.
 
-If the onset was missed, fix the exported CSV offline with
-`python -m tools.label_csv --csv ... --label leak_L1 --onset ...`.
+If the onset was missed, set it afterwards with `POST /api/runs/{id}/onset` (the replay export
+falls back to the run's onset when a run has no `leak_on` event).
 
 ## Ingest errors
 

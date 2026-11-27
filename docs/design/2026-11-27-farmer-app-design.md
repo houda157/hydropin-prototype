@@ -16,7 +16,7 @@ backend is running.
 - **Live mode** on the laptop: reads the backend (`/api/state`) for the **test bench, presented as what it is: a farm network in miniature, "HydroPin test bench · 2 sectors"** (branch A = Sector A, branch B = Sector B). Leak alerts, irrigating / at rest, repair confirmed by the sensors. In the video: a tap opened on the real bench → "Leak in Sector B" on the phone.
 - **Demo mode** on GitHub Pages (no backend): a scripted farm day (normal → leak → repair), always labelled "Demo farm".
 - Language chosen by the user: Français, العربية (right to left), English.
-- The leak story of the approved mockups (`.superpowers/brainstorm/138-1795757748/export/farmer-app-mockups.png`).
+- The leak story of the approved mockups (kept outside the repository).
 
 ## Non-goals
 

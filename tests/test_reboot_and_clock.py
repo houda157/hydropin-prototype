@@ -17,7 +17,7 @@ UNSET = "1970-01-01T00:00:00.000Z"
 
 
 def _app(tmp_path):
-    return create_app(db_path=tmp_path / "bench.db", baseline_path=None, start_mqtt=False, static_dir=None)
+    return create_app(db_path=tmp_path / "bench.db", start_mqtt=False, static_dir=None)
 
 
 def _as_esp32(msgs):

@@ -14,7 +14,7 @@ from simulator.bench_rev1 import build, simulate
 
 
 def _app(tmp_path):
-    return create_app(db_path=tmp_path / "bench.db", baseline_path=None, start_mqtt=False, static_dir=None)
+    return create_app(db_path=tmp_path / "bench.db", start_mqtt=False, static_dir=None)
 
 
 def test_slightly_negative_counts_are_clamped_not_rejected(tmp_path):

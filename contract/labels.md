@@ -30,8 +30,8 @@ Rules:
 
 - A label applies from the moment the leak starts, not to the whole file. The
   simulator emits `none` before `leak_start_s`; real runs start the labelled run
-  before opening the valve and press **Mark leak onset** at the valve. Samples
-  before onset are `none`. A missed onset can be fixed with `tools.label_csv`.
+  before opening the valve and press **Open L1/L2/L3** at the valve. Samples
+  before onset are `none`. A missed onset can be set afterwards with `POST /api/runs/{id}/onset`.
 - Stress runs (pump ripple, Wi-Fi dropout, recalibration) are `none`. They exist
   to catch false alarms; labelling them as leaks corrupts the evaluation.
 - One leak at a time during data collection. Multi-leak scenarios are out of

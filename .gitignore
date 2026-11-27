@@ -3,7 +3,6 @@ firmware/include/secrets.h
 .env
 
 # data
-data/raw/
 *.db
 simulator/data
 

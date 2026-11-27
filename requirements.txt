@@ -3,12 +3,7 @@ uvicorn
 paho-mqtt
 pandas
 numpy
-streamlit
-plotly
-scikit-learn
-joblib
 jsonschema
-rich
 httpx
 pytest
 pyserial
