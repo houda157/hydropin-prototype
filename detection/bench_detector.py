@@ -28,6 +28,8 @@ from pathlib import Path
 
 import numpy as np
 
+from hydropin import config
+
 STATES = ("PUMP_OFF", "SETTLING", "LEARNING", "HEALTHY", "WATCH", "LEAK", "OFFLINE")
 TAPS = ("L1", "L2", "L3")
 TAP_BRANCH = {"L1": "A", "L2": "B", "L3": "B"}
@@ -59,7 +61,7 @@ class BenchConfig:
     n_consecutive: int = 10           # ... for 10 samples (5 s at 2 Hz)
     adapt_tau_s: float = 600.0        # slow baseline follow while clearly healthy
     gap_s: float = 3.0                # no frame for 3 s -> OFFLINE
-    stuck_s: float = 5.0
+    stuck_s: float = 10.0             # identical raw ADC counts this long = frozen reading
     unplug_s: float = 3.0
     # unit drop direction in [PT1, PT2] for each tap (bench twin: L1 drops PT1 ~2x PT2;
     # L2/L3 drop PT2 more). Replace with measured fingerprints after the calibration runs.
@@ -91,6 +93,24 @@ def load_config(path: str | Path | None = None) -> BenchConfig:
         if cand.exists():
             return BenchConfig.from_json(cand)
     return BenchConfig()
+
+
+def values_from_raw(msg: dict) -> dict:
+    """The message's ``values`` with both pressures recomputed from the raw ADC counts.
+
+    The firmware rounds bar to 0.01 (10 mbar), coarser than the sensor noise after
+    oversampling: rounded values repeat for seconds and look "stuck". One ADC count is
+    about 0.2 mbar. Messages without raw counts keep their values.
+    """
+    values = dict(msg["values"])
+    raw = msg.get("raw") or {}
+    if raw.get("pressure_adc") is not None:
+        p1 = config.adc_to_pressure_bar(raw["pressure_adc"])
+        values["pressure_bar"] = min(max(p1, config.PRESSURE_RANGE_BAR[0]), config.PRESSURE_RANGE_BAR[1])
+    if raw.get("pressure_b_adc") is not None:
+        p2 = config.adc_to_pressure_b_bar(raw["pressure_b_adc"])
+        values["pressure_b_bar"] = min(max(p2, config.PRESSURE_B_RANGE_BAR[0]), config.PRESSURE_B_RANGE_BAR[1])
+    return values
 
 
 def _ts_seconds(ts) -> float:
@@ -161,9 +181,24 @@ class BenchDetector:
         return out
 
     def _learn_baseline(self) -> dict:
-        x = np.array(self._learn)                  # [n, 3] F, PT1, PT2
-        mu = x.mean(axis=0)
+        rows = np.array([r[:3] for r in self._learn], dtype=float)     # [n, 3] F, PT1, PT2
+        ok1 = np.array([r[3] for r in self._learn], dtype=bool)
+        ok2 = np.array([r[4] for r in self._learn], dtype=bool)
+        good = ok1 & ok2
         c = self.cfg
+        if good.sum() < 10:
+            # a pressure sensor was faulted for most of the learning window (spec 5.5.1):
+            # learn the flow from every sample, keep M2 out until the next re-baseline
+            u = np.array([1.0, 1.0]) / math.sqrt(2.0)
+            sigma = c.floor_p_bar ** 2 * np.eye(2) + c.floor_cm_bar ** 2 * np.outer(u, u)
+            return {"f": float(rows[:, 0].mean()),
+                    "p1": float(rows[ok1, 1].mean()) if ok1.any() else 0.0,
+                    "p2": float(rows[ok2, 2].mean()) if ok2.any() else 0.0,
+                    "sd_f": float(max(rows[:, 0].std(), c.floor_f_lpm)),
+                    "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(rows)),
+                    "m2_ok": False}
+        x = rows[good]
+        mu = x.mean(axis=0)
         p = x[:, 1:] - mu[1:]
         u = np.array([1.0, 1.0]) / math.sqrt(2.0)  # default healthy direction: common mode
         if len(p) >= 10:
@@ -174,7 +209,7 @@ class BenchDetector:
         sigma = cov + c.floor_p_bar ** 2 * np.eye(2) + c.floor_cm_bar ** 2 * np.outer(u, u)
         return {"f": float(mu[0]), "p1": float(mu[1]), "p2": float(mu[2]),
                 "sd_f": float(max(x[:, 0].std(), c.floor_f_lpm)),
-                "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(x))}
+                "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(x)), "m2_ok": True}
 
     # ------------------------------------------------------------------ main
     def update(self, values: dict, ts) -> dict:
@@ -226,8 +261,10 @@ class BenchDetector:
             frame["state"] = self._mode
             return self._finish(frame)
         if self._mode == "LEARNING":
-            if not p_bad:
-                self._learn.append((f, p1, p2))
+            # every sample counts for the flow; each pressure only while its sensor is healthy
+            bad1 = any(x.startswith("PT1") for x in faults) or self._low["PT1"] > 0
+            bad2 = p2v is None or any(x.startswith("PT2") for x in faults) or self._low["PT2"] > 0
+            self._learn.append((f, p1, p2 if p2v is not None else 0.0, not bad1, not bad2))
             if t - self._mode_t0 >= c.learn_s and len(self._learn) >= 10:
                 self.base = self._learn_baseline()
                 self._mode = "RUN"
@@ -250,7 +287,10 @@ class BenchDetector:
 
         d = np.array([self._ema[1] - b["p1"], self._ema[2] - b["p2"]])
         sim = None
-        if not p_bad:
+        m2_ok = b.get("m2_ok", True)             # False: a sensor was faulted while learning
+        if not m2_ok:
+            frame["methods"]["m2"].update(quality=0, excluded=True)
+        if not p_bad and m2_ok:
             z_m2 = float(math.sqrt(max(0.0, d @ np.array(b["sigma_inv"]) @ d)))
             if d.sum() > 0:                      # pressures rose: not a leak signature
                 z_m2 = -z_m2
@@ -262,7 +302,7 @@ class BenchDetector:
                 sim = self._fp @ (d / nd)        # cosine similarity per tap
 
         # one pressure moving alone while flow and the other are flat -> sensor fault, not a leak
-        if not p_bad:
+        if not p_bad and m2_ok:
             zs = np.abs(d) / c.floor_p_bar
             if abs(z_f) < 1.5 and ((zs[0] > 8 and zs[1] < 2) or (zs[1] > 8 and zs[0] < 2)):
                 self._alone += dt
@@ -311,7 +351,7 @@ class BenchDetector:
         return self._finish(frame)
 
     def update_message(self, msg: dict) -> dict:
-        frame = self.update(msg["values"], msg["ts"])
+        frame = self.update(values_from_raw(msg), msg["ts"])
         frame["device"] = msg.get("device")
         frame["seq"] = msg.get("seq")
         return frame

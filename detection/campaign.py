@@ -6,9 +6,18 @@ the train/test split only; the detector never sees them.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 from typing import Any
+
+
+def _raw(raw_json: str | None) -> dict[str, Any]:
+    """Raw counts as sent by the board (the detector recomputes bar from them)."""
+    try:
+        return json.loads(raw_json or "{}")
+    except ValueError:
+        return {}
 
 
 def load_runs(db: str | Path, min_readings: int = 20) -> list[dict[str, Any]]:
@@ -22,7 +31,7 @@ def load_runs(db: str | Path, min_readings: int = 20) -> list[dict[str, Any]]:
                               (run["started_ts"], run["stopped_ts"])).fetchall()
             if len(rd) < min_readings:
                 continue
-            msgs = [{"ts": r["ts"], "device": r["device"], "seq": r["seq"],
+            msgs = [{"ts": r["ts"], "device": r["device"], "seq": r["seq"], "raw": _raw(r["raw_json"]),
                      "values": {"flow_main_lpm": r["flow_main_lpm"], "pressure_bar": r["pressure_bar"],
                                 "pressure_b_bar": r["pressure_b_bar"]}} for r in rd]
             evs = [dict(e) for e in conn.execute("SELECT ts, type, tap FROM events WHERE run_id = ? ORDER BY ts",

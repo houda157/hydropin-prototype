@@ -92,10 +92,12 @@ def validate_frame(df: pd.DataFrame, expected_hz: float = 2.0) -> Report:
         rep.errors.append("timestamps are not monotonically increasing; sort before training")
         return rep
 
-    dup = int(df.duplicated(subset=["device", "seq"]).sum())
+    # the board restarts seq at 0 on every boot; exports from the backend carry the boot number
+    key = ["device", "boot", "seq"] if "boot" in df.columns else ["device", "seq"]
+    dup = int(df.duplicated(subset=key).sum())
     rep.duplicates = dup
     if dup:
-        rep.errors.append(f"{dup} duplicate (device, seq) rows")
+        rep.errors.append(f"{dup} duplicate ({', '.join(key)}) rows")
 
     if len(ts) > 1:
         dt = ts.diff().dt.total_seconds().dropna()

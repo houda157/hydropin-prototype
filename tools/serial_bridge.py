@@ -59,7 +59,7 @@ def mqtt_sender(host: str, port: int) -> Callable[[dict], None]:
 
 
 def http_sender(base: str) -> Callable[[dict], None]:
-    url = base.rstrip("/") + "/api/ingest"
+    url = config.fast_local_url(base.rstrip("/")) + "/api/ingest"
 
     def send(msg: dict) -> None:
         req = urllib.request.Request(url, data=json.dumps(msg).encode(), headers={"Content-Type": "application/json"})

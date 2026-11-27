@@ -80,6 +80,27 @@ def make_message(
     }
 
 
+# ADS1115 single-ended reads can dip a few counts below 0 near 0 V (pump off, unplugged
+# sensor through its 10k shunt). Counts down to this are clamped to 0; lower is an error.
+ADC_NEGATIVE_TOLERANCE = 500
+_ADC_FIELDS = ("pressure_adc", "pressure_b_adc")
+
+
+def normalize_message(msg: Any) -> Any:
+    """Clamp slightly negative raw ADC counts to 0 (the contract keeps counts >= 0).
+
+    Returns the message itself when nothing needs changing, otherwise a copy.
+    """
+    if not isinstance(msg, dict) or not isinstance(msg.get("raw"), dict):
+        return msg
+    raw = msg["raw"]
+    fixes = {k: 0 for k in _ADC_FIELDS
+             if isinstance(raw.get(k), int) and -ADC_NEGATIVE_TOLERANCE <= raw[k] < 0}
+    if not fixes:
+        return msg
+    return {**msg, "raw": {**raw, **fixes}}
+
+
 def _schema() -> dict[str, Any]:
     with SCHEMA_PATH.open("r", encoding="utf-8") as fh:
         return json.load(fh)
@@ -125,7 +146,7 @@ def parse_message(payload: str | bytes) -> dict[str, Any]:
         msg = json.loads(payload)
     except json.JSONDecodeError as exc:
         raise MessageError(f"invalid JSON: {exc}") from exc
-    return validate_message(msg)
+    return validate_message(normalize_message(msg))
 
 
 def to_row(msg: dict[str, Any]) -> dict[str, Any]:

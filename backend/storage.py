@@ -1,7 +1,14 @@
 """SQLite persistence: readings, alerts, labelled runs, events and processed frames.
 
-Idempotent ingestion is enforced by PRIMARY KEY(device, seq), so MQTT QoS 1
-redelivery cannot duplicate rows.
+Readings are keyed by (device, boot, seq). The board restarts ``seq`` and ``millis()``
+at 0 on every boot, so a seq that is already stored with a different device time is
+a new boot, not a duplicate. A true duplicate (MQTT QoS 1 redelivery) has the same
+seq, device ts and device millis, and is ignored.
+
+The board sends ts = 1970-01-01 until NTP has synced (USB fallback, hotspot without
+internet). Such readings get a laptop-time ts anchored on the first reading of the
+boot, spaced by the board's own ``ts_device_ms``; the board's value is kept in
+``device_ts``.
 """
 from __future__ import annotations
 
@@ -11,7 +18,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -20,6 +27,7 @@ DB_PATH = Path(os.environ.get("HYDROPIN_DB", "data/hydropin.db"))
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS readings (
     device TEXT NOT NULL,
+    boot INTEGER NOT NULL DEFAULT 0,
     seq INTEGER NOT NULL,
     ts TEXT NOT NULL,
     scenario TEXT,
@@ -29,9 +37,10 @@ CREATE TABLE IF NOT EXISTS readings (
     raw_json TEXT,
     dropout INTEGER, ripple INTEGER, clipped INTEGER,
     received_ts TEXT NOT NULL,
-    PRIMARY KEY (device, seq)
+    device_ts TEXT,
+    ts_device_ms INTEGER,
+    PRIMARY KEY (device, boot, seq)
 );
-CREATE INDEX IF NOT EXISTS idx_readings_ts ON readings(ts);
 CREATE TABLE IF NOT EXISTS alerts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ts TEXT NOT NULL,
@@ -73,6 +82,17 @@ CREATE TABLE IF NOT EXISTS frames (
 CREATE INDEX IF NOT EXISTS idx_frames_run ON frames(run_id);
 """
 
+# created after the readings migration (an old table has no device_ts column yet)
+INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_readings_ts ON readings(ts);
+CREATE INDEX IF NOT EXISTS idx_readings_dedupe ON readings(device, seq, device_ts);
+"""
+
+# a device ts before this is "clock not set" (the firmware sends 1970-01-01 before NTP)
+CLOCK_VALID_FROM = "2020-01-01"
+# millis() going back by more than this (and no duplicate) means the board restarted
+REBOOT_MS_BACK = 1000
+
 EVENT_TYPES = ("leak_on", "leak_off", "valve_change", "pump_on", "pump_off")
 RUN_META = {"opening": "TEXT", "measured_leak_lpm": "REAL", "blind": "INTEGER"}
 
@@ -88,6 +108,7 @@ RAW_FIELDS = {
 READING_COLUMNS = [
     "ts",
     "device",
+    "boot",
     "seq",
     "scenario",
     "label",
@@ -144,23 +165,94 @@ def init_db(path: str | Path | None = None) -> Path:
             conn.execute("ALTER TABLE readings ADD COLUMN clipped INTEGER")
         if "pressure_b_bar" not in rcols:
             conn.execute("ALTER TABLE readings ADD COLUMN pressure_b_bar REAL")
+        if "boot" not in rcols:
+            _migrate_readings_boot(conn)
+        conn.executescript(INDEXES)
     return Path(path or DB_PATH)
 
 
-def insert_reading(conn: sqlite3.Connection, msg: dict[str, Any]) -> bool:
+def _migrate_readings_boot(conn: sqlite3.Connection) -> None:
+    """Old key (device, seq) -> (device, boot, seq). SQLite cannot change a primary key in place."""
+    old_cols = [row["name"] for row in conn.execute("PRAGMA table_info(readings)")]
+    conn.execute("DROP INDEX IF EXISTS idx_readings_ts")
+    conn.execute("ALTER TABLE readings RENAME TO readings_old")
+    conn.executescript(SCHEMA)
+    cols = ", ".join(old_cols)
+    conn.execute(f"INSERT INTO readings ({cols}, boot, device_ts) SELECT {cols}, 0, ts FROM readings_old")
+    conn.execute("DROP TABLE readings_old")
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _parse(ts: str) -> datetime:
+    return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+
+
+def clock_is_set(ts: Any) -> bool:
+    return str(ts) >= CLOCK_VALID_FROM
+
+
+def place_reading(conn: sqlite3.Connection, msg: dict[str, Any]) -> tuple[int, str] | None:
+    """Where a message goes: ``(boot, ts)`` to store it under, or None for a duplicate.
+
+    ``ts`` is the device ts when its clock is set, otherwise laptop time anchored on the
+    first reading of the boot and spaced by ``ts_device_ms``.
+    """
+    device, seq = msg["device"], int(msg["seq"])
+    device_ts, dev_ms = str(msg["ts"]), msg.get("ts_device_ms")
+    dup = conn.execute(
+        "SELECT 1 FROM readings WHERE device = ? AND seq = ? AND device_ts = ? AND ts_device_ms IS ? LIMIT 1",
+        (device, seq, device_ts, dev_ms),
+    ).fetchone()
+    if dup:
+        return None
+    row = conn.execute("SELECT MAX(boot) AS b FROM readings WHERE device = ?", (device,)).fetchone()
+    boot = row["b"] if row["b"] is not None else 0
+    last = conn.execute(
+        "SELECT ts_device_ms FROM readings WHERE device = ? AND boot = ? ORDER BY rowid DESC LIMIT 1",
+        (device, boot),
+    ).fetchone()
+    seq_taken = conn.execute(
+        "SELECT 1 FROM readings WHERE device = ? AND boot = ? AND seq = ?", (device, boot, seq)
+    ).fetchone()
+    millis_back = (
+        last is not None and last["ts_device_ms"] is not None and dev_ms is not None
+        and int(dev_ms) < int(last["ts_device_ms"]) - REBOOT_MS_BACK
+    )
+    if seq_taken or millis_back:
+        boot += 1
+    if clock_is_set(device_ts):
+        return boot, device_ts
+    anchor = conn.execute(
+        "SELECT ts, ts_device_ms FROM readings WHERE device = ? AND boot = ? AND ts_device_ms IS NOT NULL "
+        "ORDER BY rowid ASC LIMIT 1",
+        (device, boot),
+    ).fetchone()
+    if anchor is not None and dev_ms is not None:
+        t = _parse(anchor["ts"]) + timedelta(milliseconds=int(dev_ms) - int(anchor["ts_device_ms"]))
+        return boot, _iso(t)
+    return boot, utc_now()
+
+
+def insert_reading(conn: sqlite3.Connection, msg: dict[str, Any], boot: int = 0,
+                   device_ts: str | None = None) -> bool:
+    """Store one message. ``boot`` and ``device_ts`` come from :func:`place_reading`."""
     values = msg["values"]
     raw = json.dumps(msg.get("raw", {}), separators=(",", ":"))
     quality = msg.get("quality", {})
     cur = conn.execute(
         """
         INSERT OR IGNORE INTO readings
-        (device, seq, ts, scenario, label, flow_main_lpm, flow_l1_lpm, flow_l2_lpm,
+        (device, boot, seq, ts, scenario, label, flow_main_lpm, flow_l1_lpm, flow_l2_lpm,
          flow_l3_lpm, pressure_bar, pressure_b_bar, raw_json, dropout, ripple,
-         clipped, received_ts)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         clipped, received_ts, device_ts, ts_device_ms)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             msg["device"],
+            int(boot),
             msg["seq"],
             msg["ts"],
             msg.get("scenario", ""),
@@ -176,6 +268,8 @@ def insert_reading(conn: sqlite3.Connection, msg: dict[str, Any]) -> bool:
             int(bool(quality.get("ripple", False))),
             int(bool(quality.get("clipped", False))),
             utc_now(),
+            device_ts if device_ts is not None else msg["ts"],
+            msg.get("ts_device_ms"),
         ),
     )
     return cur.rowcount > 0
