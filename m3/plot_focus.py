@@ -42,6 +42,7 @@ def main() -> None:
     fig.text(0.01, 0.005, "SIMULATION – 150 m PE pipe, a = 350 m/s, 25 ms valve closure", fontsize=8, color="#a00")
     fig.tight_layout(rect=(0, 0.02, 1, 1))
     out = ROOT / "report" / "figures" / "m3_time_reversal.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150)
     print(f"figure -> {out.relative_to(ROOT)}")
 

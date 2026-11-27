@@ -7,7 +7,7 @@ from simulator.bench_rev1 import build, simulate
 
 
 def _app(tmp_path):
-    return create_app(db_path=tmp_path / "bench.db", baseline_path=None, start_mqtt=False, static_dir=None)
+    return create_app(db_path=tmp_path / "bench.db", start_mqtt=False, static_dir=None)
 
 
 def test_leak_run_end_to_end(tmp_path):
@@ -71,7 +71,7 @@ def test_blind_run_label_filled_after(tmp_path):
 def test_static_dashboard_served(tmp_path):
     (tmp_path / "site").mkdir()
     (tmp_path / "site" / "index.html").write_text("<h1>hp</h1>")
-    app = create_app(db_path=tmp_path / "s.db", baseline_path=None, static_dir=tmp_path / "site")
+    app = create_app(db_path=tmp_path / "s.db", static_dir=tmp_path / "site")
     with TestClient(app) as client:
         assert "hp" in client.get("/").text
         assert client.get("/health").json()["ok"] is True

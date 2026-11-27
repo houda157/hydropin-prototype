@@ -1,23 +1,18 @@
-"""Validate, persist and optionally alert on one telemetry message."""
+"""Validate and persist one telemetry message, run the bench detector, record LEAK alerts."""
 from __future__ import annotations
 
-import threading
 from typing import Any
 
 from hydropin import config
 from hydropin.messages import MessageError, normalize_message, validate_message
 
-from . import leaks, notify, storage
+from . import leaks, storage
 from .bench_live import BenchLive
-from .live_detect import LiveDetector
 
 
 def ingest_message(
     msg: dict[str, Any],
     db_path: str | None = None,
-    detector: LiveDetector | None = None,
-    detector_lock: threading.Lock | None = None,
-    send_notifications: bool = False,
     bench: BenchLive | None = None,
 ) -> dict[str, Any]:
     msg = normalize_message(msg)
@@ -45,25 +40,18 @@ def ingest_message(
             ):
                 msg = {**msg, "label": run["label"]}
         inserted = storage.insert_reading(conn, msg, boot=boot, device_ts=device_ts)
-        if inserted and detector is not None:
-            flows = {c: msg["values"][f"flow_{c}_lpm"] for c in config.FLOW_CHANNELS}
-            lock = detector_lock or threading.Lock()
-            with lock:
-                alert = detector.push(
-                    flows,
-                    float(msg["values"]["pressure_bar"]),
-                    ts=msg["ts"],
-                    device=msg["device"],
-                )
-            if alert is not None:
-                storage.insert_alert(conn, alert)
-        # rev 1 bench detector (F0 + PT1 + PT2): processed frame for the dashboard and replays
+        # bench detector (F0 + PT1 + PT2): processed frame for the dashboard and replays.
+        # Telegram is sent by BenchLive itself; the LEAK rising edge is also kept as an alert row.
         if inserted and bench is not None:
-            frame, _ = bench.push(msg, run_id=run["id"] if run else None)
+            frame, notices = bench.push(msg, run_id=run["id"] if run else None)
             frame["id"] = storage.insert_frame(conn, frame)
             leaks.track_leak(conn, frame)
-    if alert is not None and send_notifications:
-        notify.send_telegram(alert["message"])
+            leak_notice = next((n for n in notices if n.startswith("HydroPin LEAK")), None)
+            if leak_notice is not None:
+                alert = {"ts": frame["ts"], "device": msg["device"], "branch": frame.get("branch"),
+                         "leak_lpm_est": frame.get("leak_lpm") or 0.0, "confidence": frame.get("p_leak") or 0.0,
+                         "method": "bench: flow + M2 fusion", "message": leak_notice}
+                alert["id"] = storage.insert_alert(conn, alert)
     return {"inserted": inserted, "alert": alert, "frame": frame}
 
 

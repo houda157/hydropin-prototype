@@ -85,7 +85,7 @@ config/          params.yaml (every constant, with unit, source and range) · ne
 data/            simulated training dataset (M1, M2)
 ```
 
-`sim.py` and `scenarios.py` are the command-line generator of bench data for the backend. They are separate from the twin.
+`bench_rev1.py` is the command-line generator of bench data for the backend (contract messages for the bench as built). It is separate from the twin.
 
 ## 5. Limits
 

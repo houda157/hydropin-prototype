@@ -279,6 +279,7 @@ def plot(result: dict) -> Path:
              fontsize=8, color="#a00")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig_path = ROOT / "report" / "figures" / "m3_viscoelastic.png"
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(fig_path, dpi=150)
     plt.close(fig)
     return fig_path

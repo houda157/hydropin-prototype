@@ -1,4 +1,4 @@
-/* HydroPin dashboard: the farmer app's look (docs/superpowers/specs/2026-11-27-dashboard-reskin-design.md).
+/* HydroPin dashboard: the farmer app's look (docs/design/2026-11-27-dashboard-reskin-design.md).
    Green = all is well, red = leak only, blue = water. Inter, rounded cards, no shadows. */
 :root {
   --bg: #f0fdf4; --panel: #ffffff; --panel-2: #f6faf7; --ink: #0c1814; --muted: #5b6b63; --line: #d0dad3; --grid: #e3ebe5;

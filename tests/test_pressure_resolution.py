@@ -57,7 +57,7 @@ def test_a_flickering_fault_is_notified_once():
 
 def test_replays_rebuilt_from_the_database_keep_raw_counts(tmp_path):
     db = tmp_path / "bench.db"
-    app = create_app(db_path=db, baseline_path=None, start_mqtt=False, static_dir=None)
+    app = create_app(db_path=db, start_mqtt=False, static_dir=None)
     with TestClient(app) as client:
         client.post("/api/runs", json={"label": "none"})
         msgs = sim.simulate(sim.build("baseline", duration_s=20), start=datetime.now(timezone.utc))

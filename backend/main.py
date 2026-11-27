@@ -13,7 +13,6 @@ from __future__ import annotations
 import logging
 import mimetypes
 import os
-import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -22,7 +21,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from detection.baseline import Baseline
 from hydropin import config
 from hydropin.messages import MessageError, parse_message
 
@@ -30,7 +28,6 @@ from . import storage
 from .api import router
 from .bench_live import BenchLive
 from .ingest import ingest_message
-from .live_detect import LiveDetector
 
 log = logging.getLogger("hydropin.mqtt")
 
@@ -96,8 +93,6 @@ class MQTTListener:
             ingest_message(
                 msg,
                 db_path=self.app.state.db_path,
-                detector=self.app.state.detector,
-                detector_lock=self.app.state.detector_lock,
                 bench=self.app.state.bench,
             )
             self.received += 1
@@ -112,7 +107,6 @@ class MQTTListener:
 
 def create_app(
     db_path: str | Path | None = None,
-    baseline_path: str | Path | None = "models/baseline.json",
     start_mqtt: bool = False,
     mqtt_host: str | None = None,
     mqtt_port: int | None = None,
@@ -123,15 +117,9 @@ def create_app(
     db = storage.init_db(db_path)
     app = FastAPI(title="hydropin prototype", version="0.2.0")
     app.state.db_path = str(db)
-    app.state.detector_lock = threading.Lock()
     app.state.mqtt_received = 0
     app.state.notify = bool(notify) if notify is not None else bool(os.environ.get("HYDROPIN_NOTIFY") == "1")
 
-    baseline = None
-    if baseline_path and Path(baseline_path).exists():
-        baseline = Baseline.load(baseline_path)
-    app.state.detector = LiveDetector(baseline) if baseline is not None else None
-    app.state.baseline = baseline
     # rev 1 bench detector: processed frames, /api/state, /ws (Telegram via the same notify switch)
     app.state.bench = BenchLive(send_notifications=app.state.notify) if bench else None
 

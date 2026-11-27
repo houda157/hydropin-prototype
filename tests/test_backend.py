@@ -4,10 +4,8 @@ import io
 from fastapi.testclient import TestClient
 
 from backend.main import create_app
-from detection.baseline import Baseline
 from hydropin.messages import make_message
-from simulator.scenarios import build_scenario
-from simulator.sim import simulate
+from simulator.bench_rev1 import build, simulate
 
 
 def sample(seq=1, label="none"):
@@ -21,11 +19,11 @@ def sample(seq=1, label="none"):
 
 
 def test_rest_ingest_query_export_and_runs(tmp_path):
-    app = create_app(db_path=tmp_path / "test.db", baseline_path=None, start_mqtt=False)
+    app = create_app(db_path=tmp_path / "test.db", start_mqtt=False)
     with TestClient(app) as client:
         health = client.get("/health").json()
         assert health["ok"] is True
-        assert health["detector"] is False
+        assert health["bench_detector"] is True
 
         msg = sample()
         first = client.post("/api/ingest", json=msg)
@@ -64,7 +62,7 @@ def test_rest_ingest_query_export_and_runs(tmp_path):
 
 
 def test_live_labels_follow_marked_onset(tmp_path):
-    app = create_app(db_path=tmp_path / "labels.db", baseline_path=None, start_mqtt=False)
+    app = create_app(db_path=tmp_path / "labels.db", start_mqtt=False)
     with TestClient(app) as client:
         run = client.post("/api/runs", json={"label": "leak_L1", "notes": "onset test"}).json()
         before = make_message(
@@ -96,17 +94,15 @@ def test_live_labels_follow_marked_onset(tmp_path):
         assert client.get("/api/runs").json()[0]["onset_ts"] == "2026-11-24T12:00:01.000Z"
 
 
-def test_live_detector_raises_alert_on_simulated_leak(tmp_path):
-    baseline_df, _ = simulate(build_scenario("baseline", duration_s=120, seed=7))
-    baseline_path = tmp_path / "baseline.json"
-    Baseline.fit_raw(baseline_df).save(baseline_path)
-
-    _, leak_msgs = simulate(build_scenario("leak_L1", duration_s=120, seed=7))
-    app = create_app(db_path=tmp_path / "live.db", baseline_path=baseline_path, start_mqtt=False)
+def test_bench_leak_is_recorded_as_an_alert(tmp_path):
+    """The bench detector's LEAK rising edge is stored in the alerts table (and sent to Telegram)."""
+    msgs = simulate(build("leak_L1", leak_size="large", seed=7, duration_s=150.0))
+    app = create_app(db_path=tmp_path / "live.db", start_mqtt=False)
     with TestClient(app) as client:
-        for msg in leak_msgs[:140]:
+        for msg in msgs:
             assert client.post("/api/ingest", json=msg).status_code == 200
         alerts = client.get("/api/alerts").json()
-        assert alerts, "expected a live alert"
-        assert alerts[0]["branch"] == "l1"
+        assert len(alerts) == 1, "one alert per LEAK episode"
+        assert alerts[0]["branch"] == "A"
         assert alerts[0]["leak_lpm_est"] > 0.1
+        assert alerts[0]["message"].startswith("HydroPin LEAK")

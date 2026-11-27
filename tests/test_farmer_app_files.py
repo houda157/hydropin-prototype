@@ -19,7 +19,7 @@ def test_manifest_on_disk():
 
 
 def test_app_is_served_and_installable(tmp_path):
-    app = create_app(db_path=tmp_path / "a.db", baseline_path=None, start_mqtt=False)
+    app = create_app(db_path=tmp_path / "a.db", start_mqtt=False)
     with TestClient(app) as client:
         page = client.get("/app/")
         assert page.status_code == 200 and "manifest.webmanifest" in page.text and "apple-touch-icon" in page.text

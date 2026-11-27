@@ -28,7 +28,6 @@ def health(request: Request) -> dict[str, Any]:
     return {
         "ok": True,
         "db": request.app.state.db_path,
-        "detector": request.app.state.detector is not None,
         "bench_detector": request.app.state.bench is not None,
         "mqtt": {
             "enabled": listener is not None,
@@ -44,9 +43,6 @@ def ingest(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         return ingest_message(
             payload,
             db_path=_db(request),
-            detector=request.app.state.detector,
-            detector_lock=request.app.state.detector_lock,
-            send_notifications=request.app.state.notify,
             bench=request.app.state.bench,
         )
     except MessageError as exc:

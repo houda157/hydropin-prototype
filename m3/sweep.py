@@ -140,6 +140,7 @@ def main() -> None:
              f"{len(POSITIONS)} positions x {SEEDS} noise draws", fontsize=8, color="#a00")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     fig_path = ROOT / "report" / "figures" / "m3_accuracy.png"
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(fig_path, dpi=150)
     for key in ("noise", "wave_speed"):
         print(key)

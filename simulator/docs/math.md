@@ -134,7 +134,7 @@ Parameters of the bench prototype (hardware list and sketch of 18 Nov 2026). ⚠
 | `PS_SIGMA_N`, `PS_TAU` | $\sigma_s,\tau_{ps}$ | Output noise ⚠, response time | 0.0002, 0.001 | –, s |
 | `DIV_R_TOP`, `DIV_R_BOT`, `DIV_TOL` | $R_1,R_2,t_R$ | Divider resistors and tolerance | 20 k, 10 k, 1 % (rev 1) | Ω, Ω, – |
 | `CL_R_SHUNT` | $R_{sh}$ | Shunt for a 4–20 mA sensor | 150 | Ω |
-| `FW_DIV_FACTOR`, `FW_T_AVG` | $c_{fw},T_{fw}$ | Firmware divider factor, averaging period | 3.2, 1 | –, s |
+| `FW_DIV_FACTOR`, `FW_T_AVG` | $c_{fw},T_{fw}$ | Firmware divider factor, averaging period | 3.0, 1 | –, s |
 | `ADS_FSR`, `ADS_BITS`, `ADS_DR` | $FSR,n_{ads},DR$ | ADS1115 range, resolution, data rate | ±4.096, 16, 128 | V, bit, SPS |
 | `ADS_NOISE`, `ADS_GAIN_ERR`, `ADS_OFFSET_LSB` | $\sigma_{ads},\sigma_g,\sigma_o$ | ADS1115 noise, gain and offset spread | 120 µV, 0.05 %, 1 LSB | V, –, LSB |
 | `ADS_Z_IN`, `ADS_VDD` | $Z_{in},V_{DD}$ | ADS1115 input impedance, supply | 6 MΩ, 3.3 | Ω, V |
@@ -716,7 +716,7 @@ Greedy: add the sensor that raises $\Phi$ the most, repeat until $k$. Then refin
 
 ---
 
-## 9. Open questions (for the mentor and the agricultural engineer)
+## 9. Open questions (for expert review: transients and agronomy)
 
 - [ ] Pipe references used on Tunisian farms (material, SDR/PN, Ø) for mains, sub-mains and laterals → `E_PIPE`, `E_WALL`, `NU_P`
 - [ ] Dripper datasheets (PC or not, $k_d$, $x$, $h_{act}$) → `K_D`, `X_EMIT`, `H_ACT`
@@ -795,7 +795,7 @@ $$
 $$
 \hat V_s = c_{fw}\,\text{code}\,\Delta, \qquad \hat p = p_{min} + (p_{max}-p_{min})\frac{\hat V_s}{V_{max}}
 $$
-Resolution: one code = $2.6 \times 3.2 \times 125\,\mu V / 10\,V \approx 0.10$ mbar ≈ 1 mm of water.
+Resolution: one code = $2.6 \times 3.0 \times 125\,\mu V / 10\,V \approx 0.10$ mbar ≈ 1 mm of water.
 
 ### 10.5 Flow chain (Hall sensor → pulse counter)
 

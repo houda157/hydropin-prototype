@@ -1,7 +1,7 @@
-# farm/ – simulated farm (role 5) – SIMULATION ONLY
+# farm/ – simulated farm – SIMULATION ONLY
 
-WNTR model of a 50 ha Tunisian drip farm, plus a leak dataset for sensor placement
-(role 2) and the GNN / farm M2 (role 4). Assumptions are all in `model/params.yaml`.
+WNTR model of a 50 ha Tunisian drip farm, plus a leak dataset for sensor placement and for leak
+localisation (GNN M1, farm M2). Assumptions are all in `model/params.yaml`.
 
 ```powershell
 py -3.13 -m venv .venv-sim
@@ -17,10 +17,12 @@ py -3.13 -m venv .venv-sim
 **See it:** double-click `explorer/index.html` – an interactive map to explore any leak and test
 sensor placements against all 2,070 leaks.
 
-| Folder | Owner | Content |
-|---|---|---|
-| `model/` | role 5 | farm model, parameters, layout, perturbed models |
-| `leaks/` | role 5 | scenario grid, simulation, dataset in `leaks/out/` (format: `leaks/FORMAT.md`) |
-| `explorer/` | role 5 | interactive map of the farm and its leaks (`index.html`) |
-| `docs/` | role 5 | `DATA_PIPELINE.md`: how the data is made, its fields, how it is used |
-| `placement/`, `drone/` | role 2 | sensor placement, drone dispatch |
+| Folder | Content |
+|---|---|
+| `model/` | farm model, parameters, layout, perturbed models |
+| `leaks/` | scenario grid, simulation, dataset in `leaks/out/` (format: `leaks/FORMAT.md`) |
+| `explorer/` | interactive map of the farm and its leaks (`index.html`) |
+| `docs/` | `DATA_PIPELINE.md`: how the data is made, its fields, how it is used |
+| `placement/` | sensor placement: greedy + swaps + genetic search, robustness on perturbed farms |
+| `methods/` | leak localisation on the farm: M2 (fingerprints), M1 (GNN), fusion |
+| `drone/` | simulated drone dispatch (sunrise route over the most likely pipes) |

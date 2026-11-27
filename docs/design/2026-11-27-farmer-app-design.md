@@ -1,6 +1,6 @@
 # HydroPin farmer app — design
 
-Date: 27 Nov 2026 · Owner: Israa Soudani (market lead) · Status: for approval
+Date: 27 Nov 2026 · Status: implemented (`dashboard/app/`)
 
 ## Why
 
@@ -13,10 +13,10 @@ backend is running.
 ## Goals
 
 - An installable mobile web app (PWA): opens from a link, "Add to home screen" gives a full-screen app with an icon.
-- **Live mode** on the laptop: reads Kmar's backend (`/api/state`) for the **test bench, presented as what it is: a farm network in miniature, "HydroPin test bench · 2 sectors"** (branch A = Sector A, branch B = Sector B). Leak alerts, irrigating / at rest, repair confirmed by the sensors. In the video: a tap opened on the real bench → "Leak in Sector B" on the phone.
+- **Live mode** on the laptop: reads the backend (`/api/state`) for the **test bench, presented as what it is: a farm network in miniature, "HydroPin test bench · 2 sectors"** (branch A = Sector A, branch B = Sector B). Leak alerts, irrigating / at rest, repair confirmed by the sensors. In the video: a tap opened on the real bench → "Leak in Sector B" on the phone.
 - **Demo mode** on GitHub Pages (no backend): a scripted farm day (normal → leak → repair), always labelled "Demo farm".
 - Language chosen by the user: Français, العربية (right to left), English.
-- The leak story of the approved mockups (`.superpowers/brainstorm/138-1795757748/export/farmer-app-mockups.png`).
+- The leak story of the approved mockups (kept outside the repository).
 
 ## Non-goals
 
@@ -39,7 +39,7 @@ backend is running.
 | Fit | same no-build approach as the dashboard, same Pages workflow, same backend origin | build step + workflow change | separate project |
 | Time | 4–5 h | 6–8 h | 10 h+ |
 
-Chosen by Israa on 27 Nov: A.
+Chosen: A.
 
 **How live mode presents the bench** (the app is about farms, the prototype is a bench):
 
@@ -49,7 +49,7 @@ Chosen by Israa on 27 Nov: A.
 | Shows the real chain | yes: tap opened → phone alert | no: a mockup with nothing behind | yes, but confusing |
 | Cost | as planned | ~1 h less | more, and hard to explain in 3 min |
 
-Chosen by Israa on 27 Nov: 1. The data path is the farm's (sensors → network → backend → app); only the size differs.
+Chosen: 1. The data path is the farm's (sensors → network → backend → app); only the size differs.
 
 ## What the user decided
 
@@ -180,7 +180,7 @@ It uses the same formula, with the bench's share of water lost. If the other fig
 - `fr`, `ar`, `en`; default from the browser language, otherwise `fr`. Remembered in `localStorage` when allowed.
 - Arabic sets `dir="rtl"`: layout mirrors (CSS logical properties), and direction icons (back, go) flip.
 - Numbers use the `fr-TN`, `ar-TN` (Latin digits) or `en` locale.
-- The Arabic strings are Modern Standard Arabic and need Israa's proofreading.
+- The Arabic strings are Modern Standard Arabic and still need a native proofread.
 
 ## Constraints
 
@@ -197,7 +197,7 @@ It uses the same formula, with the bench's share of water lost. If the other fig
 - The empty state of Savings.
 - Service-worker cache list details.
 
-## Open items (Israa)
+## Open items
 
 - Fill `FARM_SCALE`, with a source for each value.
 - Proofread the Arabic strings.

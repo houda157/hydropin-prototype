@@ -1,4 +1,4 @@
-# M3 tab data – format v1.1 (proposal for `contract/dashboard-data.md`)
+# M3 tab data – format v1.1 (summarised in `contract/dashboard-data.md`)
 
 **Everything here is simulation** (M3 runs in simulation only, team decision 21 Nov). Show a
 clear "Simulation" label on the M3 tab. Made by `python -m m3.export_dashboard` (~2 min).

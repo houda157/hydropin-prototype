@@ -8,7 +8,7 @@ from simulator.bench_rev1 import build, simulate
 
 
 def test_unexpected_error_is_counted_not_raised(tmp_path, monkeypatch):
-    app = create_app(db_path=tmp_path / "b.db", baseline_path=None, start_mqtt=False, static_dir=None)
+    app = create_app(db_path=tmp_path / "b.db", start_mqtt=False, static_dir=None)
     listener = MQTTListener(app, "localhost", 1883)
 
     def boom(*a, **k):

@@ -26,7 +26,6 @@ jobs:
         run: |
           mkdir -p _site/farm-explorer _site/twin
           cp -r dashboard/. _site/
-          rm -f _site/app.py                                  # Streamlit app, not part of the static site
           cp farm/explorer/index.html farm/explorer/farm-data.js _site/farm-explorer/
           cp simulator/demo/hydropin_viewer.html _site/twin/
           touch _site/.nojekyll

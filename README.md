@@ -9,8 +9,7 @@ laptop backend -> dashboard. The detector is explainable (flow + M2 PCA/SVD on t
 and what is simulation. Until the bench campaign is exported, every result in this repo
 (scoreboard, replays, farm, M3) comes from simulation and is labelled as such.
 
-The full research, datasets, design decisions and plans are
-in **[`docs/RESEARCH_AND_PLAN.md`](docs/RESEARCH_AND_PLAN.md)**.
+The design, methods and results are described in the technical report, delivered separately.
 
 **How to run, use and see everything** (website tabs, bench tests, ESP32, Telegram, bench-day
 commands, farm and M3, public link): **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)**.
@@ -56,7 +55,7 @@ The research suites (`simulator/tests`, `m3/tests`, `farm/tests`) need `requirem
 
 What a farmer sees when a buried pipe leaks: the alert, where it is, how serious, the repair confirmed
 by the sensors, and the money saved. Installable mobile web app (no build step), Français / العربية /
-English. Design: `docs/superpowers/specs/2026-11-27-farmer-app-design.md`.
+English. Design: `docs/design/2026-11-27-farmer-app-design.md`.
 
 - **Live (the test bench):** open `http://localhost:8001/app/` (or `:8000`) while the backend runs. The
   bench is shown as what it is, "HydroPin test bench · 2 sectors" (branch A = Sector A, B = Sector B);
@@ -72,25 +71,6 @@ English. Design: `docs/superpowers/specs/2026-11-27-farmer-app-design.md`.
   null value shows "—". Severity: share of the pumped water lost (< 5 % small, < 15 % medium, else large).
 - Backend support: `GET /api/leaks`, `POST /api/leaks/{id}/fixed` (leak episodes, `backend/leaks.py`).
 - Tests: `node --test "dashboard/app/tests/*.test.js"` (Node 22) and `pytest tests`.
-
-## Legacy: 4-flow pipeline (simulation only)
-
-An earlier design had a flow sensor on every branch. The bench as built has only the main flow
-sensor, so this pipeline (`simulator/sim.py`, `detection/detect.py`, the Random Forest in `ml/`)
-is **simulation only** and is not part of the demo. Its scores (detector F1 0.957, Random Forest
-macro F1 0.98) are on simulated 4-flow data and say nothing about the real bench.
-
-```powershell
-python -m simulator.sim --scenario baseline --duration 120 --seed 7
-python -m simulator.sim --scenario leak_L1 --duration 120 --seed 7
-python -m detection.baseline --csv data/raw/baseline_seed7.csv --out models/baseline.json
-python -m detection.evaluate --dir data/raw --strict
-python -m ml.train --seeds 1 2 3 4
-python -m ml.predict --model models/hydropin_rf.joblib --csv data/raw/leak_L1_seed7.csv
-streamlit run dashboard/app.py                          # the older Streamlit dashboard
-```
-
-The simulator also emits a dark Plotly report: `data/raw/<scenario>_seed<seed>.html`.
 
 ## Laptop settings (.env)
 
@@ -114,7 +94,7 @@ marked SIMULATED and stay labelled simulation).
 
 ## Farm (simulation): placement, M1/M2, drone
 
-Run in `.venv-sim`, in this order (after role 1's sigma, pass `--sigma-bar` to the first two):
+Run in `.venv-sim`, in this order (once the bench sigma is measured, pass `--sigma-bar` to the first two):
 
 ```powershell
 python -m farm.leaks.generate
@@ -135,16 +115,13 @@ File formats: `contract/dashboard-data.md`.
 python -m tools.calibrate flow --pulses 900 --litres 2.0 --seconds 60
 python -m tools.calibrate pressure --point 0:0 --point 8889:2 --point 17778:4 --point 26667:6
 
-# after collecting runs: validate exported CSVs, fix a missed onset
-python -m tools.validate_dataset --dir data/real --strict
-python -m tools.label_csv --csv data/real/leak_L1_01.csv --label leak_L1 --onset 2026-11-24T12:00:30Z
-# (training and scoring of the bench detector: see "Bench day" above)
+# training and scoring of the bench detector: see "Bench day" above
 ```
 
-In the dashboard, start a run before the leak and press **Mark leak onset** when
-the valve opens; only samples after that instant inherit the run label. The
-`/api/export.csv` file includes raw pulses, raw pressure ADC and the `clipped`
-flag, so the validator and calibration fitter can run on exported runs too.
+In the dashboard, start a run before the leak and press **Open L1/L2/L3** when the tap opens (and
+**Tap closed** when it closes); only samples after that instant inherit the run label. The
+`/api/export.csv` file includes raw pulses, raw pressure ADC and the `clipped` flag, so the
+calibration fitter can run on exported runs too.
 
 ## Layout
 
@@ -153,19 +130,17 @@ flag, so the validator and calibration fitter can run on exported runs too.
 - `firmware/` ESP32 PlatformIO project (ADS1115 PT1/PT2 + main flow ISR + MQTT)
 - `hydropin/` shared Python: config, units, message parsing
 - `simulator/` digital twin `hydropin_sim/` (physics, sensors, M1/M2/M3, prototype bench; see simulator/README.md)
-  + bench data generator `sim.py` / `scenarios.py` (scenarios, quantization, dropout)
   + rev 1 bench simulator `bench_rev1.py` (F0 + PT1 + PT2, taps L1-L3, stress and fault scenarios)
 - `detection/` rev 1 bench detector `bench_detector.py`, replay/scoring `replay.py`, campaign
-  training; plus the legacy 4-flow M0 detector (`detect.py`, simulation only)
-- `ml/` legacy 4-flow Random Forest (scikit-learn, simulation only)
+  training (`train_bench.py`), report charts
 - `backend/` FastAPI + SQLite + MQTT listener + REST/WebSocket; serves the static dashboard at `/`
 - `dashboard/` static dashboard (`index.html`, live + replay, no build step; published on Pages),
-  its data (`replays/`, `scoreboard*.json`, `farm/`, `m3/`) and the older Streamlit `app.py`
+  its data (`replays/`, `scoreboard*.json`, `farm/`, `m3/`), the 3D bench (`bench3d/`) and the farmer app (`app/`)
 - `farm/`, `m3/` virtual farm + leak dataset, M3 pressure-wave method (simulation; see their READMEs)
-- `tools/` real-data validator, onset labeller, calibration fitter, replay/scoreboard export
+- `tools/` calibration fitter, noise σ, replay/scoreboard export, serial bridge, simulated campaign, report figures
 - `data/` runs, database, calibration notes
-- `docs/` wiring, test protocol, research + plan
-- `models/` legacy 4-flow baseline and Random Forest (generated, simulation only)
+- `docs/` user guide, wiring, test protocol, design notes (`docs/design/`)
+- `twin/` twin-vs-real comparison
 
 ## Calibration warning
 

@@ -33,7 +33,7 @@ from the bench. Every value is set in `m3/params.yaml` or in the code named belo
 
 | Parameter | Value | Where it comes from |
 |---|---|---|
-| Length `L` | 150 m | role 5 brief (as in the earlier simulation) |
+| Length `L` | 150 m | assumption (as in the earlier simulation) |
 | Inner diameter `D` | 0.05 m (area 1.963 × 10⁻³ m²) | assumption (PE 63 class) |
 | Wave speed `a` | 350 m/s | brief: 300–400 m/s in PE |
 | Darcy friction `f` | 0.02 | assumption |
@@ -106,7 +106,7 @@ sensor sits at the valve.** Positions are measured from the reservoir.
 | `echo` | `x_leak_true_m`, `x_leak_est_m`, `error_m`, `echo_amplitude_m` (0.235 m), `leak_fraction`, `note` |
 | `min_head_m` | lowest head anywhere in the pipe (> 0, so no column separation) |
 
-**Used for:** proving the solver is correct (report, mentor review).
+**Used for:** proving the solver is correct (report).
 
 ---
 
@@ -433,7 +433,7 @@ differ in the last digits between machines (floating-point and thread order).
 
 - One straight pipe, one sensor at the valve: no junctions, no branches, no trapped air.
 - Steady friction only (no unsteady friction).
-- Creep values are **illustrative**: the mentor should confirm them. Real pipes need the
+- Creep values are **illustrative** and still need an expert check. Real pipes need the
   one-time calibration; its simulated accuracy is optimistic (5.1), the model-form test (5.2) is the fairer check.
 - The leak is a fixed orifice. Noise is white Gaussian. Wave speed, friction and creep are
   uniform along the pipe.
