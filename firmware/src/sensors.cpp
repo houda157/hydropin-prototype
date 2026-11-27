@@ -10,8 +10,6 @@ volatile uint32_t g_pulses_main = 0;
 static Adafruit_ADS1115 s_ads;
 static uint32_t s_last_count = 0;
 static uint32_t s_slots[FLOW_WINDOW_SLOTS] = {};
-static uint32_t s_slot_ms[FLOW_WINDOW_SLOTS] = {};   // time each slot actually covered
-static uint32_t s_last_read_ms = 0;
 static uint8_t s_slot = 0;
 
 static void IRAM_ATTR isr_main() { g_pulses_main = g_pulses_main + 1; }
@@ -42,9 +40,7 @@ static int16_t read_adc(uint8_t channel) {
     for (uint8_t i = 0; i < PRESSURE_OVERSAMPLE; i++) {
         acc += s_ads.readADC_SingleEnded(channel);
     }
-    acc /= PRESSURE_OVERSAMPLE;
-    // single-ended reads dip a few counts below 0 near 0 V; the contract keeps counts >= 0
-    return (int16_t)(acc < 0 ? 0 : acc);
+    return (int16_t)(acc / PRESSURE_OVERSAMPLE);
 }
 
 static float adc_to_bar(int16_t adc, float divider, float gain, float offset) {
@@ -58,24 +54,15 @@ SensorSnapshot sensors_read() {
     count = g_pulses_main;
     interrupts();
 
-    uint32_t now_ms = millis();
     uint32_t delta = count - s_last_count;
     s_last_count = count;
     s_slots[s_slot] = delta;
-    // a stalled loop (e.g. a slow MQTT reconnect) makes a slot longer than 500 ms: divide the
-    // pulses by the time they were really counted over, not by a fixed 2 s
-    s_slot_ms[s_slot] = s_last_read_ms == 0 ? PUBLISH_PERIOD_MS : now_ms - s_last_read_ms;
-    s_last_read_ms = now_ms;
     s_slot = (s_slot + 1) % FLOW_WINDOW_SLOTS;
 
     uint32_t sum = 0;
-    uint32_t window_ms = 0;
-    for (uint8_t k = 0; k < FLOW_WINDOW_SLOTS; k++) {
-        sum += s_slots[k];
-        window_ms += s_slot_ms[k];
-    }
+    for (uint8_t k = 0; k < FLOW_WINDOW_SLOTS; k++) sum += s_slots[k];
 
-    const float window_s = (window_ms > 0 ? window_ms : FLOW_WINDOW_MS) / 1000.0f;
+    const float window_s = FLOW_WINDOW_MS / 1000.0f;
 
     int16_t adc_pt1 = read_adc(ADS_CHANNEL_PT1);
     int16_t adc_pt2 = read_adc(ADS_CHANNEL_PT2);

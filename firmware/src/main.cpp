@@ -33,10 +33,8 @@ static void publish_snapshot(const SensorSnapshot& s) {
     values["flow_l1_lpm"] = 0.0f;
     values["flow_l2_lpm"] = 0.0f;
     values["flow_l3_lpm"] = 0.0f;
-    // 4 decimals: one ADC count is ~0.2 mbar; 0.01 bar rounding looked like a stuck sensor.
-    // (The backend recomputes bar from raw ADC anyway, so older firmware still works.)
-    values["pressure_bar"] = roundf(s.pressure_bar * 10000.0f) / 10000.0f;
-    values["pressure_b_bar"] = roundf(s.pressure_b_bar * 10000.0f) / 10000.0f;
+    values["pressure_bar"] = roundf(s.pressure_bar * 100.0f) / 100.0f;
+    values["pressure_b_bar"] = roundf(s.pressure_b_bar * 100.0f) / 100.0f;
 
     JsonObject quality = doc["quality"].to<JsonObject>();
     quality["dropout"] = false;
@@ -50,8 +48,6 @@ static void publish_snapshot(const SensorSnapshot& s) {
         return;
     }
     serializeJson(doc, payload, sizeof(payload));
-    // One JSON line per frame on USB too: tools/serial_bridge.py forwards it if WiFi fails.
-    Serial.println(payload);
     if (!network_publish(payload)) {
         Serial.println("[main] publish failed (mqtt down)");
     }
