@@ -91,7 +91,7 @@ def build(name: str, **overrides) -> BenchScenario:
     return replace(sc, **{k: v for k, v in overrides.items() if v is not None})
 
 
-def simulate(sc: BenchScenario, device: str = config.DEFAULT_DEVICE,
+def simulate(sc: BenchScenario, device: str = config.SIM_DEVICE,
              start: datetime | None = None) -> list[dict]:
     """Messages (rev 1 contract) for one scenario, one every 0.5 s."""
     rng = np.random.default_rng(sc.seed)
@@ -194,7 +194,7 @@ def main(argv=None) -> int:
     ap.add_argument("--publish", action="store_true", help="publish over MQTT")
     ap.add_argument("--broker", default=config.MQTT_HOST)
     ap.add_argument("--port", type=int, default=config.MQTT_PORT)
-    ap.add_argument("--device", default=config.DEFAULT_DEVICE)
+    ap.add_argument("--device", default=config.SIM_DEVICE)
     ap.add_argument("--post", metavar="URL", help="send to the backend's POST /api/ingest instead of MQTT")
     ap.add_argument("--now", action="store_true", help="timestamps from the wall clock (live demo)")
     a = ap.parse_args(argv)

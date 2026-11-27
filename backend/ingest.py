@@ -24,6 +24,13 @@ def ingest_message(
     alert: dict[str, Any] | None = None
     frame: dict[str, Any] | None = None
     with storage.db_session(db_path) as conn:
+        placed = storage.place_reading(conn, msg)
+        if placed is None:                      # MQTT redelivery of a stored message
+            return {"inserted": False, "alert": None, "frame": None}
+        boot, ts = placed
+        device_ts = msg["ts"]
+        if ts != device_ts:                     # board clock not set yet: laptop time
+            msg = {**msg, "ts": ts}
         run = storage.active_run(conn)
         # Real firmware always sends label="none"; the dashboard marks the leak
         # onset, and only live samples at/after that instant inherit the run
@@ -36,7 +43,7 @@ def ingest_message(
                 and str(msg["ts"]) >= str(run["onset_ts"])
             ):
                 msg = {**msg, "label": run["label"]}
-        inserted = storage.insert_reading(conn, msg)
+        inserted = storage.insert_reading(conn, msg, boot=boot, device_ts=device_ts)
         if inserted and detector is not None:
             flows = {c: msg["values"][f"flow_{c}_lpm"] for c in config.FLOW_CHANNELS}
             lock = detector_lock or threading.Lock()

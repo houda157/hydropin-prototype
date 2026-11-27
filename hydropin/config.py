@@ -24,7 +24,8 @@ SCHEMA_VERSION = "1.0"
 MQTT_HOST = "localhost"
 MQTT_PORT = 1883
 MQTT_BASE_TOPIC = "hydropin/bench"
-DEFAULT_DEVICE = "esp32-bench-01"
+DEFAULT_DEVICE = "esp32-bench-01"     # the real board (firmware DEVICE_ID)
+SIM_DEVICE = "sim-bench-01"          # simulator/bench_rev1.py, so simulated runs never mix with the board's
 
 PUBLISH_HZ = 2.0
 SAMPLE_PERIOD_S = 1.0 / PUBLISH_HZ
