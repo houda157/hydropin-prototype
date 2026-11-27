@@ -21,3 +21,12 @@ def test_bridge_survives_send_failures():
         raise ConnectionError("broker down")
     n = bridge_lines([json.dumps(m) for m in msgs], boom, log=lambda *_: None)
     assert n["send_failed"] == len(msgs) and n["sent"] == 0
+
+
+def test_localhost_urls_skip_the_slow_ipv6_attempt():
+    from hydropin.config import fast_local_url
+    assert fast_local_url("http://localhost:8000") == "http://127.0.0.1:8000"
+    assert fast_local_url("http://localhost:8000/api") == "http://127.0.0.1:8000/api"
+    assert fast_local_url("http://localhost") == "http://127.0.0.1"
+    assert fast_local_url("http://192.168.1.10:8000") == "http://192.168.1.10:8000"
+    assert fast_local_url("http://localhost.example.com") == "http://localhost.example.com"

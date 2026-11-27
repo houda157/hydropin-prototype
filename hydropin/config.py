@@ -18,6 +18,8 @@ fits above are from the sensor datasheet range + the actual 20k/10k divider.
 """
 from __future__ import annotations
 
+import re
+
 SCHEMA_VERSION = "1.0"
 
 # --- transport -------------------------------------------------------------
@@ -26,6 +28,18 @@ MQTT_PORT = 1883
 MQTT_BASE_TOPIC = "hydropin/bench"
 DEFAULT_DEVICE = "esp32-bench-01"     # the real board (firmware DEVICE_ID)
 SIM_DEVICE = "sim-bench-01"          # simulator/bench_rev1.py, so simulated runs never mix with the board's
+
+
+
+def fast_local_url(url: str) -> str:
+    """``http://localhost:...`` -> ``http://127.0.0.1:...``.
+
+    On Windows, "localhost" tries IPv6 (::1) first; uvicorn listens on IPv4 only, so every
+    request waited about 2 s before falling back. That is slower than the board's 2 messages
+    per second, so the serial bridge and the simulator fell further and further behind.
+    """
+    return re.sub(r"^(https?://)localhost(?=[:/]|$)", r"\g<1>127.0.0.1", url)
+
 
 PUBLISH_HZ = 2.0
 SAMPLE_PERIOD_S = 1.0 / PUBLISH_HZ

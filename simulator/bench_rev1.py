@@ -230,7 +230,7 @@ def main(argv=None) -> int:
             client.publish(config.telemetry_topic(m["device"]), json.dumps(m), qos=1)
         if a.post:
             import urllib.request
-            req = urllib.request.Request(a.post.rstrip("/") + "/api/ingest", data=json.dumps(m).encode(),
+            req = urllib.request.Request(config.fast_local_url(a.post.rstrip("/")) + "/api/ingest", data=json.dumps(m).encode(),
                                          headers={"Content-Type": "application/json"}, method="POST")
             urllib.request.urlopen(req, timeout=5).read()
     if client is not None:
