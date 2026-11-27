@@ -3,6 +3,10 @@
 // Tone: short, plain words a farmer reads at 6 am. No technical terms on the first screen.
 
 const en = {
+  "sheet.sensors": "Sensors", "sheet.water_saved": "Water saved this season", "sheet.avg_repair": "Average time to repair",
+  "plan.monitor": "Monitor: the alert and the suspect zone", "plan.pinpoint": "Pinpoint: adds the pressure-wave test, to a few metres",
+  "plan.payment": "Half paid at the start of the season, half after harvest",
+  "share.text": "HydroPin season {year}: {n} leaks found and fixed, about {dt} DT saved (estimate).", "btn.close": "Close",
   "tab.home": "Home", "tab.map": "Map", "tab.savings": "Savings", "tab.help": "Help",
   "hello.morning": "Good morning", "hello.afternoon": "Good afternoon", "hello.evening": "Good evening",
   "badge.demo": "Demo farm", "badge.live": "Test bench · 2 sectors", "bench.name": "HydroPin test bench",
@@ -41,6 +45,10 @@ const en = {
 };
 
 const fr = {
+  "sheet.sensors": "Capteurs", "sheet.water_saved": "Eau économisée cette saison", "sheet.avg_repair": "Temps moyen de réparation",
+  "plan.monitor": "Monitor : l'alerte et la zone suspecte", "plan.pinpoint": "Pinpoint : ajoute le test par onde de pression, à quelques mètres près",
+  "plan.payment": "La moitié au début de la saison, l'autre après la récolte",
+  "share.text": "HydroPin saison {year} : {n} fuites trouvées et réparées, environ {dt} DT économisés (estimation).", "btn.close": "Fermer",
   "tab.home": "Accueil", "tab.map": "Carte", "tab.savings": "Économies", "tab.help": "Aide",
   "hello.morning": "Bonjour", "hello.afternoon": "Bon après-midi", "hello.evening": "Bonsoir",
   "badge.demo": "Ferme de démo", "badge.live": "Banc d'essai · 2 secteurs", "bench.name": "Banc d'essai HydroPin",
@@ -83,6 +91,10 @@ const fr = {
 
 // Modern Standard Arabic. Proofread by Israa before the video.
 const ar = {
+  "sheet.sensors": "المستشعرات", "sheet.water_saved": "الماء الموفَّر هذا الموسم", "sheet.avg_repair": "متوسط مدة الإصلاح",
+  "plan.monitor": "Monitor: التنبيه والمنطقة المشتبه بها", "plan.pinpoint": "Pinpoint: يضيف اختبار موجة الضغط، بدقة بضعة أمتار",
+  "plan.payment": "النصف في بداية الموسم، والنصف بعد الحصاد",
+  "share.text": "HydroPin موسم {year}: {n} تسربات اكتُشفت وأُصلحت، حوالي {dt} د.ت موفّرة (تقدير).", "btn.close": "إغلاق",
   "tab.home": "الرئيسية", "tab.map": "الخريطة", "tab.savings": "التوفير", "tab.help": "مساعدة",
   "hello.morning": "صباح الخير", "hello.afternoon": "مساء الخير", "hello.evening": "مساء الخير",
   "badge.demo": "مزرعة تجريبية", "badge.live": "منصة اختبار · قطاعان", "bench.name": "منصة اختبار HydroPin",

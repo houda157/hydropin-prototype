@@ -1,0 +1,101 @@
+/* HydroPin farmer app. Tokens and components from the approved mockups
+   (.superpowers/brainstorm/.../farmer-app-hifi.html). Logical properties so Arabic mirrors. */
+:root {
+  --primary: #15803D; --primary-tint: rgba(21, 128, 61, .10); --danger: #DC2626; --danger-tint: rgba(220, 38, 38, .09);
+  --warning: #A16207; --water: #1D5FA8; --bg: #F0FDF4; --card: #FFFFFF; --fg: #14532D; --muted: #475569; --border: #D7EFDF;
+  --off: #64748b; --off-tint: #eef2f1;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: #E3EBE5; color: var(--fg); font: 16px/1.45 Inter, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+.app { max-width: 430px; min-height: 100dvh; margin-inline: auto; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+main { flex: 1; padding: 14px 16px calc(92px + env(safe-area-inset-bottom)); }
+.loading { color: var(--muted); text-align: center; margin-top: 40vh; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; border-radius: 8px; }
+
+.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ic.sm { width: 18px; height: 18px; } .ic.xl { width: 44px; height: 44px; stroke-width: 1.8; }
+[dir="rtl"] .ic-dir { transform: scaleX(-1); }
+
+/* header */
+.hello { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 4px 0 14px; }
+.hello .t { font-size: 14px; color: var(--muted); } .hello .n { font-size: 21px; font-weight: 800; line-height: 1.2; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--primary-tint); color: var(--primary); margin-top: 6px; }
+.chip.rest { background: var(--off-tint); color: var(--muted); }
+.chip.demo { background: #fdf4e3; color: var(--warning); } .chip.live { background: #e6eefb; color: var(--water); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* status, cards, buttons */
+.status { border-radius: 20px; padding: 16px; display: flex; gap: 14px; align-items: center; }
+.status.ok { background: var(--primary-tint); color: var(--primary); }
+.status.bad { background: var(--danger-tint); color: var(--danger); }
+.status.off { background: var(--off-tint); color: var(--off); }
+.status .t { font-size: 19px; font-weight: 800; line-height: 1.25; }
+.status .s { font-size: 14px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.card { background: var(--card); border-radius: 20px; border: 1px solid var(--border); padding: 12px; margin-top: 12px; }
+.card.map { padding: 0; overflow: hidden; margin-top: 0; }
+.row-card { display: flex; gap: 12px; align-items: center; font-size: 14.5px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 16px; min-height: 52px; padding: 0 16px; font-weight: 700; font-size: 16px; margin-top: 12px; width: 100%; text-align: center; }
+.btn.primary { background: var(--primary); color: #fff; } .btn.danger { background: var(--danger); color: #fff; }
+.btn.outline { border: 1.5px solid var(--border); background: var(--card); color: var(--fg); font-weight: 600; }
+.btn.link { color: var(--primary); font-weight: 600; min-height: 44px; }
+.btn.big { min-height: 62px; font-size: 18px; }
+.btn:active { transform: scale(.98); }
+.saved { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; padding: 12px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); }
+.saved .l { font-size: 14px; color: var(--muted); } .saved .v { text-align: end; }
+.money { font-size: 22px; font-weight: 800; color: var(--primary); }
+.est { font-size: 11px; font-weight: 600; color: var(--warning); text-transform: uppercase; letter-spacing: .04em; }
+.muted { color: var(--muted); }
+.sec { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 2px 4px; }
+.sec .h { font-size: 12px; font-weight: 700; color: var(--off); text-transform: uppercase; letter-spacing: .07em; }
+.sec .a { font-size: 14px; color: var(--primary); font-weight: 600; padding: 8px 0; }
+.li { display: flex; align-items: center; gap: 10px; padding: 11px 2px; border-top: 1px solid var(--border); font-size: 14.5px; }
+.li .tx { flex: 1; }
+.ok-c { color: var(--primary); } .bad-c { color: var(--danger); }
+.details { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 48px; padding: 0 2px; border-top: 1px solid var(--border); margin-top: 10px; font-size: 15px; color: var(--muted); font-weight: 500; }
+.topbar { display: flex; align-items: center; gap: 12px; margin: 2px 0 12px; font-weight: 700; font-size: 18px; }
+.back { width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex: none; }
+.title { font-size: 24px; font-weight: 800; margin: 6px 0 2px; }
+.bigsay { font-size: 23px; font-weight: 800; line-height: 1.2; margin: 16px 0 4px; }
+.sub { font-size: 15px; color: var(--muted); margin: 0; }
+.center { text-align: center; } .tall { padding-top: 8vh; }
+.huge { margin: 8px 0; } .huge .money { font-size: 44px; }
+.bigcheck { width: 112px; height: 112px; border-radius: 50%; background: var(--primary-tint); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+.bigcheck .ic { width: 64px; height: 64px; stroke-width: 1.8; }
+.spinner { width: 64px; height: 64px; border-radius: 50%; border: 6px solid var(--primary-tint); border-block-start-color: var(--primary); margin: 0 auto; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; padding: 0 4px; }
+.bars div { flex: 1; border-radius: 8px 8px 3px 3px; background: var(--primary); opacity: .85; }
+.bars-l { display: flex; justify-content: space-between; font-size: 12px; color: var(--off); padding: 6px 8px 0; }
+
+/* sheet (Details, profile...) */
+#sheet { position: fixed; inset: 0; z-index: 10; }
+#sheet .dim { position: absolute; inset: 0; background: rgba(10, 30, 20, .38); }
+#sheet .panel { position: absolute; inset-inline: 0; bottom: 0; max-width: 430px; margin-inline: auto; max-height: 85dvh; overflow-y: auto; background: var(--card); border-radius: 26px 26px 0 0; padding: 10px 20px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 28px rgba(0, 0, 0, .18); }
+#sheet h2 { font-size: 19px; margin: 4px 0 8px; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 12px; }
+.kv { padding: 11px 0; border-top: 1px solid var(--border); font-size: 15px; }
+.kv .k { font-size: 12px; font-weight: 700; color: var(--off); text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 4px; }
+.pill { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 20px; margin-inline-end: 6px; }
+.sev-small { background: var(--primary-tint); color: var(--primary); }
+.sev-medium { background: #fdf4e3; color: var(--warning); }
+.sev-large { background: var(--danger-tint); color: var(--danger); }
+.langs { display: flex; gap: 8px; flex-wrap: wrap; }
+.lang { min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1.5px solid var(--border); font-weight: 600; }
+.lang[aria-pressed="true"] { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* tab bar */
+#tabs { position: fixed; bottom: 0; inset-inline: 0; max-width: 430px; margin-inline: auto; display: flex; justify-content: space-around; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--border); z-index: 5; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11.5px; color: var(--off); font-weight: 500; min-width: 64px; min-height: 48px; justify-content: center; }
+.tab.on { color: var(--primary); font-weight: 700; }
+
+/* farm drawing: water flows while irrigating */
+.farm svg { max-height: 190px; }
+.flow { stroke-dasharray: 7 9; animation: flow 1.1s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -16; } }
+@media (prefers-reduced-motion: reduce) { .flow, .pulse, .spinner { animation: none; } }
