@@ -19,7 +19,7 @@
 - Severity thresholds: `share < 0.05` small, `< 0.15` medium, otherwise large (`SEVERITY = {medium_from: 0.05, large_from: 0.15}` in `dashboard/config.js`).
 - Money: `saved_m3 = max(0, share × farm_flow_m3_per_h × irrigation_hours_per_day × days_to_notice_without_hydropin − lost_m3)`, `saved_dt = saved_m3 × price_dt_per_m3`; bench `lost_m3 = lost_l / 1000 × farm_flow_m3_per_h / (base_lpm × 0.06)`; any null parameter → money `null`, shown "—".
 - Demo placeholders (only in demo mode, labelled "estimate"): `farm_flow_m3_per_h 200, irrigation_hours_per_day 8, days_to_notice_without_hydropin 10, price_dt_per_m3 0.25`.
-- Demo mode is always labelled "Demo farm"; live mode "Live · bench".
+- Demo mode is always labelled "Demo farm" (farmer "Mr Moez", 4 sectors). Live mode is the test bench as a mini-farm: name "HydroPin test bench", badge "Test bench · 2 sectors", sectors A and B = bench branches A and B; its money lines are projections ("If this leak happened on a {area} ha farm: about {dt} DT").
 - Languages `fr` (default), `ar` (RTL, `ar-TN` locale, Latin digits), `en`; key parity across the three.
 - Tests: `node --test dashboard/app/tests/` and `.venv/Scripts/python -m pytest tests -q` must both pass after every task.
 - Commits: no AI co-author lines.
@@ -160,7 +160,7 @@ test("leak view", () => {
 - Test: `dashboard/app/tests/i18n.test.js`
 
 **Interfaces:**
-- Produces: `STRINGS = { fr: {...}, ar: {...}, en: {...} }`, flat keys. Required keys (copy in the spec's tone; `{x}` are placeholders): `tab.home tab.map tab.savings tab.help hello.morning hello.afternoon hello.evening badge.demo badge.live status.ok.title status.ok.sub status.leak.title({sector}) status.leak.sub({time}) status.offline.title status.offline.sub farm.irrigating({sectors}) farm.rest saved.season alerts.title alerts.see_all alerts.leak_fixed({sector},{date}) alerts.leak_open({sector}) btn.show_where btn.take_me btn.call_tech btn.fixed_it btn.back_home btn.call_us btn.whatsapp_us btn.share_report btn.add_photo where.title where.sector({sector}) where.near_tap({tap}) details.title details.severity sev.small sev.medium sev.large sev.advice.small sev.advice.medium sev.advice.large details.why details.why_text({sector}) details.lost details.where details.how_we_count money.how({perHour},{days},{hours},{saved},{price},{dt}) money.not_set money.estimate checking.title checking.sub fixed.title fixed.sub fixed.saved fixed.not_confirmed map.title map.sensors_ok({n}) map.sensors_pipes savings.title savings.season({year}) savings.count({n}) savings.details help.title help.next_visit help.plan profile.title profile.language profile.source currency`.
+- Produces: `STRINGS = { fr: {...}, ar: {...}, en: {...} }`, flat keys. Required keys (copy in the spec's tone; `{x}` are placeholders): `tab.home tab.map tab.savings tab.help hello.morning hello.afternoon hello.evening badge.demo badge.live(="Test bench · 2 sectors") bench.name(="HydroPin test bench") money.if_farm({area},{dt}) money.if_farm_no_area({dt}) status.ok.title status.ok.sub status.leak.title({sector}) status.leak.sub({time}) status.offline.title status.offline.sub farm.irrigating({sectors}) farm.rest saved.season alerts.title alerts.see_all alerts.leak_fixed({sector},{date}) alerts.leak_open({sector}) btn.show_where btn.take_me btn.call_tech btn.fixed_it btn.back_home btn.call_us btn.whatsapp_us btn.share_report btn.add_photo where.title where.sector({sector}) where.near_tap({tap}) details.title details.severity sev.small sev.medium sev.large sev.advice.small sev.advice.medium sev.advice.large details.why details.why_text({sector}) details.lost details.where details.how_we_count money.how({perHour},{days},{hours},{saved},{price},{dt}) money.not_set money.estimate checking.title checking.sub fixed.title fixed.sub fixed.saved fixed.not_confirmed map.title map.sensors_ok({n}) map.sensors_pipes savings.title savings.season({year}) savings.count({n}) savings.details help.title help.next_visit help.plan profile.title profile.language profile.source currency`.
 - Produces: `detectLang(navLang: string | undefined, stored: string | null) -> "fr" | "ar" | "en"` (stored wins if valid; else `navLang` prefix; else `"fr"`); `t(lang, key, vars = {}) -> string` (falls back to `fr`, then to the key; replaces `{name}`); `isRtl(lang) -> boolean`; `locale(lang) -> "fr-TN" | "ar-TN" | "en"`; `fmt(lang, n, digits = 0) -> string` via `Intl.NumberFormat(locale(lang), { maximumFractionDigits: digits, numberingSystem: "latn" })`; `loadLang(storage = globalThis.localStorage) -> string | null` and `saveLang(lang, storage = globalThis.localStorage) -> void`, both wrapped in try/catch.
 
 - [ ] **Step 1: Write the failing tests:**
@@ -308,7 +308,11 @@ test("detectSource", async () => {
      - "Call" → `tel:+21600000000` (placeholder, open item);
      - "WhatsApp us" → `https://wa.me/21600000000`;
      - "Share the report" → `navigator.share` if present, else copy the text.
-  4. Escape every interpolated value with an `esc()` helper.
+  4. Live mode (`snap.kind === "live"`):
+     - Home's title is `bench.name` instead of the "Mr Moez" greeting, and the badge `badge.live` is always visible.
+     - Every money line uses `money.if_farm` (or `money.if_farm_no_area` when `FARM_SCALE.area_ha` is null), or "—" when `moneyReady` is false.
+     - Demo mode keeps "Mr Moez", `badge.demo` and the plain money lines.
+  5. Escape every interpolated value with an `esc()` helper.
 - [ ] **Step 4: Verify in a browser.** Serve with the backend (`/app/`, port 8001 if running) or `python -m http.server` in `dashboard/`. Take Edge headless screenshots, 390×844, of:
   - `app/?source=demo&lang=en#/home` (normal day),
   - `?demo=leak&lang=en#/home`,
@@ -365,6 +369,7 @@ test("detectSource", async () => {
   - open `http://localhost:8765/app/?lang=en`.
 
   Expected:
+  - Home titled "HydroPin test bench" with the badge "Test bench · 2 sectors";
   - Home "Leak in Sector B" after ~1.5 min;
   - Where shows Sector B, and Details shows severity Large (bench share ~0.2) with money "—" (farm figures not set);
   - tap "I fixed it" → Checking;

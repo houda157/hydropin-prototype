@@ -13,7 +13,7 @@ backend is running.
 ## Goals
 
 - An installable mobile web app (PWA): opens from a link, "Add to home screen" gives a full-screen app with an icon.
-- **Live mode** on the laptop: reads Kmar's backend (`/api/state`, `/ws`) for the bench; leak alerts, irrigating / at rest, repair confirmed by the sensors.
+- **Live mode** on the laptop: reads Kmar's backend (`/api/state`) for the **test bench, presented as what it is: a farm network in miniature, "HydroPin test bench · 2 sectors"** (branch A = Sector A, branch B = Sector B). Leak alerts, irrigating / at rest, repair confirmed by the sensors. In the video: a tap opened on the real bench → "Leak in Sector B" on the phone.
 - **Demo mode** on GitHub Pages (no backend): a scripted farm day (normal → leak → repair), always labelled "Demo farm".
 - Language chosen by the user: Français, العربية (right to left), English.
 - The leak story of the approved mockups (`.superpowers/brainstorm/138-1795757748/export/farmer-app-mockups.png`).
@@ -40,6 +40,16 @@ backend is running.
 | Time | 4–5 h | 6–8 h | 10 h+ |
 
 Chosen by Israa on 27 Nov: A.
+
+**How live mode presents the bench** (the app is about farms, the prototype is a bench):
+
+| | 1. The bench as a mini-farm (**chosen**) | 2. Demo only, no live mode | 3. Simulated farm, one sector driven by the bench |
+|---|---|---|---|
+| Honest | yes: labelled "test bench · 2 sectors" | yes | hard: real and simulated on one screen |
+| Shows the real chain | yes: tap opened → phone alert | no: a mockup with nothing behind | yes, but confusing |
+| Cost | as planned | ~1 h less | more, and hard to explain in 3 min |
+
+Chosen by Israa on 27 Nov: 1. The data path is the farm's (sensors → network → backend → app); only the size differs.
 
 ## What the user decided
 
@@ -91,6 +101,8 @@ The app polls `GET /api/state` every 2 s and lists leaks with `GET /api/leaks`.
 | `frame.state` `OFFLINE`, or no frame | "No news from your sensors" |
 
 - Live mode draws a 2-sector farm: the bench's branches A and B.
+  - Its name is "HydroPin test bench" (in place of "Mr Moez").
+  - Its badge says "Test bench · 2 sectors".
 - "Where exactly" comes from `frame.loc`. If one tap has ≥ 0.6, the text says "near tap L2" (or L1, L3); otherwise it names the sector only.
 
 **New in the backend: leak episodes.** A table `leaks` and two endpoints:
@@ -156,6 +168,12 @@ Example with the placeholders:
 Behind Details → "How we count", the app shows this in one plain sentence with the numbers, marked "estimate".
 
 **If any parameter is null:** money shows "—", and Details says "farm figures not set yet". On Pages the demo uses the placeholders above, labelled "estimate".
+
+**In live mode (the bench)**, the litres lost on the bench are tiny, so money is always worded as a projection:
+- "If this leak happened on a {area} ha farm: about {dt} DT", with `area` = `FARM_SCALE.area_ha`;
+- "If this leak happened on a farm: about {dt} DT" when `area_ha` is null.
+
+It uses the same formula, with the bench's share of water lost. If the other figures are null, it shows "—".
 
 ## Language
 
