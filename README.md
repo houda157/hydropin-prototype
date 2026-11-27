@@ -1,49 +1,28 @@
 # hydropin-prototype
 
-Real-time leak detection for a hydroponic bench: ESP32 + main flow sensor +
-two branch pressure sensors (PT1 0..6 bar, PT2 -1..1.6 bar) -> MQTT -> backend
--> dashboard, with an explainable detector and a trained ML model.
+Real-time leak detection for a drip-irrigation test bench: ESP32 + one main flow sensor (F0) +
+two branch pressure sensors (PT1 0..6 bar on branch A, PT2 -1..1.6 bar on branch B) -> MQTT ->
+laptop backend -> dashboard. The detector is explainable (flow + M2 PCA/SVD on the two pressures
++ log-odds fusion) and says which branch leaks.
 
-The full research, datasets, design decisions, plans and validation results are
+**Measured vs simulated:** the dashboard's "What's real" tab lists what was measured on the bench
+and what is simulation. Until the bench campaign is exported, every result in this repo
+(scoreboard, replays, farm, M3) comes from simulation and is labelled as such.
+
+The full research, datasets, design decisions and plans are
 in **[`docs/RESEARCH_AND_PLAN.md`](docs/RESEARCH_AND_PLAN.md)**.
 
 **How to run, use and see everything** (website tabs, bench tests, ESP32, Telegram, bench-day
 commands, farm and M3, public link): **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)**.
 
-## Quick start (no hardware)
+## Bench rev 1 (F0 + PT1 + PT2, taps L1-L3)
+
+The bench as built has one flow meter (F0) and two pressure sensors (PT1 on branch A, PT2 on
+branch B).
 
 ```powershell
 python -m pip install -r requirements.txt
 
-# 1. generate a healthy baseline and a leak run
-python -m simulator.sim --scenario baseline --duration 120 --seed 7
-python -m simulator.sim --scenario leak_L1 --duration 120 --seed 7
-
-# 2. fit the baseline and evaluate the detector on data/raw/*.csv
-python -m detection.baseline --csv data/raw/baseline_seed7.csv --out models/baseline.json
-python -m detection.evaluate --dir data/raw --strict
-
-# 3. train and try the ML model
-python -m ml.train --seeds 1 2 3 4
-python -m ml.predict --model models/hydropin_rf.joblib --csv data/raw/leak_L1_seed7.csv
-
-# 4. backend + dashboard
-uvicorn backend.main:app
-streamlit run dashboard/app.py
-
-# 5. tests
-python -m pytest -q
-```
-
-The simulator also emits a dark Plotly report:
-`data/raw/<scenario>_seed<seed>.html`.
-
-## Bench rev 1 demo (F0 + PT1 + PT2, taps L1-L3)
-
-The bench as built has one flow meter (F0) and two pressure sensors (PT1 on branch A, PT2 on
-branch B). This chain runs next to the 4-flow pieces above without changing them:
-
-```powershell
 # backend + static dashboard (http://localhost:8000): live mode, replays, scoreboard, farm, M3
 uvicorn backend.main:app
 $env:HYDROPIN_MQTT="1"; uvicorn backend.main:app        # with the broker / real ESP32
@@ -55,7 +34,13 @@ python -m simulator.bench_rev1 --scenario baseline --realtime --publish       # 
 # replays + scoreboard for the static site (GitHub Pages)
 python -m tools.export_replays --sim                    # simulated, labelled "simulation"
 python -m tools.export_replays --db data/hydropin.db    # the recorded bench campaign
+
+# tests of the demo chain
+python -m pytest tests -q
 ```
+
+The research suites (`simulator/tests`, `m3/tests`, `farm/tests`) need `requirements-sim.txt`
+(torch, WNTR); see the READMEs in those folders.
 
 - `detection/bench_detector.py`: quality gate -> pump states -> `flow` + `m2` -> log-odds fusion ->
   `HEALTHY | WATCH | LEAK` (+ `PUMP_OFF`, `SETTLING`, `LEARNING`, `OFFLINE`), branch A/B, per-tap
@@ -66,6 +51,25 @@ python -m tools.export_replays --db data/hydropin.db    # the recorded bench cam
   valve change -> **Stop run**. Each run is then a replay: `GET /api/runs/{id}/replay`.
 - GitHub Pages: `.github/workflows/pages.yml` publishes `dashboard/` (+ the farm explorer and the
   twin viewer) on every push to `main`. Pages has replay mode only; live mode needs the laptop.
+
+## Legacy: 4-flow pipeline (simulation only)
+
+An earlier design had a flow sensor on every branch. The bench as built has only the main flow
+sensor, so this pipeline (`simulator/sim.py`, `detection/detect.py`, the Random Forest in `ml/`)
+is **simulation only** and is not part of the demo. Its scores (detector F1 0.957, Random Forest
+macro F1 0.98) are on simulated 4-flow data and say nothing about the real bench.
+
+```powershell
+python -m simulator.sim --scenario baseline --duration 120 --seed 7
+python -m simulator.sim --scenario leak_L1 --duration 120 --seed 7
+python -m detection.baseline --csv data/raw/baseline_seed7.csv --out models/baseline.json
+python -m detection.evaluate --dir data/raw --strict
+python -m ml.train --seeds 1 2 3 4
+python -m ml.predict --model models/hydropin_rf.joblib --csv data/raw/leak_L1_seed7.csv
+streamlit run dashboard/app.py                          # the older Streamlit dashboard
+```
+
+The simulator also emits a dark Plotly report: `data/raw/<scenario>_seed<seed>.html`.
 
 ## Laptop settings (.env)
 
@@ -110,12 +114,10 @@ File formats: `contract/dashboard-data.md`.
 python -m tools.calibrate flow --pulses 900 --litres 2.0 --seconds 60
 python -m tools.calibrate pressure --point 0:0 --point 8889:2 --point 17778:4 --point 26667:6
 
-# after collecting runs: validate, fix a missed onset, fit baseline, train
+# after collecting runs: validate exported CSVs, fix a missed onset
 python -m tools.validate_dataset --dir data/real --strict
 python -m tools.label_csv --csv data/real/leak_L1_01.csv --label leak_L1 --onset 2026-11-24T12:00:30Z
-python -m detection.baseline --csv data/real/baseline_01.csv --out models/baseline_real.json
-python -m detection.evaluate --dir data/real --strict
-python -m ml.train --data-dir data/real --holdout-dir data/real_holdout --out models/hydropin_rf_real.joblib
+# (training and scoring of the bench detector: see "Bench day" above)
 ```
 
 In the dashboard, start a run before the leak and press **Mark leak onset** when
@@ -132,9 +134,9 @@ flag, so the validator and calibration fitter can run on exported runs too.
 - `simulator/` digital twin `hydropin_sim/` (physics, sensors, M1/M2/M3, prototype bench; see simulator/README.md)
   + bench data generator `sim.py` / `scenarios.py` (scenarios, quantization, dropout)
   + rev 1 bench simulator `bench_rev1.py` (F0 + PT1 + PT2, taps L1-L3, stress and fault scenarios)
-- `detection/` explainable M0 detector (normalized shares + CUSUM) and evaluation;
-  rev 1 bench detector `bench_detector.py` and replay/scoring `replay.py`
-- `ml/` features, training, prediction (scikit-learn)
+- `detection/` rev 1 bench detector `bench_detector.py`, replay/scoring `replay.py`, campaign
+  training; plus the legacy 4-flow M0 detector (`detect.py`, simulation only)
+- `ml/` legacy 4-flow Random Forest (scikit-learn, simulation only)
 - `backend/` FastAPI + SQLite + MQTT listener + REST/WebSocket; serves the static dashboard at `/`
 - `dashboard/` static dashboard (`index.html`, live + replay, no build step; published on Pages),
   its data (`replays/`, `scoreboard*.json`, `farm/`, `m3/`) and the older Streamlit `app.py`
@@ -142,7 +144,7 @@ flag, so the validator and calibration fitter can run on exported runs too.
 - `tools/` real-data validator, onset labeller, calibration fitter, replay/scoreboard export
 - `data/` runs, database, calibration notes
 - `docs/` wiring, test protocol, research + plan
-- `models/` fitted baseline and trained model (generated)
+- `models/` legacy 4-flow baseline and Random Forest (generated, simulation only)
 
 ## Calibration warning
 

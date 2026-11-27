@@ -274,14 +274,18 @@ All features are causal: a test changes future samples and asserts earlier
 features do not move. Features are computed per run so a window never crosses a
 run boundary.
 
-### 5.4 Model ladder
+### 5.4 Model ladder (legacy 4-flow pipeline, simulation only)
 
-| Stage | Model | Status |
+This ladder belongs to the earlier 4-flow design (a flow sensor on every branch). Its steps are
+called L0-L3 so they don't clash with the project's method names: **M1 = GNN, M2 = PCA/SVD,
+M3 = pressure waves / time reversal**, as in the blueprint.
+
+| Step | Model | Status |
 |---|---|---|
-| M0 | Rules: share residual + CUSUM + branch argmax | **done**, explainable, no training |
-| M1 | Isolation Forest / PCA reconstruction (normal-only) | next |
-| M2 | Random Forest multiclass (4 classes) | **done** |
-| M3 | LSTM-AE / 1D-CNN sequence model | only with several hours of real data |
+| L0 | Rules: share residual + CUSUM + branch argmax (the "M0" detector in the code) | **done** on simulated 4-flow data, explainable, no training |
+| L1 | Isolation Forest / PCA reconstruction (normal-only) | not started |
+| L2 | Random Forest multiclass (4 classes) | **done** on simulated 4-flow data; needs branch flow meters the bench does not have |
+| L3 | LSTM-AE / 1D-CNN sequence model | only with several hours of real data |
 
 ### 5.5 Validation protocol
 
@@ -403,7 +407,7 @@ The simulator is a **test harness for the pipeline**, not a digital twin.
 | 7 | Firmware | code complete; compiles for ESP32 | **compiled** (PlatformIO 6.2.0, espressif32 6.9.0); not flashed |
 | 8 | Docs + full validation | 40 tests, e2e, this file | 40 passed |
 
-### Measured detector results (simulator, 120 s runs)
+### Simulated detector results (legacy 4-flow simulator, 120 s runs)
 
 | Run | Recall | Delay | Branch | FA/min |
 |---|---|---|---|---|
@@ -421,7 +425,7 @@ The simulator is a **test harness for the pipeline**, not a digital twin.
 Micro over all 6 leak runs: **precision 1.000, recall 0.918, F1 0.957**
 (TP=1010, FP=0, FN=90).
 
-### Measured ML results (grouped CV, 56 runs, 13,440 samples)
+### Simulated ML results (legacy 4-flow Random Forest, grouped CV, 56 simulated runs, 13,440 samples)
 
 - Accuracy 0.980, macro F1 0.982.
 - Binary leak: precision 0.995, recall 0.969, F1 0.982.
@@ -494,7 +498,7 @@ not by assuming.
 3. **Fit the real baseline** on healthy runs, re-evaluate M0 on real held-out
    runs, and tune `cusum_h`, `min_branch_z`, window size against the FA budget.
 4. **Train on real runs** with `--data-dir` and a separate `--holdout-dir`;
-   compare with simulation-only metrics. Add M1 (Isolation Forest / PCA) on the
+   compare with simulation-only metrics. Add the normal-only model (L1: Isolation Forest / PCA) on the
    same split.
 5. **Finish the firmware**: flash the compiled binary, verify the 2 Hz JSON and
    ms timestamps, add NTP sync guard + offline ring buffer.

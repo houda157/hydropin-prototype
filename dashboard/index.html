@@ -244,8 +244,8 @@
       <table class="tbl real">
         <thead><tr><th>Part</th><th>Status</th><th>What it means</th></tr></thead>
         <tbody>
-          <tr><td>Bench readings (F0, PT1, PT2)</td><td><span class="pill ok">measured</span></td><td>Live mode and replays marked "bench": ESP32 + ADS1115 on the real bench.</td></tr>
-          <tr><td>Flow + M2 detection, fusion</td><td><span class="pill ok">runs on real data</span></td><td>The same detector code runs live, in scoring and in the replay export. It never reads labels or events.</td></tr>
+          <tr><td>Bench readings (F0, PT1, PT2)</td><td><span class="pill no" id="real-bench">not recorded yet</span></td><td>Live mode and replays marked "bench": ESP32 + ADS1115 on the real bench. Says "measured" once a recorded bench run is published.</td></tr>
+          <tr><td>Flow + M2 detection, fusion</td><td><span class="pill sim" id="real-detect">tested on simulation</span></td><td>The same detector code runs live, in scoring and in the replay export. It never reads labels or events. Says "runs on real data" once a recorded bench run is published.</td></tr>
           <tr><td>Scoreboard</td><td><span class="pill" id="real-score">–</span></td><td>Scored only on runs the detector was not tuned on. Until the campaign is exported, the scoreboard is from the bench simulator and says so.</td></tr>
           <tr><td>Replays marked "simulation"</td><td><span class="pill sim">simulation</span></td><td>simulator/bench_rev1.py: starter physics, to be replaced by recorded runs.</td></tr>
           <tr><td>Virtual farm (50 ha)</td><td><span class="pill sim">simulation</span></td><td>WNTR model, assumed parameters listed in the report; leaks and sensor noise simulated.</td></tr>

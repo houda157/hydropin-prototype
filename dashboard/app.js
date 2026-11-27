@@ -174,6 +174,16 @@ function setSource(kind) {
   el.style.color = kind === "sim" ? "var(--accent)" : kind ? "var(--ok)" : "";
 }
 
+// "What's real" tab: claim measured bench data only when a recorded bench run is published
+function setRealPills(hasBench) {
+  const set = (id, ok, okText, noText, noClass) => {
+    $(id).textContent = ok ? okText : noText;
+    $(id).className = `pill ${ok ? "ok" : noClass}`;
+  };
+  set("real-bench", hasBench, "measured", "not recorded yet", "no");
+  set("real-detect", hasBench, "runs on real data", "tested on simulation", "sim");
+}
+
 // --- replay
 async function loadReplayIndex() {
   try {
@@ -183,6 +193,7 @@ async function loadReplayIndex() {
     pick.innerHTML = runs.map((r) => `<option value="${r.file}">${r.simulation ? "[sim] " : "[bench] "}${r.label}${r.opening ? ` · ${r.opening}` : ""} · ${r.id}</option>`).join("");
     const first = runs.find((r) => r.label === "leak_L1" && r.opening === "medium") || runs[0];
     if (first) pick.value = first.file;
+    setRealPills(runs.some((r) => r.kind === "bench" && !r.simulation));
     return runs.length > 0;
   } catch (e) {
     $("replay-pick").innerHTML = "<option>no replays found</option>";
