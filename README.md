@@ -9,8 +9,7 @@ laptop backend -> dashboard. The detector is explainable (flow + M2 PCA/SVD on t
 and what is simulation. Until the bench campaign is exported, every result in this repo
 (scoreboard, replays, farm, M3) comes from simulation and is labelled as such.
 
-The full research, datasets, design decisions and plans are
-in **[`docs/RESEARCH_AND_PLAN.md`](docs/RESEARCH_AND_PLAN.md)**.
+The design, methods and results are described in the technical report, delivered separately.
 
 **How to run, use and see everything** (website tabs, bench tests, ESP32, Telegram, bench-day
 commands, farm and M3, public link): **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)**.
