@@ -22,7 +22,7 @@ Overleaf and TeX Live, so nothing else needs to be uploaded.
 | VII Platform and dashboard | Contract, backend, dashboard, campaign tooling (Fig. 9) | done |
 | VIII Bench results | Calibration, campaign, blind test, twin vs real | **TODO: real data** |
 | IX What is real | Status table | update the bench row after the campaign |
-| X Conclusion, references | — | References checked (27 Nov); **TODO:** confirm article number 111967 of the 2025 Waqar paper |
+| X Conclusion, references | — | **TODO:** check the three Waqar/Wang references |
 
 ## Figures (`figures/`)
 | File | Made with |
@@ -33,14 +33,8 @@ Overleaf and TeX Live, so nothing else needs to be uploaded.
 | `farm_m1_m2_fused.png` | `python -m farm.methods.results` |
 | `m3_*.png` | `m3/` scripts |
 
-Spare figures, not used yet:
-- `farmer_app.png`: the farmer app, demo leak in sector B, two phone screens. It shows the demo
-  user name "Mr Moez".
-- `farm_explorer.png` (old look, from before the re-skin), `farm_drone_route.png`,
-  `farm_m1_m2_fused.png`, `m3_accuracy.png`, `m3_time_reversal.png`, `m3_viscoelastic.png`.
-
-The dashboard screenshots were retaken on 27 Nov after the farmer-app re-skin was merged; the
-Bench tab uses its 2D view, because the 3D view does not render in headless capture.
+Spare figures, not used yet: `farm_explorer.png`, `farm_drone_route.png`,
+`farm_m1_m2_fused.png`, `m3_accuracy.png`, `m3_time_reversal.png`, `m3_viscoelastic.png`.
 
 After the campaign, add `report/figures/bench_ttd_hist.png`, `bench_confusion.png` and
 `bench_example_run.png`, made by `python -m detection.report_charts` from the **real**

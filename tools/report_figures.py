@@ -38,8 +38,8 @@ def software_chain(path: Path) -> None:
         if label:
             ax.text((x1 + x2) / 2, (y1 + y2) / 2 + dy, label, ha="center", fontsize=6.5, color="#444")
 
-    box(1, 20, 17, 17, "ESP32 bench node", ["ADS1115: PT1, PT2", "Hall flow meter F0", "2 Hz, raw counts + values", "WiFi"])
-    box(23, 20, 12, 17, "MQTT broker", ["amqtt / Mosquitto", "hydropin/bench", "status: LWT", "(laptop, LAN)"])
+    box(1, 20, 17, 17, "ESP32 bench node", ["ADS1115: PT1, PT2", "Hall flow meter F0", "2 Hz, converted values", "USB serial fallback"])
+    box(23, 20, 12, 17, "MQTT broker", ["Mosquitto 2.x", "hydropin/bench", "status: LWT", "(laptop, LAN)"])
     box(40, 14, 25, 23, "Python backend (laptop)", ["FastAPI + paho-mqtt + SQLite", "validate -> store -> detect",
                                                      "quality gate, pump states,", "flow + M2 -> fusion -> state,",
                                                      "branch, tap, L/min, litres lost", "REST: runs, events, baseline,",
