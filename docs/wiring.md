@@ -93,9 +93,7 @@ calibration and is not enabled in the current firmware.
 
 1. Never connect +24 V directly to R1-R4 or the ADS1115.
 2. Never feed 5 V or 4.4 V directly into an ESP32 GPIO.
-3. The divider ratio is **3.0** (20k/10k), not 3.2. The old 22k/10k note was
-   wrong for this board.
-4. The current detector/ML expects branch **flow** shares (L1/L2/L3). This bench
+3. The current detector/ML expects branch **flow** shares (L1/L2/L3). This bench
    has branch **pressure** sensors, not branch flow sensors. Until you add
    branch flow sensors or retrain on PT1/PT2, the live detector is a connectivity
    and data-quality test, not a validated branch-localisation result.
