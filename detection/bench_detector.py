@@ -181,9 +181,24 @@ class BenchDetector:
         return out
 
     def _learn_baseline(self) -> dict:
-        x = np.array(self._learn)                  # [n, 3] F, PT1, PT2
-        mu = x.mean(axis=0)
+        rows = np.array([r[:3] for r in self._learn], dtype=float)     # [n, 3] F, PT1, PT2
+        ok1 = np.array([r[3] for r in self._learn], dtype=bool)
+        ok2 = np.array([r[4] for r in self._learn], dtype=bool)
+        good = ok1 & ok2
         c = self.cfg
+        if good.sum() < 10:
+            # a pressure sensor was faulted for most of the learning window (spec 5.5.1):
+            # learn the flow from every sample, keep M2 out until the next re-baseline
+            u = np.array([1.0, 1.0]) / math.sqrt(2.0)
+            sigma = c.floor_p_bar ** 2 * np.eye(2) + c.floor_cm_bar ** 2 * np.outer(u, u)
+            return {"f": float(rows[:, 0].mean()),
+                    "p1": float(rows[ok1, 1].mean()) if ok1.any() else 0.0,
+                    "p2": float(rows[ok2, 2].mean()) if ok2.any() else 0.0,
+                    "sd_f": float(max(rows[:, 0].std(), c.floor_f_lpm)),
+                    "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(rows)),
+                    "m2_ok": False}
+        x = rows[good]
+        mu = x.mean(axis=0)
         p = x[:, 1:] - mu[1:]
         u = np.array([1.0, 1.0]) / math.sqrt(2.0)  # default healthy direction: common mode
         if len(p) >= 10:
@@ -194,7 +209,7 @@ class BenchDetector:
         sigma = cov + c.floor_p_bar ** 2 * np.eye(2) + c.floor_cm_bar ** 2 * np.outer(u, u)
         return {"f": float(mu[0]), "p1": float(mu[1]), "p2": float(mu[2]),
                 "sd_f": float(max(x[:, 0].std(), c.floor_f_lpm)),
-                "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(x))}
+                "u": u.tolist(), "sigma_inv": np.linalg.inv(sigma).tolist(), "n": int(len(x)), "m2_ok": True}
 
     # ------------------------------------------------------------------ main
     def update(self, values: dict, ts) -> dict:
@@ -246,8 +261,10 @@ class BenchDetector:
             frame["state"] = self._mode
             return self._finish(frame)
         if self._mode == "LEARNING":
-            if not p_bad:
-                self._learn.append((f, p1, p2))
+            # every sample counts for the flow; each pressure only while its sensor is healthy
+            bad1 = any(x.startswith("PT1") for x in faults) or self._low["PT1"] > 0
+            bad2 = p2v is None or any(x.startswith("PT2") for x in faults) or self._low["PT2"] > 0
+            self._learn.append((f, p1, p2 if p2v is not None else 0.0, not bad1, not bad2))
             if t - self._mode_t0 >= c.learn_s and len(self._learn) >= 10:
                 self.base = self._learn_baseline()
                 self._mode = "RUN"
@@ -270,7 +287,10 @@ class BenchDetector:
 
         d = np.array([self._ema[1] - b["p1"], self._ema[2] - b["p2"]])
         sim = None
-        if not p_bad:
+        m2_ok = b.get("m2_ok", True)             # False: a sensor was faulted while learning
+        if not m2_ok:
+            frame["methods"]["m2"].update(quality=0, excluded=True)
+        if not p_bad and m2_ok:
             z_m2 = float(math.sqrt(max(0.0, d @ np.array(b["sigma_inv"]) @ d)))
             if d.sum() > 0:                      # pressures rose: not a leak signature
                 z_m2 = -z_m2
@@ -282,7 +302,7 @@ class BenchDetector:
                 sim = self._fp @ (d / nd)        # cosine similarity per tap
 
         # one pressure moving alone while flow and the other are flat -> sensor fault, not a leak
-        if not p_bad:
+        if not p_bad and m2_ok:
             zs = np.abs(d) / c.floor_p_bar
             if abs(z_f) < 1.5 and ((zs[0] > 8 and zs[1] < 2) or (zs[1] > 8 and zs[0] < 2)):
                 self._alone += dt
