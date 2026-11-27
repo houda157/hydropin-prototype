@@ -677,7 +677,7 @@ function showTab(name) {
     loaded[name] = true;
     if (name === "score") loadScoreboard();
     if (name === "m3") loadM3();
-    if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html"; loadFarm(); }
+    if (name === "farm") loadFarm();
   }
   if (b3.h) b3.h.pause(name !== "bench" || b3.view !== "3d");   // no WebGL work on hidden tabs
   if (name === "bench" && bench.mode === "replay") seek(bench.idx);
