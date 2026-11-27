@@ -5,16 +5,16 @@ there too (the contract test asserts the two stay compatible).
 
 Calibration (bench wiring rev 1, 2026-11-23):
     flow_lpm     = (pulses / dt_s) / 7.5 * 1.5       # provisional, calibrate
-    PT1 (branch A): 0..6 bar, 0-10 V, R1=20k series + R2=10k shunt
-        V_sensor = V_ads * 3.0
+    PT1 (branch A): 0..6 bar, 0-10 V, R1=22k series + R2=10k shunt
+        V_sensor = V_ads * 3.2
         pressure_bar = 0.0 + 0.6 * V_sensor
-    PT2 (branch B): -1..1.6 bar, 0-10 V, R3=20k series + R4=10k shunt
-        V_sensor = V_ads * 3.0
+    PT2 (branch B): -1..1.6 bar, 0-10 V, R3=22k series + R4=10k shunt
+        V_sensor = V_ads * 3.2
         pressure_b_bar = -1.0 + 0.26 * V_sensor
     Flow main: 5 V pulse, R5=10k series + R6=20k shunt -> 3.33 V at GPIO27.
 
 The flow gain is still provisional; fit it with a measured volume. The pressure
-fits above are from the sensor datasheet range + the actual 20k/10k divider.
+fits above are from the sensor datasheet range + the actual 22k/10k divider.
 """
 from __future__ import annotations
 
@@ -62,20 +62,20 @@ FLOW_K_PULSES_PER_LITRE = 450.0                       # datasheet nominal
 FLOW_PULSES_PER_LPM = FLOW_K_PULSES_PER_LITRE / 60.0  # 7.5 Hz per L/min
 FLOW_GAIN = 1.5                                       # "flow * 3/2"
 
-# --- pressure sensors (0-10 V through 20k/10k into ADS1115) ----------------
-# Divider: 20k series + 10k shunt -> V_ads = V_sensor * 10/30 = V_sensor / 3.0.
-# At 10 V the ADS pin sees 3.333 V, inside the +/-4.096 V PGA range (gain=1).
+# --- pressure sensors (0-10 V through 22k/10k into ADS1115) ----------------
+# Divider: 22k series + 10k shunt -> V_ads = V_sensor * 10/32 = V_sensor / 3.2.
+# At 10 V the ADS pin sees 3.125 V, inside the +/-4.096 V PGA range (gain=1).
 ADS_VOLTAGE_RANGE = 4.096
 ADS_COUNTS = 32767.0
 
 # PT1, branch A: 0..6 bar over 0-10 V.
-PRESSURE_DIVIDER = 3.0
+PRESSURE_DIVIDER = 3.2
 PRESSURE_GAIN = 0.6                                   # 6 bar / 10 V
 PRESSURE_OFFSET_BAR = 0.0
 PRESSURE_RANGE_BAR = (0.0, 6.0)
 
 # PT2, branch B: -1..1.6 bar over 0-10 V.
-PRESSURE_B_DIVIDER = 3.0
+PRESSURE_B_DIVIDER = 3.2
 PRESSURE_B_GAIN = 0.26                                # 2.6 bar / 10 V
 PRESSURE_B_OFFSET_BAR = -1.0
 PRESSURE_B_RANGE_BAR = (-1.0, 1.6)
