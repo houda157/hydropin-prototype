@@ -34,9 +34,9 @@ the dashboard's 5 tabs (Bench, Scoreboard, Farm, M3, What's real) to that langua
 
 | Token | Light | Use |
 |---|---|---|
-| page bg | `#e9efea` | behind the cards |
-| surface | `#f0fdf4` | panels (the app's screen colour) |
-| card | `#ffffff` | inner cards, inputs, buttons |
+| page bg | `#f0fdf4` | behind the cards (the app's screen colour; built that way, it reads closer to the app than a grey page) |
+| card | `#ffffff` | panels, inputs, buttons (the app's white cards) |
+| card-2 | `#f6faf7` | segmented controls, farm sectors |
 | ok-soft | `#d9f0e1` | "all is well" status card |
 | primary / ok | `#15803d` | primary buttons, active tab, good values |
 | ink | `#0c1814` | text |
@@ -73,6 +73,9 @@ map = Farm, wave = M3, info = What's real), active tab in primary green. "sim" m
 
 **Header:** keep the cells (Source, State, P(leak), Branch), restyled; the orange tag becomes a
 green wordmark.
+
+**Farm map:** chosen sensors are green dots (as in the app's Map tab), pipes water blue, drone route ink
+dashed, leak probability red.
 
 ## Files
 - `dashboard/style.css`: rewritten tokens and components.

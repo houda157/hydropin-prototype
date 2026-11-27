@@ -7,14 +7,14 @@
 <meta name="description" content="HydroPin leak detection: live bench monitor, recorded replays, scoreboard and simulations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app">
   <header class="strip">
-    <div class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.5c3.5 4.6 6 8 6 11.2a6 6 0 0 1-12 0C6 10.5 8.5 7.1 12 2.5z"/></svg>HYDROPIN</div>
-    <div class="title"><span class="lbl">Leak detection prototype</span><b>Bench <i>monitor</i></b></div>
+    <div class="tag"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c3.5 4.6 6 8 6 11.2a6 6 0 0 1-12 0C6 10.5 8.5 7.1 12 2.5z"/></svg></span>HydroPin</div>
+    <div class="title"><span class="lbl">Leak detection prototype</span><b>Bench monitor</b></div>
     <div><span class="lbl">Source</span><span class="cellv" id="h-source">–</span></div>
     <div><span class="lbl">State</span><span class="cellv dot st-idle" id="h-state">–</span></div>
     <div><span class="lbl">P(leak)</span><span class="cellv" id="h-p">–</span></div>
@@ -22,11 +22,11 @@
   </header>
 
   <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="bench" aria-selected="true">Bench</button>
-    <button role="tab" data-tab="score">Scoreboard</button>
-    <button role="tab" data-tab="farm">Farm <em>sim</em></button>
-    <button role="tab" data-tab="m3">M3 <em>sim</em></button>
-    <button role="tab" data-tab="real">What's real</button>
+    <button role="tab" data-tab="bench" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/></svg>Bench</button>
+    <button role="tab" data-tab="score"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11"/><path d="M12 20V5"/><path d="M19 20v-6"/></svg>Scoreboard</button>
+    <button role="tab" data-tab="farm"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg>Farm <em>Sim</em></button>
+    <button role="tab" data-tab="m3"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h3.5l2.5-6 4 12 3-9 2 3H22"/></svg>M3 <em>Sim</em></button>
+    <button role="tab" data-tab="real"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg>What's real</button>
   </nav>
 
   <!-- ============================== BENCH ============================== -->
@@ -46,6 +46,10 @@
       <div id="live-ctl" class="ctl" hidden>
         <span class="mono" id="live-conn">connecting…</span>
       </div>
+    </div>
+    <div class="status" id="status-card" role="status" aria-live="polite">
+      <svg class="ic" id="status-ic" viewBox="0 0 24 24" aria-hidden="true"></svg>
+      <div><b id="status-title">Waiting for bench data</b><span id="status-sub">Start the ESP32 or the simulator</span></div>
     </div>
     <p class="banner" id="bench-banner" hidden></p>
 
@@ -68,7 +72,8 @@
         <div class="pn">
           <div class="pn-h"><span class="sq"></span><span class="lbl">Methods</span><span class="idx">02</span></div>
           <table class="tbl" id="d-methods"><tbody></tbody></table>
-          <p class="note">Flow: F0 above its learned baseline. M2: pressure change off the healthy (common-mode) subspace. Fusion: weighted log-odds; WATCH above 0.5, LEAK above 0.9 for 10 samples in a row (5 s) by default. The campaign's training split can tune these (data/model.json).</p>
+          <details class="more"><summary>Details</summary>
+          <p class="note">Flow: F0 above its learned baseline. M2: pressure change off the healthy (common-mode) subspace. Fusion: weighted log-odds; WATCH above 0.5, LEAK above 0.9 for 10 samples in a row (5 s) by default. The campaign's training split can tune these (data/model.json).</p></details>
         </div>
         <div class="pn">
           <div class="pn-h"><span class="sq"></span><span class="lbl">Sensor faults</span><span class="idx">03</span></div>
@@ -126,7 +131,8 @@
         <div class="pn">
           <div class="pn-h"><span class="sq"></span><span class="lbl">Where</span><span class="idx">per tap</span></div>
           <div id="d-loc" class="loc"></div>
-          <p class="note">The promise is the branch (A or B). L2 and L3 share branch B and one sensor, so they split B's probability.</p>
+          <details class="more"><summary>Details</summary>
+          <p class="note">The promise is the branch (A or B). L2 and L3 share branch B and one sensor, so they split B's probability.</p></details>
         </div>
       </div>
     </div>
@@ -142,9 +148,9 @@
     </div>
     <div class="two">
       <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Each method alone vs fused</span></div><table class="tbl" id="score-methods"></table>
-        <p class="note">A method alone "fires" when its own score stays above the LEAK threshold as long as the fused rule requires.</p></div>
+        <details class="more"><summary>Details</summary><p class="note">A method alone "fires" when its own score stays above the LEAK threshold as long as the fused rule requires.</p></details></div>
       <div class="pn"><div class="pn-h"><span class="sq"></span><span class="lbl">Tap really opened vs detector's top tap</span></div><table class="tbl" id="score-confusion"></table>
-        <p class="note">L2 and L3 sit on branch B with one sensor: the promise is the branch.</p></div>
+        <details class="more"><summary>Details</summary><p class="note">L2 and L3 sit on branch B with one sensor: the promise is the branch.</p></details></div>
     </div>
     <div class="pn" id="score-blind-pn" hidden><div class="pn-h"><span class="sq"></span><span class="lbl">Blind test (misses included)</span><span class="idx" id="score-blind-n"></span></div>
       <div class="scroll"><table class="tbl" id="score-blind"></table></div></div>
@@ -179,12 +185,12 @@
             <div><span class="lbl">On 10 other farms</span><b id="fp-rob">–</b></div>
             <div><span class="lbl">Kit cost</span><b id="fp-cost">–</b></div>
           </div>
-          <p class="note" id="fp-note"></p>
+          <details class="more"><summary>Details</summary><p class="note" id="fp-note"></p></details>
         </section>
         <section class="pn" id="fp-meth" hidden>
           <div class="pn-h"><span class="sq"></span><span class="lbl">Test farms (never trained on)</span></div>
           <table class="tbl" id="fp-mt"></table>
-          <p class="note">3–10 % leaks, 1-minute average. Right branch = main pipe or the right sector.</p>
+          <details class="more"><summary>Details</summary><p class="note">3–10 % leaks, 1-minute average. Right branch = main pipe or the right sector.</p></details>
         </section>
       </div>
       <div class="col">
@@ -211,7 +217,7 @@
             <div><span class="lbl">Route</span><b id="fd-len">–</b></div>
             <div><span class="lbl">Leak pipe in route</span><b id="fd-hit">–</b></div>
           </div>
-          <p class="note" id="fd-note"></p>
+          <details class="more"><summary>Details</summary><p class="note" id="fd-note"></p></details>
         </section>
       </div>
     </div>
@@ -246,7 +252,7 @@
         <tbody>
           <tr><td>Bench readings (F0, PT1, PT2)</td><td><span class="pill no" id="real-bench">not recorded yet</span></td><td>Live mode and replays marked "bench": ESP32 + ADS1115 on the real bench. Says "measured" once a recorded bench run is published.</td></tr>
           <tr><td>Flow + M2 detection, fusion</td><td><span class="pill sim" id="real-detect">tested on simulation</span></td><td>The same detector code runs live, in scoring and in the replay export. It never reads labels or events. Says "runs on real data" once a recorded bench run is published.</td></tr>
-          <tr><td>Scoreboard</td><td><span class="pill" id="real-score">–</span></td><td>Scored only on runs the detector was not tuned on. Until the campaign is exported, the scoreboard is from the bench simulator and says so.</td></tr>
+          <tr><td>Scoreboard</td><td><span class="pill no" id="real-score">–</span></td><td>Scored only on runs the detector was not tuned on. Until the campaign is exported, the scoreboard is from the bench simulator and says so.</td></tr>
           <tr><td>Replays marked "simulation"</td><td><span class="pill sim">simulation</span></td><td>simulator/bench_rev1.py: starter physics, to be replaced by recorded runs.</td></tr>
           <tr><td>Virtual farm (50 ha)</td><td><span class="pill sim">simulation</span></td><td>WNTR model, assumed parameters listed in the report; leaks and sensor noise simulated.</td></tr>
           <tr><td>M3 pressure wave + time reversal</td><td><span class="pill sim">simulation</span></td><td>The bench cannot sample at kHz or close a valve in 25 ms; team decision 21 Nov.</td></tr>
