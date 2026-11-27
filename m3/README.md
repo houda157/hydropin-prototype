@@ -1,4 +1,4 @@
-# m3/ – pressure-wave method (role 5) – SIMULATION ONLY
+# m3/ – pressure-wave method – SIMULATION ONLY
 
 M3 runs in simulation only (team decision 21 Nov): the bench cannot produce fast waves.
 Assumptions are in `params.yaml` (150 m PE pipe, a = 350 m/s, 25 ms valve closure,
@@ -44,7 +44,7 @@ sensor at the valve, 2 kHz). Full data description: `docs/DATA_PIPELINE.md`.
    the wave → `|E(x)|` peaks at the leak.
 
 This is the zero-lag imaging-condition form of time reversal, on the first round trip.
-**Confirm with the mentor that it matches ref [2].**
+**Check that it matches ref [2].**
 
 ## Results (simulation, 5 % leak, 6 positions × 3 noise draws)
 
@@ -106,4 +106,4 @@ for leaks ≥ 4 %, 3.3 m for 2–4 %, but 17.6 m for 1–2 % leaks, whose echo (
 ## Dashboard files (M3 tab)
 `python -m m3.export_dashboard` writes `dashboard/m3/index.json` and 4 showcase cases (wave animation,
 sensor trace, time-reversal and matched-field curves, every method's estimate). Format and suggested
-use: `dashboard/m3/FORMAT.md`. Mentor review: done (Moez approved).
+use: `dashboard/m3/FORMAT.md`.

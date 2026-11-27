@@ -1,4 +1,4 @@
-# Farm leak dataset – format v1.0 (draft, to agree with roles 2 and 4)
+# Farm leak dataset – format v1.0
 
 **Everything here is simulation** (WNTR model of a 50 ha drip farm; assumptions in
 `farm/model/params.yaml`). Regenerate with `python -m farm.leaks.generate` (about 30 s).
@@ -13,27 +13,27 @@
 - A **world** = one irrigation shift (2 sectors open) plus one random draw of roughness,
   elevations and clogging: the "real farm". The **twin** = the nominal model.
 - Scenario ids are stable for the same params and arguments.
-- σ = `meta.json:sigma_bar`. It is a **placeholder (0.01 bar)** until role 1 measures the
-  bench σ. Re-run with `--sigma-bar <value>`.
+- σ = `meta.json:sigma_bar`. It is a **placeholder (0.01 bar)** until the bench noise is measured;
+  re-run with `--sigma-bar <value>`.
 
 ## Files (`farm/leaks/out/`)
 
-| File | Shape / type | Content | Main user |
+| File | Shape / type | Content | Used by |
 |---|---|---|---|
 | `meta.json` | object | units, σ, counts, `node_order`, `candidate_order`, runtime | all |
 | `scenarios.csv` | S rows | `scenario_id, world_id, config_id, open_sectors, world_seed, leak_kind (node/pipe), leak_at (node or pipe id), branch (main / sector_<s>), sector, x, y, size_pct, q_target_lps, area_m2, leak_lps (realised), pump_lps, healthy_pump_lps` | all |
-| `candidates.json` | list | per candidate: `row, id, node_index, kind, branch, sector, x, y` | role 2 |
-| `dP.npy` | float32 [16 × S] | **ΔP(i, s)**: leak pressure − healthy pressure in the same world, noise-free. Apply your own k·σ. | role 2 (placement) |
-| `dP_all.npy` | float32 [S × 28] | same, at every junction | role 2 / 4 |
-| `healthy.npy` | float32 [W·20 × 28] | noisy healthy samples (20 per world) | role 4 (farm M2) |
-| `healthy_index.csv` | rows | `sample, world_id, config_id` for `healthy.npy` | role 4 |
-| `gnn/graph.json` | object | nodes (`index, id, x, y, elev, kind, sector, branch, candidate`), edges (`id, source, target, kind, sector, branch, length, diameter`) | role 4 |
-| `gnn/X.npy` | float32 [S × 28] | **residual vs measured healthy baseline**: leak pressure + noise − mean of the world's 20 healthy samples. This is the default GNN input; mask to your sensor nodes. | role 4 |
-| `gnn/X_twin.npy` | float32 [S × 28] | residual vs the **uncalibrated nominal twin** (includes the model-reality gap, std about 0.15 bar). For robustness experiments only. | role 4 |
-| `gnn/X_clean.npy` | float32 [S × 28] | noise-free ΔP (= `dP_all`) | role 4 |
-| `gnn/y_node.npy` | int [S] | leak junction index, or −1 for a pipe leak | role 4 |
-| `gnn/y_pipe.json` | list[str] | leak pipe id for pipe leaks, `""` for node leaks | role 4 |
-| `gnn/sector_open.npy` | bool [S × 28] | node is in an open sector (or on the main) | role 4 |
+| `candidates.json` | list | per candidate: `row, id, node_index, kind, branch, sector, x, y` | placement |
+| `dP.npy` | float32 [16 × S] | **ΔP(i, s)**: leak pressure − healthy pressure in the same world, noise-free. Apply your own k·σ. | placement |
+| `dP_all.npy` | float32 [S × 28] | same, at every junction | placement, GNN, farm M2 |
+| `healthy.npy` | float32 [W·20 × 28] | noisy healthy samples (20 per world) | farm M2 |
+| `healthy_index.csv` | rows | `sample, world_id, config_id` for `healthy.npy` | GNN, farm M2 |
+| `gnn/graph.json` | object | nodes (`index, id, x, y, elev, kind, sector, branch, candidate`), edges (`id, source, target, kind, sector, branch, length, diameter`) | GNN, farm M2 |
+| `gnn/X.npy` | float32 [S × 28] | **residual vs measured healthy baseline**: leak pressure + noise − mean of the world's 20 healthy samples. This is the default GNN input; mask to your sensor nodes. | GNN, farm M2 |
+| `gnn/X_twin.npy` | float32 [S × 28] | residual vs the **uncalibrated nominal twin** (includes the model-reality gap, std about 0.15 bar). For robustness experiments only. | GNN, farm M2 |
+| `gnn/X_clean.npy` | float32 [S × 28] | noise-free ΔP (= `dP_all`) | GNN, farm M2 |
+| `gnn/y_node.npy` | int [S] | leak junction index, or −1 for a pipe leak | GNN, farm M2 |
+| `gnn/y_pipe.json` | list[str] | leak pipe id for pipe leaks, `""` for node leaks | GNN, farm M2 |
+| `gnn/sector_open.npy` | bool [S × 28] | node is in an open sector (or on the main) | GNN, farm M2 |
 
 ## Grid (v1.0)
 - 3 shifts ({1,2}, {3,4}, {5,6} open) × 10 worlds × 23 pressurised leak sites × sizes

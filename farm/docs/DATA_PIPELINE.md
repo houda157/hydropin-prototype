@@ -22,9 +22,9 @@ leaks/simulate.simulate_world()  (one process per world, 15 in parallel)
       ▼
 leaks/generate.py ──► farm/leaks/out/  (scenarios.csv, dP.npy, healthy.npy, gnn/…, meta.json)
       │
-      ├──► role 2: sensor placement (dP.npy, candidates.json, perturbed/*.inp)
-      ├──► role 4: GNN M1 + farm M2 (gnn/*, healthy.npy)
-      └──► role 3: Farm tab map (layout.json)
+      ├──► sensor placement (dP.npy, candidates.json, perturbed/*.inp)
+      ├──► GNN M1 + farm M2 (gnn/*, healthy.npy)
+      └──► Farm tab map (layout.json)
 ```
 
 ---
@@ -175,7 +175,7 @@ For each world (parallel `multiprocessing.Pool`, 15 workers):
       - `X_twin` = measured − p_twin: compared with the uncalibrated twin, so it includes
         the model-reality gap.
 
-σ = `sigma_bar` = **0.01 bar, a placeholder** until role 1 measures the bench noise. Re-run with
+σ = `sigma_bar` = **0.01 bar, a placeholder** until the bench noise is measured. Re-run with
 `python -m farm.leaks.generate --sigma-bar <value>`.
 
 **Note:** the realised leak flow is 81–100 % of the target, because the leak lowers the
@@ -260,17 +260,14 @@ Nodes behind a closed valve read 0 in every array.
 
 ## 5. How the data is used
 
-**Status, 25 Nov:** the consumers below are planned in the role briefs; roles 2 and 4 have
-not built them yet. The format needs their agreement (`FORMAT.md`).
-
 | Consumer | Reads | Exactly what it does with it |
 |---|---|---|
-| **Role 2 – sensor placement** (`farm/placement/`) | `dP.npy`, `candidates.json`, `scenarios.csv` (`branch`), `meta.json` (σ) | Candidate i **covers** scenario s if \|dP[i, s]\| > k·σ (k = 3). Two scenarios are **distinguishable** if their dP columns over the chosen sensors differ by > k·σ. Greedy then genetic search over the 16 candidates; isolation is scored against `branch` |
-| Role 2 – robustness | `farm/model/perturbed/*.inp` | Re-simulate leaks on worlds the placement never saw; replace sensors that lose their signal |
-| **Role 4 – GNN (M1)** | `gnn/graph.json`, `gnn/X.npy`, `gnn/sector_open.npy`, `gnn/y_node.npy`, `gnn/y_pipe.json`, `scenarios.csv` | Node features = X masked to the chosen sensor nodes (0 elsewhere) + has-sensor flag + elevation + `sector_open`; edges from `graph.json`; target = leak node / pipe; **split by `world_id`**, so no world is in both train and test. `X_twin` is for robustness tests only |
-| Role 4 – farm M2 | `healthy.npy` (+ `healthy_index.csv`), `gnn/X.npy` | Healthy subspace (PCA/SVD) per shift from `healthy.npy`; leak fingerprints from `X` |
-| Role 4 – sensor sets | Role 2's 3-, 6- and 10-sensor sets | Train/evaluate the GNN vs M2 with those sensor nodes only |
-| **Role 3 – Farm tab** | `dashboard/farm/layout.json` | Draw the map (nodes, pipes, sectors); mark candidate sites |
+| **Sensor placement** (`farm/placement/`) | `dP.npy`, `candidates.json`, `scenarios.csv` (`branch`, `open_sectors`), `meta.json` (σ) | A set of sensors **detects** scenario s if \|dP[i, s]\| > k·σ (k = 3) at one of them. It **isolates** s if, once the common drop is removed, the sensor with the largest extra drop is on the leak's branch (a sensor in a closed sector counts as main pipe). Greedy, then swaps, then a genetic search over the 16 candidates → `dashboard/farm/placement.json` |
+| Placement robustness | the perturbed-model seeds (`farm/model/perturbed/*.inp`) | Re-simulates the leaks on 10 farm versions the placement never saw and reports the same scores |
+| **GNN (M1)** (`farm/methods/m1_gnn.py`) | `gnn/graph.json`, `gnn/X.npy` (or `X_clean.npy` + noise), `gnn/sector_open.npy`, `scenarios.csv` | Node features = residual at the chosen sensor nodes (0 elsewhere), the same with the common mode removed, has-sensor flag, `sector_open`, elevation; edges from `graph.json`; target = leak site (junction or pipe); **split by world** (versions 0–6 train, 7–9 test) |
+| **Farm M2** (`farm/methods/m2.py`) | `gnn/X.npy`, `scenarios.csv` | Common mode removed; one fingerprint per leak site from the training worlds; likelihood of each site for a test residual |
+| Sensor sets | the 3-, 6- and 10-sensor sets from the placement tool | M2, M1 and their fusion are trained and scored with those sensor nodes only → `dashboard/farm/results.json`, then the drone routes (`farm/drone/`) |
+| **Farm tab** | `dashboard/farm/layout.json` | Draws the map (nodes, pipes, sectors) and marks the candidate sites |
 | Report | `report/figures/farm_layout.png`, `params.yaml` | The one farm figure; the list of assumptions |
 | Tests (`farm/tests/`) | the model + a `--quick` run | Pressure band, full demand, mass balance, leaks lower every pressure, file shapes |
 

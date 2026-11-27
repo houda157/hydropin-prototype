@@ -374,7 +374,7 @@ Then run the same commands with `--db rehearsal.db`.
 **Look without rebuilding anything:** the website's Farm and M3 tabs already have the data. The
 farm explorer also opens by double-clicking `farm\explorer\index.html`.
 
-**Regenerate the farm data** in this order (`.venv-sim`). After role 1 measures σ, add
+**Regenerate the farm data** in this order (`.venv-sim`). Once the bench σ is measured, add
 `--sigma-bar <σ>` to the first two commands.
 
 1. Leak dataset:

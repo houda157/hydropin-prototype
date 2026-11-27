@@ -716,7 +716,7 @@ Greedy: add the sensor that raises $\Phi$ the most, repeat until $k$. Then refin
 
 ---
 
-## 9. Open questions (for the mentor and the agricultural engineer)
+## 9. Open questions (for expert review: transients and agronomy)
 
 - [ ] Pipe references used on Tunisian farms (material, SDR/PN, Ø) for mains, sub-mains and laterals → `E_PIPE`, `E_WALL`, `NU_P`
 - [ ] Dripper datasheets (PC or not, $k_d$, $x$, $h_{act}$) → `K_D`, `X_EMIT`, `H_ACT`

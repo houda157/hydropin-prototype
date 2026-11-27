@@ -113,7 +113,7 @@ marked SIMULATED and stay labelled simulation).
 
 ## Farm (simulation): placement, M1/M2, drone
 
-Run in `.venv-sim`, in this order (after role 1's sigma, pass `--sigma-bar` to the first two):
+Run in `.venv-sim`, in this order (once the bench sigma is measured, pass `--sigma-bar` to the first two):
 
 ```powershell
 python -m farm.leaks.generate

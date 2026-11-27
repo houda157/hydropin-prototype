@@ -16,7 +16,7 @@ the dashboard's 5 tabs (Bench, Scoreboard, Farm, M3, What's real) to that langua
 ## Non-goals
 - No backend change (`backend/`, API, WebSocket, data files, `contract/`): UI only.
 - No new data, panels, metrics or features; no change to what any number means.
-- Kmar's farm explorer and Houda's twin viewer keep their look for now (follow-up branch, option C).
+- The farm explorer and the twin viewer keep their look for now (follow-up branch, option C).
 
 ## Anti-goals (a failure even if it works)
 - Generic "AI" styling: gradients, glows, drop-shadow stacks, emoji, decorative icons with no label.
@@ -93,13 +93,13 @@ Exact spacing, icon paths (simple 24×24 strokes), chart line widths, responsive
 - `python -m pytest tests -q` still passes; `git diff --stat` shows no file outside `dashboard/` and `docs/`.
 
 ## Addendum (2026-11-27): 3D bench in place of "Bench rev 1"
-Agreed in conversation: Houda's 3D bench (`simulator/run/viewer3d`) is the picture; every number and
+Agreed: the digital twin's 3D bench (`simulator/run/viewer3d`) is the picture; every number and
 the leak display come from this branch's backend (live WebSocket frames or recorded replays).
 - Panel "Bench" with a 3D / 2D switch; 3D by default, 2D = the old drawing and the fallback without WebGL.
 - `tools/export_bench3d.py` copies the bundle and the twin slice the scene needs (default valve setting
   R 65°, V 78°: 19 states, 8 KB) into `dashboard/bench3d/` (Pages publishes `dashboard/` only).
 - `scene3d.js` gains `setLive()` and an optional theme; bundle rebuilt with three 0.170.0 + esbuild.
-  Additive: Houda's viewer keeps calling `setState()`. Tell Houda.
+  Additive: the twin viewer keeps calling `setState()`.
 - Branch B (L2 ≈ L3): both taps "suspected" with their %, no tap drawn open. A tap opens (and drips)
   only on LEAK with ≥ 60 % on it. Pipe colours: twin state for that leak (mean of the suspects), sized
   by the measured leak flow; pump off → no pressure, no flow.

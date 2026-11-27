@@ -1,29 +1,26 @@
 # Dashboard data files – v1.1
 
-Every JSON file the static dashboard reads, who writes it and its required keys. These are the
+Every JSON file the static dashboard reads, the command that writes it and its required keys. These are the
 files GitHub Pages serves (paths relative to `dashboard/`). Bench frames, REST, WebSocket and
 the replay file itself are in `contract/api.md`; this file references them and does not repeat
-them. Changing a format means bumping `version` and agreeing with the roles that read it.
+them. Changing a format means bumping `version` and updating the code that reads it.
 
 **Rule for everything below:** a file made from simulation carries `"simulation": true`, and the
 page shows a "Simulation" label wherever it is used.
 
-Status: v1.1 drafted by role 2 on 26 Nov from the files as built. Roles 3, 4 and 5 still need to
-confirm it (roles 3–5: ☐ ☐ ☐).
-
-| File | Written by | Made with | Read by (tab) |
-|---|---|---|---|
-| `replays/index.json`, `replays/<id>.json` | role 4 / 2 | `python -m tools.export_replays --sim` or `--db data/hydropin.db` | Bench (replay) |
-| `scoreboard.json` (bench) / `scoreboard_sim.json` (simulated) | role 4 / 2 | same | Scoreboard |
-| `farm/layout.json` | role 5 | `python -m farm.model.export_layout` | Farm |
-| `farm/placement.json` | role 2 | `python -m farm.placement.optimise` | Farm (placement) |
-| `farm/results.json` | role 4 / 2 | `python -m farm.methods.m1_gnn` then `python -m farm.methods.results` | Farm (leak) |
-| `farm/drone.json` | role 2 | `python -m farm.drone.dispatch` | Farm (leak + drone) |
-| `m3/index.json`, `m3/m3_case_XX.json` | role 5 | `python -m m3.export_dashboard` | M3 |
+| File | Made with | Read by (tab) |
+|---|---|---|
+| `replays/index.json`, `replays/<id>.json` | `python -m tools.export_replays --sim` or `--db data/hydropin.db` | Bench (replay) |
+| `scoreboard.json` (bench) / `scoreboard_sim.json` (simulated) | same | Scoreboard |
+| `farm/layout.json` | `python -m farm.model.export_layout` | Farm |
+| `farm/placement.json` | `python -m farm.placement.optimise` | Farm (placement) |
+| `farm/results.json` | `python -m farm.methods.m1_gnn` then `python -m farm.methods.results` | Farm (leak) |
+| `farm/drone.json` | `python -m farm.drone.dispatch` | Farm (leak + drone) |
+| `m3/index.json`, `m3/m3_case_XX.json` | `python -m m3.export_dashboard` | M3 |
 
 Regenerate the farm files in this order: `farm.leaks.generate` → `farm.placement.optimise` →
 `farm.methods.m1_gnn` → `farm.methods.results` → `farm.drone.dispatch` →
-`farm.explorer.build_data`. After role 1's σ is measured, pass `--sigma-bar <σ>` to the first one.
+`farm.explorer.build_data`. Once the bench σ is measured, pass `--sigma-bar <σ>` to the first one.
 
 ---
 
@@ -49,7 +46,7 @@ Regenerate the farm files in this order: `farm.leaks.generate` → `farm.placeme
 | `blind` | `{runs, summary, events[]: {id, label, detected, delay_s, branch, false_alarm}}`, misses included |
 | `runs[]` | one per run: `id, label, simulation, split, blind, detected, watched, delay_s, branch, branch_ok, tap_top, leak_lpm, measured_leak_lpm, opening, false_alarm, faults, healthy_s, false_episodes{fused, flow, m2}, methods_alone{flow, m2: {detected, delay_s}}` |
 
-## `farm/layout.json` (role 5)
+## `farm/layout.json`
 
 | Key | Content |
 |---|---|
@@ -61,7 +58,7 @@ Regenerate the farm files in this order: `farm.leaks.generate` → `farm.placeme
 Coordinates are in metres, y pointing north; the pump station is at the south edge. Branch is
 `main` or `sector_<s>`.
 
-## `farm/placement.json` (role 2)
+## `farm/placement.json`
 
 | Key | Content |
 |---|---|
@@ -75,7 +72,7 @@ Coordinates are in metres, y pointing north; the pump station is at the south ed
 
 The 3 / 6 / 10 sets are also in `farm/placement/out/sets.json` (`{sets: {"3": [...], "6": [...], "10": [...]}}`).
 
-## `farm/results.json` (roles 4 / 2)
+## `farm/results.json`
 
 | Key | Content |
 |---|---|
@@ -92,7 +89,7 @@ The 3 / 6 / 10 sets are also in `farm/placement/out/sets.json` (`{sets: {"3": [.
 
 Pipe probabilities sum to about 1 per method. Values below 5e-4 are left out.
 
-## `farm/drone.json` (role 2)
+## `farm/drone.json`
 
 | Key | Content |
 |---|---|
@@ -103,7 +100,7 @@ Pipe probabilities sum to about 1 per method. Values below 5e-4 are left out.
 | `next_steps` | text |
 | `routes[]` | `scenario` (an id in `results.json`), `title, sensors_n, true_pipes[], true_pipe_in_route, prob_covered, pipes[]` (in flight order), `waypoints[[x, y], …]` (m, from base back to base), `length_m, flight_s, fits_one_battery, takeoff` |
 
-## M3 (role 5)
+## M3
 
 Full description: `dashboard/m3/FORMAT.md`. Required keys:
 
