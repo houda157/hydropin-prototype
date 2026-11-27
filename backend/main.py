@@ -11,6 +11,7 @@ The MQTT listener is optional: without a broker the REST API still works and
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 import threading
 from contextlib import asynccontextmanager
@@ -32,6 +33,11 @@ from .ingest import ingest_message
 from .live_detect import LiveDetector
 
 log = logging.getLogger("hydropin.mqtt")
+
+# Windows can map .js to text/plain in its registry, which browsers refuse for ES modules;
+# the farmer app (dashboard/app/) also needs its manifest type.
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 
 try:  # pragma: no cover - paho is installed in the project env
     import paho.mqtt.client as mqtt

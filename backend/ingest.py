@@ -7,7 +7,7 @@ from typing import Any
 from hydropin import config
 from hydropin.messages import MessageError, normalize_message, validate_message
 
-from . import notify, storage
+from . import leaks, notify, storage
 from .bench_live import BenchLive
 from .live_detect import LiveDetector
 
@@ -61,6 +61,7 @@ def ingest_message(
         if inserted and bench is not None:
             frame, _ = bench.push(msg, run_id=run["id"] if run else None)
             frame["id"] = storage.insert_frame(conn, frame)
+            leaks.track_leak(conn, frame)
     if alert is not None and send_notifications:
         notify.send_telegram(alert["message"])
     return {"inserted": inserted, "alert": alert, "frame": frame}
