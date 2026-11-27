@@ -1,0 +1,73 @@
+{
+ "version": "1.1",
+ "simulation": true,
+ "label": "Simulation: M3 pressure-wave method on a 150 m PE pipe (not measured on the bench)",
+ "methods": {
+  "tr": "time reversal",
+  "mfp": "matched-field",
+  "echo": "echo timing",
+  "cnn": "1D CNN"
+ },
+ "cases": [
+  {
+   "id": "m3_case_01",
+   "file": "m3_case_01.json",
+   "title": "Leak 115 m from the sensor",
+   "story": "A far leak: its echo returns after 0.66 s.",
+   "pipe": "elastic",
+   "x_true_m": 35.0,
+   "error_m": {
+    "tr": 0.0,
+    "mfp": 0.0,
+    "echo": 0.85,
+    "cnn": 2.18
+   },
+   "size_kb": 189
+  },
+  {
+   "id": "m3_case_02",
+   "file": "m3_case_02.json",
+   "title": "Leak 60 m from the sensor",
+   "story": "Mid-pipe leak: echo after 0.34 s, time reversal focuses on it.",
+   "pipe": "elastic",
+   "x_true_m": 90.0,
+   "error_m": {
+    "tr": 0.0,
+    "mfp": 0.0,
+    "echo": 1.11,
+    "cnn": 0.32
+   },
+   "size_kb": 189
+  },
+  {
+   "id": "m3_case_03",
+   "file": "m3_case_03.json",
+   "title": "Leak 15 m from the sensor",
+   "story": "A near leak: the echo returns only 86 ms after the valve closes.",
+   "pipe": "elastic",
+   "x_true_m": 135.0,
+   "error_m": {
+    "tr": 0.17,
+    "mfp": 0.0,
+    "echo": 1.1,
+    "cnn": 0.15
+   },
+   "size_kb": 189
+  },
+  {
+   "id": "m3_case_04",
+   "file": "m3_case_04.json",
+   "title": "PE pipe with creep, calibrated model",
+   "story": "The plastic wall absorbs the wave; after one leak-free calibration test the leak is found again.",
+   "pipe": "creep",
+   "x_true_m": 90.0,
+   "error_m": {
+    "tr": 0.0,
+    "mfp": 0.0,
+    "echo": 0.85,
+    "cnn": 0.48
+   },
+   "size_kb": 189
+  }
+ ]
+}

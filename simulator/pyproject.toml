@@ -1,0 +1,34 @@
+[project]
+name = "hydropin-sim"
+version = "0.1.0"
+description = "HydroPin digital twin: steady-state and transient simulation of farm drip networks for leak detection"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "networkx>=3.0",
+    "wntr>=1.1",
+    "matplotlib>=3.7",
+    "pyyaml>=6.0",
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+ml = ["torch>=2.1", "scikit-learn>=1.3"]   # M1 and M2
+wiring = ["cairosvg>=2.7", "pypdf>=4.0"]   # run/wiring.py (schematic PDF)
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hydropin_sim*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::UserWarning", "ignore::DeprecationWarning", "ignore::FutureWarning"]

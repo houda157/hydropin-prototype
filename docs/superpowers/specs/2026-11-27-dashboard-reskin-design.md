@@ -1,0 +1,106 @@
+# Dashboard re-skin to the farmer app's look – design
+
+Branch: `dashboard_ui_improvement` · Date: 2026-11-27 · Size: small change (short design)
+
+## Intent
+Make every part of HydroPin feel like one product. The prototype dashboard (`dashboard/`) still uses
+the orange "studio" look; the farmer's mobile app mockups set the project's visual language. Re-skin
+the dashboard's 5 tabs (Bench, Scoreboard, Farm, M3, What's real) to that language.
+
+## Goals
+- The app's palette, type and shapes on every tab, light and dark.
+- Colour carries meaning as in the app: green = all is well, red = leak only, blue = water/pipes.
+- A status card at the top of the Bench tab in the app's style ("Everything is fine" / "Leak in branch B").
+- Long technical notes folded behind "Details", like the app.
+
+## Non-goals
+- No backend change (`backend/`, API, WebSocket, data files, `contract/`): UI only.
+- No new data, panels, metrics or features; no change to what any number means.
+- Kmar's farm explorer and Houda's twin viewer keep their look for now (follow-up branch, option C).
+
+## Anti-goals (a failure even if it works)
+- Generic "AI" styling: gradients, glows, drop-shadow stacks, emoji, decorative icons with no label.
+- Red used for anything but a leak (today: panel markers, primary buttons, "sim" tags).
+- Any element id, form field or button that `app.js` uses renamed or removed (it would break live mode).
+
+## Approaches
+- A. Colours and fonts only: quick, but still reads as the old dashboard in green.
+- **B. Full visual re-skin, same screens and data (chosen).** A + shapes, sentence-case
+  headings, labelled line icons on tabs, Bench status card, Details toggles.
+- C. B + farm explorer + twin viewer: full harmony, but two more pages owned by others; later branch.
+
+## Decisions
+**Tokens** (sampled from the mockup image; Tailwind green/red scale):
+
+| Token | Light | Use |
+|---|---|---|
+| page bg | `#f0fdf4` | behind the cards (the app's screen colour; built that way, it reads closer to the app than a grey page) |
+| card | `#ffffff` | panels, inputs, buttons (the app's white cards) |
+| card-2 | `#f6faf7` | segmented controls, farm sectors |
+| ok-soft | `#d9f0e1` | "all is well" status card |
+| primary / ok | `#15803d` | primary buttons, active tab, good values |
+| ink | `#0c1814` | text |
+| muted | `#5b6b63` | secondary text (my call: darker than the mockup's grey for contrast ≥ 4.5:1) |
+| line | `#d0dad3` | borders |
+| leak | `#dc2626` | LEAK state, leak bars, leak halo only |
+| leak-soft | `#eee9e1` | leak status card |
+| water | `#2563eb` | pipes in the bench drawing, PT1/F0 series |
+| watch | `#b45309` | WATCH state (my call: the app has no "watch" state; amber, never red) |
+| sim | `#475569` on `#e2e8f0` | "Simulation" chips and banners (my call: neutral slate, not red) |
+
+Dark mode stays (my call): the same roles on a deep green base (`#0f1a15` bg, `#15231c` surface).
+
+**Type:** Inter only (drop Archivo). Headings sentence case, 600. Small labels sentence case, no
+letter-spacing caps. Numbers tabular.
+
+**Shapes:** cards 14 px radius, buttons and inputs 10 px, pills fully rounded; 1 px borders; no shadows.
+
+**Tabs:** each tab gets a 1.5 px line icon above or beside its label (house = Bench, bars = Scoreboard,
+map = Farm, wave = M3, info = What's real), active tab in primary green. "sim" marker → slate chip.
+
+**Bench status card** (new, top of the Bench tab), from the detector state already in each frame:
+
+| State | Card | Text |
+|---|---|---|
+| HEALTHY | green | "Everything is fine" · "No leak on the bench" |
+| WATCH | amber | "Watching a possible leak" · "Branch X, P(leak) NN %" |
+| LEAK | red | "Leak in branch X" · "About N L/min lost" |
+| PUMP_OFF / SETTLING / LEARNING | neutral | "Pump off" / "Settling" / "Learning normal" |
+| OFFLINE or no data | neutral | "Waiting for bench data" · "Start the ESP32 or the simulator" |
+
+**Details:** the explanatory `.note` paragraphs (Methods, Where, Scoreboard, Farm, M3) move into
+`<details><summary>Details</summary>` blocks, closed by default. Live values stay visible.
+
+**Header:** keep the cells (Source, State, P(leak), Branch), restyled; the orange tag becomes a
+green wordmark.
+
+**Farm map:** chosen sensors are green dots (as in the app's Map tab), pipes water blue, drone route ink
+dashed, leak probability red.
+
+## Files
+- `dashboard/style.css`: rewritten tokens and components.
+- `dashboard/index.html`: tab icons, status card markup, `<details>` wrappers, font link. All ids kept.
+- `dashboard/app.js`: status-card render from the existing frame; any colour that should follow the
+  new roles (state colours, P(leak) bar, schematic sensor strokes). No logic or data change.
+
+## Left to the builder
+Exact spacing, icon paths (simple 24×24 strokes), chart line widths, responsive breakpoints.
+
+## Done when
+- All 5 tabs render in the new look, light and dark, with no console errors.
+- Live mode still works end to end with `simulator.bench_rev1 --scenario leak_L2` (state, charts,
+  status card go HEALTHY → LEAK → HEALTHY).
+- `python -m pytest tests -q` still passes; `git diff --stat` shows no file outside `dashboard/` and `docs/`.
+
+## Addendum (2026-11-27): 3D bench in place of "Bench rev 1"
+Agreed in conversation: Houda's 3D bench (`simulator/run/viewer3d`) is the picture; every number and
+the leak display come from this branch's backend (live WebSocket frames or recorded replays).
+- Panel "Bench" with a 3D / 2D switch; 3D by default, 2D = the old drawing and the fallback without WebGL.
+- `tools/export_bench3d.py` copies the bundle and the twin slice the scene needs (default valve setting
+  R 65°, V 78°: 19 states, 8 KB) into `dashboard/bench3d/` (Pages publishes `dashboard/` only).
+- `scene3d.js` gains `setLive()` and an optional theme; bundle rebuilt with three 0.170.0 + esbuild.
+  Additive: Houda's viewer keeps calling `setState()`. Tell Houda.
+- Branch B (L2 ≈ L3): both taps "suspected" with their %, no tap drawn open. A tap opens (and drips)
+  only on LEAK with ≥ 60 % on it. Pipe colours: twin state for that leak (mean of the suspects), sized
+  by the measured leak flow; pump off → no pressure, no flow.
+- The dashboard opens on the twin's "board" camera preset; "Reset view" returns to it.

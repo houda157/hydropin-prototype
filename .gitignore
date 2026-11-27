@@ -1,12 +1,25 @@
 # secrets
 firmware/include/secrets.h
+.env
 
 # data
 data/raw/
 *.db
+simulator/data
 
 # python
 __pycache__/
+.pytest_cache/
+.venv/
+.venv-sim/
 
 # platformio
 .pio/
+
+# editor and local tool settings
+.vscode/
+.claude/
+
+# large generated M3 data and run logs (regenerate with python -m m3.cnn data)
+m3/out/cnn_data.npz
+m3/out/*.log

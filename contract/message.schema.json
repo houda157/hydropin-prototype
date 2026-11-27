@@ -1,3 +1,54 @@
 {
-  "$comment": "JSON fields, units, types"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/houda157/hydropin-prototype/contract/message.schema.json",
+  "title": "Hydropin bench telemetry message",
+  "description": "One telemetry sample, 2 Hz, published on hydropin/bench/<device>/telemetry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "device", "seq", "ts", "label", "raw", "values", "quality"],
+  "properties": {
+    "schema": { "const": "1.0" },
+    "device": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "seq": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "string", "format": "date-time" },
+    "ts_device_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "label": { "enum": ["none", "leak_L1", "leak_L2", "leak_L3"] },
+    "scenario": { "type": "string", "maxLength": 64 },
+    "raw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flow_main_pulses", "flow_l1_pulses", "flow_l2_pulses", "flow_l3_pulses", "pressure_adc"],
+      "properties": {
+        "flow_main_pulses": { "type": "integer", "minimum": 0 },
+        "flow_l1_pulses": { "type": "integer", "minimum": 0 },
+        "flow_l2_pulses": { "type": "integer", "minimum": 0 },
+        "flow_l3_pulses": { "type": "integer", "minimum": 0 },
+        "pressure_adc": { "type": "integer", "minimum": 0, "maximum": 32767 },
+        "pressure_b_adc": { "type": "integer", "minimum": 0, "maximum": 32767 }
+      }
+    },
+    "values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flow_main_lpm", "flow_l1_lpm", "flow_l2_lpm", "flow_l3_lpm", "pressure_bar"],
+      "properties": {
+        "flow_main_lpm": { "type": "number" },
+        "flow_l1_lpm": { "type": "number" },
+        "flow_l2_lpm": { "type": "number" },
+        "flow_l3_lpm": { "type": "number" },
+        "pressure_bar": { "type": "number" },
+        "pressure_b_bar": { "type": "number" }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dropout"],
+      "properties": {
+        "dropout": { "type": "boolean" },
+        "ripple": { "type": "boolean" },
+        "clipped": { "type": "boolean" }
+      }
+    }
+  }
 }

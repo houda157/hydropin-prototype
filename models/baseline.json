@@ -1,0 +1,30 @@
+{
+  "window": 20,
+  "mu": {
+    "share_l1": 0.32916666666666666,
+    "share_l2": 0.2731433823529412,
+    "share_l3": 0.39875,
+    "pressure_bar": 1.9983525,
+    "total_lpm": 1.6,
+    "main_lpm": 1.65
+  },
+  "sigma": {
+    "share_l1": 0.015807132352941202,
+    "share_l2": 0.02261752328431362,
+    "share_l3": 0.024146757352941105,
+    "pressure_bar": 0.01,
+    "total_lpm": 0.1111950000000001,
+    "main_lpm": 0.08
+  },
+  "columns": [
+    "share_l1",
+    "share_l2",
+    "share_l3",
+    "pressure_bar",
+    "total_lpm",
+    "main_lpm"
+  ],
+  "meta": {
+    "samples": 240
+  }
+}

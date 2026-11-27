@@ -1,0 +1,74 @@
+# HydroPin virtual farm – all parameters in one place.
+# EVERY value here is an ASSUMPTION unless a source is given. The report must say so.
+# Units: SI (m, m3/s) unless the key says otherwise. Pressures in m of water head
+# (1 m = 0.0980665 bar).
+
+meta:
+  name: hydropin-virtual-farm
+  version: 1
+  label: simulation
+
+farm:
+  # Source: master document, reference networks for pricing ("farm of 50 ha with 6 sensor
+  # nodes"). Shape and layout are assumptions: a central main along a farm road with
+  # 3 rows of 2 sectors (west/east).
+  area_ha: 50
+  width_m: 700          # east-west
+  length_m: 715         # north-south (700 x 715 m = 50 ha)
+  n_rows: 3             # 3 rows x 2 sides = 6 sectors (role 5 brief: 4-6 sectors)
+  ground_elev_m: 100.0  # arbitrary datum
+  slope_north: 0.004    # m/m, gentle relief: +2.9 m over the farm (assumption)
+  slope_east: 0.0015    # m/m, small cross-slope so west and east sectors differ
+
+irrigation:
+  # Drip orchards (citrus/olive) at ~1-2 mm/h; 1.5 mm/h assumed.
+  # 8.3 ha sector x 1.5 mm/h = 125 m3/h = 35 L/s.
+  application_mm_h: 1.5
+  # Irrigation shifts: 2 sectors open at a time, one row per shift (assumption).
+  open_configs: [[1, 2], [3, 4], [5, 6]]
+  # Each sector's laterals are lumped into 2 manifold demands (brief: model laterals
+  # as demand at the manifold, not every dripper). Distances from the main (m).
+  manifold_offsets_m: [120, 290]
+  manifold_split: [0.5, 0.5]
+
+hydraulics:
+  headloss: H-W
+  demand_model: PDD
+  required_pressure_m: 12.0   # drip manifold ~1.2 bar for full demand (assumption)
+  minimum_pressure_m: 0.0
+  pressure_exponent: 0.5
+  leak_discharge_coeff: 0.75  # WNTR default orifice coefficient
+
+pipes:
+  # Inner diameters. Roughness = Hazen-Williams C (new PVC/PE ~140-150).
+  main:          {material: PVC 250 PN6, diameter_m: 0.235, roughness: 145}
+  sector_link:   {material: PVC 160,     diameter_m: 0.150, roughness: 145, length_m: 6.0}
+  sector_valve:  {material: valve 150,   diameter_m: 0.150, roughness: 145, length_m: 2.0, minor_loss: 2.0}
+  submain_1:     {material: PVC 160 PN6, diameter_m: 0.150, roughness: 145}
+  submain_2:     {material: PE 125 PN6,  diameter_m: 0.110, roughness: 140}
+
+pump:
+  # Pumping from a farm basin 2 m below ground. 3-point head curve (WNTR):
+  # shut-off ~1.33 x design head at 0 flow, design point, 0 head at 2 x design flow.
+  suction_head_m: 98.0
+  design_flow_lps: 70.0
+  design_head_m: 30.0     # tuned so every open manifold stays >= 12 m (required pressure)
+
+sensors:
+  # Candidate sensor sites (where a sensor could really go): pump outlet, main
+  # junctions (valve boxes), sector heads upstream of the sector valve, sub-main ends.
+  candidate_kinds: [pump_out, main, sector_head, submain_end]
+
+leaks:
+  sizes_pct: [1, 3, 10]   # % of the open sectors' delivered flow (role 5 brief)
+  n_seeds: 10             # random perturbations per (config, size, location)
+  sigma_bar: 0.01         # sensor noise: PLACEHOLDER until role 1 measures bench sigma
+  healthy_samples_per_world: 20
+  base_seed: 20261124
+
+perturb:
+  # Uncertain parameters randomised per scenario (blueprint M1 / placement robustness).
+  roughness_rel_sd: 0.05      # HW C x N(1, 0.05)
+  elevation_sd_m: 0.5         # survey error per node
+  clogging_range: [0.8, 1.0]  # per-sector demand multiplier (emitter clogging)
+  n_perturbed_models: 10      # exported .inp files for role 2's robustness check

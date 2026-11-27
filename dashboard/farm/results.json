@@ -1,0 +1,3045 @@
+{
+ "version": "1.1",
+ "simulation": true,
+ "source": "farm/methods/results.py on farm/leaks/out (WNTR virtual farm)",
+ "split": "worlds 0-6 of each shift train, 7-9 test; metrics on test only",
+ "sigma_bar": 0.01,
+ "noise_cases": {
+  "single": "one reading per sensor",
+  "avg_60": "residual averaged over 60 readings (1 min at 1 Hz); white noise assumed"
+ },
+ "showcase_case": "avg_60",
+ "methods": [
+  "m2",
+  "m1",
+  "fused"
+ ],
+ "m1_note": null,
+ "fusion": "normalised product of the method maps (floor 1e-3)",
+ "metrics": {
+  "single": {
+   "3": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 74.4,
+      "right_site_pct": 6.3,
+      "within_one_hop_pct": 16.3,
+      "right_branch_pct": 25.1
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 26.1,
+      "right_site_pct": 2.9,
+      "within_one_hop_pct": 7.7,
+      "right_branch_pct": 12.6
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 97.1,
+      "right_site_pct": 7.7,
+      "within_one_hop_pct": 19.8,
+      "right_branch_pct": 29.0
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 8.2,
+      "within_one_hop_pct": 21.3,
+      "right_branch_pct": 33.8
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 98.6,
+      "right_site_pct": 8.0,
+      "within_one_hop_pct": 20.5,
+      "right_branch_pct": 31.4
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 74.4,
+      "right_site_pct": 8.7,
+      "within_one_hop_pct": 15.0,
+      "right_branch_pct": 25.1
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 26.1,
+      "right_site_pct": 2.9,
+      "within_one_hop_pct": 4.8,
+      "right_branch_pct": 10.1
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 97.1,
+      "right_site_pct": 10.1,
+      "within_one_hop_pct": 16.9,
+      "right_branch_pct": 30.9
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.0,
+      "within_one_hop_pct": 23.2,
+      "right_branch_pct": 34.3
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 98.6,
+      "right_site_pct": 11.6,
+      "within_one_hop_pct": 20.0,
+      "right_branch_pct": 32.6
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 74.4,
+      "right_site_pct": 9.2,
+      "within_one_hop_pct": 17.4,
+      "right_branch_pct": 25.0
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 26.1,
+      "right_site_pct": 3.9,
+      "within_one_hop_pct": 5.8,
+      "right_branch_pct": 10.1
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 97.1,
+      "right_site_pct": 9.7,
+      "within_one_hop_pct": 18.8,
+      "right_branch_pct": 30.0
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 14.0,
+      "within_one_hop_pct": 27.5,
+      "right_branch_pct": 34.8
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 98.6,
+      "right_site_pct": 11.8,
+      "within_one_hop_pct": 23.2,
+      "right_branch_pct": 32.4
+     }
+    }
+   },
+   "6": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 80.4,
+      "right_site_pct": 14.3,
+      "within_one_hop_pct": 25.1,
+      "right_branch_pct": 33.5
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 41.1,
+      "right_site_pct": 6.8,
+      "within_one_hop_pct": 10.1,
+      "right_branch_pct": 14.0
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 14.5,
+      "within_one_hop_pct": 29.0,
+      "right_branch_pct": 40.1
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 21.7,
+      "within_one_hop_pct": 36.2,
+      "right_branch_pct": 46.4
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 18.1,
+      "within_one_hop_pct": 32.6,
+      "right_branch_pct": 43.2
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 80.4,
+      "right_site_pct": 11.9,
+      "within_one_hop_pct": 22.1,
+      "right_branch_pct": 35.6
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 41.1,
+      "right_site_pct": 4.3,
+      "within_one_hop_pct": 6.8,
+      "right_branch_pct": 12.1
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 12.6,
+      "within_one_hop_pct": 24.2,
+      "right_branch_pct": 44.0
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 18.8,
+      "within_one_hop_pct": 35.3,
+      "right_branch_pct": 50.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 15.7,
+      "within_one_hop_pct": 29.7,
+      "right_branch_pct": 47.3
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 80.4,
+      "right_site_pct": 15.0,
+      "within_one_hop_pct": 25.1,
+      "right_branch_pct": 37.0
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 41.1,
+      "right_site_pct": 5.3,
+      "within_one_hop_pct": 8.2,
+      "right_branch_pct": 13.0
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 16.9,
+      "within_one_hop_pct": 30.0,
+      "right_branch_pct": 46.4
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 22.7,
+      "within_one_hop_pct": 37.2,
+      "right_branch_pct": 51.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 19.8,
+      "within_one_hop_pct": 33.6,
+      "right_branch_pct": 49.0
+     }
+    }
+   },
+   "10": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 86.3,
+      "right_site_pct": 26.2,
+      "within_one_hop_pct": 37.5,
+      "right_branch_pct": 45.2
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 58.9,
+      "right_site_pct": 11.1,
+      "within_one_hop_pct": 17.9,
+      "right_branch_pct": 26.1
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 27.5,
+      "within_one_hop_pct": 39.1,
+      "right_branch_pct": 46.9
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 40.1,
+      "within_one_hop_pct": 55.6,
+      "right_branch_pct": 62.8
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 33.8,
+      "within_one_hop_pct": 47.3,
+      "right_branch_pct": 54.8
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 86.3,
+      "right_site_pct": 20.5,
+      "within_one_hop_pct": 35.7,
+      "right_branch_pct": 45.1
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 58.9,
+      "right_site_pct": 8.7,
+      "within_one_hop_pct": 14.5,
+      "right_branch_pct": 25.6
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 20.3,
+      "within_one_hop_pct": 35.7,
+      "right_branch_pct": 44.0
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 32.4,
+      "within_one_hop_pct": 57.0,
+      "right_branch_pct": 65.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 26.3,
+      "within_one_hop_pct": 46.4,
+      "right_branch_pct": 54.8
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 86.3,
+      "right_site_pct": 26.4,
+      "within_one_hop_pct": 37.8,
+      "right_branch_pct": 45.1
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 58.9,
+      "right_site_pct": 11.1,
+      "within_one_hop_pct": 17.4,
+      "right_branch_pct": 24.2
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 27.5,
+      "within_one_hop_pct": 39.6,
+      "right_branch_pct": 46.4
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 40.6,
+      "within_one_hop_pct": 56.5,
+      "right_branch_pct": 64.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 34.1,
+      "within_one_hop_pct": 48.1,
+      "right_branch_pct": 55.6
+     }
+    }
+   }
+  },
+  "avg_60": {
+   "3": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 7.2,
+      "within_one_hop_pct": 20.1,
+      "right_branch_pct": 35.9
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 6.8,
+      "within_one_hop_pct": 19.3,
+      "right_branch_pct": 33.3
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 6.8,
+      "within_one_hop_pct": 18.4,
+      "right_branch_pct": 36.2
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 8.2,
+      "within_one_hop_pct": 22.7,
+      "right_branch_pct": 38.2
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 7.5,
+      "within_one_hop_pct": 20.5,
+      "right_branch_pct": 37.2
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 12.7,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 32.2
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 11.1,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 37.7
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.5,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 26.6
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.5,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 32.4
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.5,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 29.5
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.2,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 32.7
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 12.1,
+      "within_one_hop_pct": 22.7,
+      "right_branch_pct": 38.2
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 14.5,
+      "within_one_hop_pct": 21.7,
+      "right_branch_pct": 26.6
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.0,
+      "within_one_hop_pct": 20.8,
+      "right_branch_pct": 33.3
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 13.8,
+      "within_one_hop_pct": 21.3,
+      "right_branch_pct": 30.0
+     }
+    }
+   },
+   "6": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 22.1,
+      "within_one_hop_pct": 39.0,
+      "right_branch_pct": 54.6
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 14.0,
+      "within_one_hop_pct": 31.4,
+      "right_branch_pct": 50.2
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 23.7,
+      "within_one_hop_pct": 40.6,
+      "right_branch_pct": 53.6
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 28.5,
+      "within_one_hop_pct": 44.9,
+      "right_branch_pct": 59.9
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 26.1,
+      "within_one_hop_pct": 42.8,
+      "right_branch_pct": 56.8
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 22.4,
+      "within_one_hop_pct": 39.5,
+      "right_branch_pct": 54.8
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 20.3,
+      "within_one_hop_pct": 34.8,
+      "right_branch_pct": 44.4
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 20.8,
+      "within_one_hop_pct": 39.6,
+      "right_branch_pct": 53.6
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 26.1,
+      "within_one_hop_pct": 44.0,
+      "right_branch_pct": 66.2
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 23.4,
+      "within_one_hop_pct": 41.8,
+      "right_branch_pct": 59.9
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 27.1,
+      "within_one_hop_pct": 43.5,
+      "right_branch_pct": 56.2
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 22.2,
+      "within_one_hop_pct": 35.7,
+      "right_branch_pct": 47.8
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 26.6,
+      "within_one_hop_pct": 44.0,
+      "right_branch_pct": 56.0
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 32.4,
+      "within_one_hop_pct": 50.7,
+      "right_branch_pct": 64.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 29.5,
+      "within_one_hop_pct": 47.3,
+      "right_branch_pct": 60.4
+     }
+    }
+   },
+   "10": {
+    "m2": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 35.3,
+      "within_one_hop_pct": 50.2,
+      "right_branch_pct": 60.9
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 19.8,
+      "within_one_hop_pct": 42.0,
+      "right_branch_pct": 55.6
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 43.5,
+      "within_one_hop_pct": 54.6,
+      "right_branch_pct": 62.3
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 42.5,
+      "within_one_hop_pct": 54.1,
+      "right_branch_pct": 64.7
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 43.0,
+      "within_one_hop_pct": 54.3,
+      "right_branch_pct": 63.5
+     }
+    },
+    "m1": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 34.1,
+      "within_one_hop_pct": 57.0,
+      "right_branch_pct": 65.5
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 27.5,
+      "within_one_hop_pct": 48.8,
+      "right_branch_pct": 61.4
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 32.9,
+      "within_one_hop_pct": 57.0,
+      "right_branch_pct": 66.2
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 42.0,
+      "within_one_hop_pct": 65.2,
+      "right_branch_pct": 69.1
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 37.4,
+      "within_one_hop_pct": 61.1,
+      "right_branch_pct": 67.6
+     }
+    },
+    "fused": {
+     "all": {
+      "n": 621,
+      "detected_pct": 100.0,
+      "right_site_pct": 43.0,
+      "within_one_hop_pct": 57.0,
+      "right_branch_pct": 64.3
+     },
+     "1": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 29.5,
+      "within_one_hop_pct": 51.2,
+      "right_branch_pct": 59.4
+     },
+     "3": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 48.8,
+      "within_one_hop_pct": 57.5,
+      "right_branch_pct": 66.2
+     },
+     "10": {
+      "n": 207,
+      "detected_pct": 100.0,
+      "right_site_pct": 50.7,
+      "within_one_hop_pct": 62.3,
+      "right_branch_pct": 67.1
+     },
+     "3+10": {
+      "n": 414,
+      "detected_pct": 100.0,
+      "right_site_pct": 49.8,
+      "within_one_hop_pct": 59.9,
+      "right_branch_pct": 66.7
+     }
+    }
+   }
+  }
+ },
+ "scenarios": [
+  {
+   "id": "farm_533",
+   "scenario_id": 533,
+   "title": "10 % leak on MN1 (main)",
+   "true": {
+    "site": "MN1",
+    "kind": "pipe",
+    "branch": "main",
+    "pipes": [
+     "MN1"
+    ],
+    "x": 350.0,
+    "y": 59.58,
+    "size_pct": 10.0,
+    "leak_lps": 5.9152
+   },
+   "open_sectors": [
+    1,
+    2
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "M3",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.0838,
+       "fused": 0.0841
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0278,
+       "fused": 0.0279
+      },
+      "V1": {
+       "m2": 0.0435,
+       "m1": 0.0338,
+       "fused": 0.034
+      },
+      "S1a": {
+       "m2": 0.087,
+       "m1": 0.0684,
+       "fused": 0.0688
+      },
+      "S1b": {
+       "m2": 0.1087,
+       "m1": 0.0853,
+       "fused": 0.0858
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0274,
+       "fused": 0.0275
+      },
+      "V2": {
+       "m2": 0.0435,
+       "m1": 0.0327,
+       "fused": 0.033
+      },
+      "S2a": {
+       "m2": 0.087,
+       "m1": 0.0685,
+       "fused": 0.0689
+      },
+      "S2b": {
+       "m2": 0.1087,
+       "m1": 0.0912,
+       "fused": 0.0916
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0707,
+       "fused": 0.0705
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0396,
+       "fused": 0.0394
+      },
+      "V3": {
+       "m2": 0.0217,
+       "m1": 0.0267,
+       "fused": 0.0266
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0415,
+       "fused": 0.0413
+      },
+      "V4": {
+       "m2": 0.0217,
+       "m1": 0.0286,
+       "fused": 0.0284
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0987,
+       "fused": 0.098
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0547,
+       "fused": 0.0543
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0303,
+       "fused": 0.0301
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0575,
+       "fused": 0.057
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0331,
+       "fused": 0.0328
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "H4",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0929,
+       "m1": 0.2427,
+       "fused": 0.2342
+      },
+      "L1": {
+       "m2": 0.0363,
+       "m1": 0.0516,
+       "fused": 0.058
+      },
+      "V1": {
+       "m2": 0.0497,
+       "m1": 0.0322,
+       "fused": 0.0403
+      },
+      "S1a": {
+       "m2": 0.0918,
+       "fused": 0.0021
+      },
+      "S1b": {
+       "m2": 0.1144,
+       "fused": 0.0026
+      },
+      "L2": {
+       "m2": 0.0301,
+       "m1": 0.0351,
+       "fused": 0.0335
+      },
+      "V2": {
+       "m2": 0.0438,
+       "m1": 0.0221,
+       "fused": 0.0227
+      },
+      "S2a": {
+       "m2": 0.0868,
+       "m1": 0.0228,
+       "fused": 0.025
+      },
+      "S2b": {
+       "m2": 0.1196,
+       "m1": 0.0989,
+       "fused": 0.1056
+      },
+      "MN2": {
+       "m2": 0.0609,
+       "m1": 0.1267,
+       "fused": 0.1211
+      },
+      "L3": {
+       "m2": 0.031,
+       "m1": 0.0708,
+       "fused": 0.0687
+      },
+      "V3": {
+       "m2": 0.0203,
+       "m1": 0.0478,
+       "fused": 0.0455
+      },
+      "L4": {
+       "m2": 0.0308,
+       "m1": 0.1001,
+       "fused": 0.0955
+      },
+      "V4": {
+       "m2": 0.0201,
+       "m1": 0.0771,
+       "fused": 0.0724
+      },
+      "MN3": {
+       "m2": 0.0643,
+       "m1": 0.0539,
+       "fused": 0.0533
+      },
+      "L5": {
+       "m2": 0.0335,
+       "m1": 0.0076,
+       "fused": 0.0079
+      },
+      "V5": {
+       "m2": 0.0201,
+       "m1": 0.0048,
+       "fused": 0.0049
+      },
+      "L6": {
+       "m2": 0.0335,
+       "m1": 0.0043,
+       "fused": 0.0048
+      },
+      "V6": {
+       "m2": 0.0201,
+       "m1": 0.0015,
+       "fused": 0.0018
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "H2",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0229,
+       "m1": 0.3846,
+       "fused": 0.269
+      },
+      "L1": {
+       "m2": 0.0075,
+       "m1": 0.1088,
+       "fused": 0.0748
+      },
+      "V1": {
+       "m2": 0.0119,
+       "m1": 0.0823,
+       "fused": 0.0585
+      },
+      "S1a": {
+       "m2": 0.0226,
+       "m1": 0.0074,
+       "fused": 0.0084
+      },
+      "S1b": {
+       "m2": 0.0269,
+       "fused": 0.0018
+      },
+      "L2": {
+       "m2": 0.0123,
+       "m1": 0.1696,
+       "fused": 0.1988
+      },
+      "V2": {
+       "m2": 0.1038,
+       "m1": 0.1396,
+       "fused": 0.2243
+      },
+      "S2a": {
+       "m2": 0.2887,
+       "m1": 0.0037,
+       "fused": 0.0614
+      },
+      "S2b": {
+       "m2": 0.4224,
+       "fused": 0.0265
+      },
+      "MN2": {
+       "m2": 0.0148,
+       "m1": 0.0633,
+       "fused": 0.0443
+      },
+      "L3": {
+       "m2": 0.0074,
+       "m1": 0.0096,
+       "fused": 0.007
+      },
+      "V3": {
+       "m2": 0.0049,
+       "m1": 0.0082,
+       "fused": 0.0059
+      },
+      "L4": {
+       "m2": 0.0074,
+       "m1": 0.0099,
+       "fused": 0.0072
+      },
+      "V4": {
+       "m2": 0.0049,
+       "m1": 0.0084,
+       "fused": 0.006
+      },
+      "MN3": {
+       "m2": 0.0156,
+       "m1": 0.0037,
+       "fused": 0.0035
+      },
+      "L5": {
+       "m2": 0.0082,
+       "fused": 0.0008
+      },
+      "V5": {
+       "m2": 0.0049
+      },
+      "L6": {
+       "m2": 0.0082,
+       "fused": 0.0008
+      },
+      "V6": {
+       "m2": 0.0049
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_538",
+   "scenario_id": 538,
+   "title": "3 % leak on S1b (sector 1)",
+   "true": {
+    "site": "S1b",
+    "kind": "pipe",
+    "branch": "sector_1",
+    "pipes": [
+     "S1b"
+    ],
+    "x": 145.0,
+    "y": 119.17,
+    "size_pct": 3.0,
+    "leak_lps": 1.7834
+   },
+   "open_sectors": [
+    1,
+    2
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.098,
+       "fused": 0.098
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0324,
+       "fused": 0.0324
+      },
+      "V1": {
+       "m2": 0.0435,
+       "m1": 0.0434,
+       "fused": 0.0434
+      },
+      "S1a": {
+       "m2": 0.087,
+       "m1": 0.0882,
+       "fused": 0.0882
+      },
+      "S1b": {
+       "m2": 0.1087,
+       "m1": 0.11,
+       "fused": 0.11
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.032,
+       "fused": 0.032
+      },
+      "V2": {
+       "m2": 0.0435,
+       "m1": 0.042,
+       "fused": 0.0421
+      },
+      "S2a": {
+       "m2": 0.087,
+       "m1": 0.0883,
+       "fused": 0.0883
+      },
+      "S2b": {
+       "m2": 0.1087,
+       "m1": 0.1176,
+       "fused": 0.1174
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0616,
+       "fused": 0.0617
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0291,
+       "fused": 0.0291
+      },
+      "V3": {
+       "m2": 0.0217,
+       "m1": 0.0191,
+       "fused": 0.0191
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0303,
+       "fused": 0.0303
+      },
+      "V4": {
+       "m2": 0.0217,
+       "m1": 0.0203,
+       "fused": 0.0203
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0665,
+       "fused": 0.0666
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0363,
+       "fused": 0.0363
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0216,
+       "fused": 0.0216
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0389,
+       "fused": 0.0388
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0242,
+       "fused": 0.0242
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "A1",
+     "pipes": {
+      "V1": {
+       "m2": 0.2539,
+       "m1": 0.0658,
+       "fused": 0.1803
+      },
+      "S1a": {
+       "m2": 0.4581,
+       "m1": 0.4324,
+       "fused": 0.4747
+      },
+      "S1b": {
+       "m2": 0.2881,
+       "m1": 0.5018,
+       "fused": 0.345
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S1b",
+     "pipes": {
+      "S1a": {
+       "m2": 0.0096,
+       "m1": 0.3436,
+       "fused": 0.0162
+      },
+      "S1b": {
+       "m2": 0.9899,
+       "m1": 0.6371,
+       "fused": 0.9836
+      },
+      "V1": {
+       "m1": 0.0194
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_542",
+   "scenario_id": 542,
+   "title": "10 % leak on S2a (sector 2)",
+   "true": {
+    "site": "S2a",
+    "kind": "pipe",
+    "branch": "sector_2",
+    "pipes": [
+     "S2a"
+    ],
+    "x": 414.0,
+    "y": 119.17,
+    "size_pct": 10.0,
+    "leak_lps": 5.8327
+   },
+   "open_sectors": [
+    1,
+    2
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "M3",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.0838,
+       "fused": 0.0841
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0278,
+       "fused": 0.0279
+      },
+      "V1": {
+       "m2": 0.0435,
+       "m1": 0.0338,
+       "fused": 0.034
+      },
+      "S1a": {
+       "m2": 0.087,
+       "m1": 0.0684,
+       "fused": 0.0688
+      },
+      "S1b": {
+       "m2": 0.1087,
+       "m1": 0.0853,
+       "fused": 0.0858
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0274,
+       "fused": 0.0275
+      },
+      "V2": {
+       "m2": 0.0435,
+       "m1": 0.0327,
+       "fused": 0.033
+      },
+      "S2a": {
+       "m2": 0.087,
+       "m1": 0.0685,
+       "fused": 0.0689
+      },
+      "S2b": {
+       "m2": 0.1087,
+       "m1": 0.0912,
+       "fused": 0.0916
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0707,
+       "fused": 0.0705
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0396,
+       "fused": 0.0394
+      },
+      "V3": {
+       "m2": 0.0217,
+       "m1": 0.0267,
+       "fused": 0.0266
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0415,
+       "fused": 0.0413
+      },
+      "V4": {
+       "m2": 0.0217,
+       "m1": 0.0286,
+       "fused": 0.0284
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0987,
+       "fused": 0.098
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0547,
+       "fused": 0.0543
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0303,
+       "fused": 0.0301
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0575,
+       "fused": 0.057
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0331,
+       "fused": 0.0328
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "B2",
+     "pipes": {
+      "MN1": {
+       "m2": 0.1129,
+       "m1": 0.1732,
+       "fused": 0.125
+      },
+      "L1": {
+       "m2": 0.0251,
+       "m1": 0.0354,
+       "fused": 0.0174
+      },
+      "V1": {
+       "m2": 0.0326,
+       "m1": 0.0201,
+       "fused": 0.0112
+      },
+      "S1a": {
+       "m2": 0.0564,
+       "fused": 0.0008
+      },
+      "S1b": {
+       "m2": 0.0706,
+       "fused": 0.001
+      },
+      "L2": {
+       "m2": 0.0274,
+       "m1": 0.0573,
+       "fused": 0.0318
+      },
+      "V2": {
+       "m2": 0.0738,
+       "m1": 0.1073,
+       "fused": 0.1267
+      },
+      "S2a": {
+       "m2": 0.1495,
+       "m1": 0.245,
+       "fused": 0.27
+      },
+      "S2b": {
+       "m2": 0.2259,
+       "m1": 0.2916,
+       "fused": 0.3842
+      },
+      "MN2": {
+       "m2": 0.0411,
+       "m1": 0.0439,
+       "fused": 0.0184
+      },
+      "L3": {
+       "m2": 0.0205,
+       "m1": 0.0064,
+       "fused": 0.0029
+      },
+      "V3": {
+       "m2": 0.0137,
+       "m1": 0.0037,
+       "fused": 0.0017
+      },
+      "L4": {
+       "m2": 0.0205,
+       "m1": 0.0049,
+       "fused": 0.0023
+      },
+      "V4": {
+       "m2": 0.0137,
+       "m1": 0.0022,
+       "fused": 0.0011
+      },
+      "MN3": {
+       "m2": 0.0433,
+       "m1": 0.0058,
+       "fused": 0.003
+      },
+      "L5": {
+       "m2": 0.0228,
+       "m1": 0.0011,
+       "fused": 0.0008
+      },
+      "V5": {
+       "m2": 0.0137,
+       "m1": 0.0009,
+       "fused": 0.0006
+      },
+      "L6": {
+       "m2": 0.0228,
+       "m1": 0.0007,
+       "fused": 0.0006
+      },
+      "V6": {
+       "m2": 0.0137
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "A2",
+     "pipes": {
+      "S2a": {
+       "m2": 0.1995,
+       "m1": 0.5149,
+       "fused": 0.3928
+      },
+      "S2b": {
+       "m2": 0.8005,
+       "m1": 0.4562,
+       "fused": 0.6071
+      },
+      "V2": {
+       "m1": 0.0288
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1225",
+   "scenario_id": 1225,
+   "title": "3 % leak on MN2 (main)",
+   "true": {
+    "site": "MN2",
+    "kind": "pipe",
+    "branch": "main",
+    "pipes": [
+     "MN2"
+    ],
+    "x": 350.0,
+    "y": 238.33,
+    "size_pct": 3.0,
+    "leak_lps": 1.9716
+   },
+   "open_sectors": [
+    3,
+    4
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.0719,
+       "fused": 0.0725
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0241,
+       "fused": 0.0243
+      },
+      "V1": {
+       "m2": 0.0217,
+       "m1": 0.0161,
+       "fused": 0.0162
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0237,
+       "fused": 0.0239
+      },
+      "V2": {
+       "m2": 0.0217,
+       "m1": 0.0157,
+       "fused": 0.0159
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0616,
+       "fused": 0.0617
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0356,
+       "fused": 0.0355
+      },
+      "V3": {
+       "m2": 0.0435,
+       "m1": 0.0431,
+       "fused": 0.0431
+      },
+      "S3a": {
+       "m2": 0.087,
+       "m1": 0.0768,
+       "fused": 0.077
+      },
+      "S3b": {
+       "m2": 0.1087,
+       "m1": 0.0877,
+       "fused": 0.0882
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0365,
+       "fused": 0.0364
+      },
+      "V4": {
+       "m2": 0.0435,
+       "m1": 0.0455,
+       "fused": 0.0454
+      },
+      "S4a": {
+       "m2": 0.087,
+       "m1": 0.0867,
+       "fused": 0.0867
+      },
+      "S4b": {
+       "m2": 0.1087,
+       "m1": 0.1026,
+       "fused": 0.1027
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0922,
+       "fused": 0.0917
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0542,
+       "fused": 0.0538
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0327,
+       "fused": 0.0325
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0573,
+       "fused": 0.0569
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0358,
+       "fused": 0.0355
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0056,
+       "m1": 0.1014,
+       "fused": 0.0071
+      },
+      "L1": {
+       "m2": 0.0011,
+       "m1": 0.0532,
+       "fused": 0.0024
+      },
+      "L2": {
+       "m2": 0.0011,
+       "m1": 0.0369,
+       "fused": 0.002
+      },
+      "MN2": {
+       "m2": 0.0542,
+       "m1": 0.1319,
+       "fused": 0.0879
+      },
+      "L3": {
+       "m2": 0.0504,
+       "m1": 0.0315,
+       "fused": 0.0375
+      },
+      "V3": {
+       "m2": 0.0576,
+       "m1": 0.0094,
+       "fused": 0.0121
+      },
+      "S3a": {
+       "m2": 0.0847,
+       "m1": 0.0022,
+       "fused": 0.0032
+      },
+      "S3b": {
+       "m2": 0.1315,
+       "m1": 0.017,
+       "fused": 0.0185
+      },
+      "L4": {
+       "m2": 0.0817,
+       "m1": 0.0259,
+       "fused": 0.0341
+      },
+      "V4": {
+       "m2": 0.1085,
+       "m1": 0.0027,
+       "fused": 0.0081
+      },
+      "S4a": {
+       "m2": 0.0706,
+       "fused": 0.0013
+      },
+      "S4b": {
+       "m2": 0.014
+      },
+      "MN3": {
+       "m2": 0.1186,
+       "m1": 0.1111,
+       "fused": 0.1487
+      },
+      "L5": {
+       "m2": 0.0725,
+       "m1": 0.1033,
+       "fused": 0.1704
+      },
+      "V5": {
+       "m2": 0.0484,
+       "m1": 0.0856,
+       "fused": 0.1473
+      },
+      "L6": {
+       "m2": 0.0614,
+       "m1": 0.1286,
+       "fused": 0.1704
+      },
+      "V6": {
+       "m2": 0.0374,
+       "m1": 0.1108,
+       "fused": 0.1473
+      },
+      "V1": {
+       "m1": 0.0324,
+       "fused": 0.0009
+      },
+      "V2": {
+       "m1": 0.016
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "MN2",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0056,
+       "m1": 0.3464,
+       "fused": 0.0192
+      },
+      "MN2": {
+       "m2": 0.2664,
+       "m1": 0.2712,
+       "fused": 0.6527
+      },
+      "L3": {
+       "m2": 0.0698,
+       "m1": 0.0495,
+       "fused": 0.0739
+      },
+      "V3": {
+       "m2": 0.0484,
+       "m1": 0.025,
+       "fused": 0.031
+      },
+      "S3a": {
+       "m2": 0.0098
+      },
+      "S3b": {
+       "m2": 0.0011
+      },
+      "L4": {
+       "m2": 0.0721,
+       "m1": 0.0385,
+       "fused": 0.0614
+      },
+      "V4": {
+       "m2": 0.0535,
+       "m1": 0.0142,
+       "fused": 0.0187
+      },
+      "S4a": {
+       "m2": 0.0125,
+       "m1": 0.0006
+      },
+      "S4b": {
+       "m2": 0.0012
+      },
+      "MN3": {
+       "m2": 0.19,
+       "m1": 0.0576,
+       "fused": 0.1053
+      },
+      "L5": {
+       "m2": 0.0822,
+       "m1": 0.0069,
+       "fused": 0.0115
+      },
+      "V5": {
+       "m2": 0.0442,
+       "m1": 0.0039,
+       "fused": 0.0059
+      },
+      "L6": {
+       "m2": 0.0901,
+       "m1": 0.0059,
+       "fused": 0.0109
+      },
+      "V6": {
+       "m2": 0.0522,
+       "m1": 0.0028,
+       "fused": 0.0052
+      },
+      "L1": {
+       "m1": 0.0819,
+       "fused": 0.0017
+      },
+      "V1": {
+       "m1": 0.0073
+      },
+      "L2": {
+       "m1": 0.0813,
+       "fused": 0.0017
+      },
+      "V2": {
+       "m1": 0.0067
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1229",
+   "scenario_id": 1229,
+   "title": "10 % leak on S3a (sector 3)",
+   "true": {
+    "site": "S3a",
+    "kind": "pipe",
+    "branch": "sector_3",
+    "pipes": [
+     "S3a"
+    ],
+    "x": 286.0,
+    "y": 357.5,
+    "size_pct": 10.0,
+    "leak_lps": 6.2263
+   },
+   "open_sectors": [
+    3,
+    4
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.072,
+       "fused": 0.0726
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0241,
+       "fused": 0.0243
+      },
+      "V1": {
+       "m2": 0.0217,
+       "m1": 0.0159,
+       "fused": 0.016
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0237,
+       "fused": 0.0239
+      },
+      "V2": {
+       "m2": 0.0217,
+       "m1": 0.0155,
+       "fused": 0.0156
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0654,
+       "fused": 0.0653
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.039,
+       "fused": 0.0389
+      },
+      "V3": {
+       "m2": 0.0435,
+       "m1": 0.0458,
+       "fused": 0.0458
+      },
+      "S3a": {
+       "m2": 0.087,
+       "m1": 0.0766,
+       "fused": 0.0769
+      },
+      "S3b": {
+       "m2": 0.1087,
+       "m1": 0.0857,
+       "fused": 0.0862
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0401,
+       "fused": 0.0399
+      },
+      "V4": {
+       "m2": 0.0435,
+       "m1": 0.0484,
+       "fused": 0.0483
+      },
+      "S4a": {
+       "m2": 0.087,
+       "m1": 0.0868,
+       "fused": 0.0868
+      },
+      "S4b": {
+       "m2": 0.1087,
+       "m1": 0.1003,
+       "fused": 0.1005
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0941,
+       "fused": 0.0936
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0507,
+       "fused": 0.0504
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0298,
+       "fused": 0.0297
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0534,
+       "fused": 0.053
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0325,
+       "fused": 0.0323
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "B3",
+     "pipes": {
+      "MN2": {
+       "m2": 0.036,
+       "m1": 0.0136,
+       "fused": 0.0051
+      },
+      "L3": {
+       "m2": 0.0955,
+       "m1": 0.1148,
+       "fused": 0.0793
+      },
+      "V3": {
+       "m2": 0.2979,
+       "m1": 0.2699,
+       "fused": 0.4295
+      },
+      "S3a": {
+       "m2": 0.3221,
+       "m1": 0.4001,
+       "fused": 0.4117
+      },
+      "S3b": {
+       "m2": 0.2003,
+       "m1": 0.1107,
+       "fused": 0.0636
+      },
+      "L4": {
+       "m2": 0.0193,
+       "m1": 0.0187,
+       "fused": 0.005
+      },
+      "MN3": {
+       "m2": 0.0229,
+       "m1": 0.0432,
+       "fused": 0.0053
+      },
+      "L5": {
+       "m2": 0.0031,
+       "m1": 0.0087
+      },
+      "L6": {
+       "m2": 0.0029,
+       "m1": 0.0067
+      },
+      "V4": {
+       "m1": 0.0063
+      },
+      "S4a": {
+       "m1": 0.0006
+      },
+      "V5": {
+       "m1": 0.0044
+      },
+      "V6": {
+       "m1": 0.0024
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S3a",
+     "pipes": {
+      "S3a": {
+       "m2": 1.0,
+       "m1": 0.6082,
+       "fused": 0.9987
+      },
+      "V3": {
+       "m1": 0.1557,
+       "fused": 0.0005
+      },
+      "S3b": {
+       "m1": 0.2361,
+       "fused": 0.0008
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1237",
+   "scenario_id": 1237,
+   "title": "3 % leak on S4b (sector 4)",
+   "true": {
+    "site": "S4b",
+    "kind": "pipe",
+    "branch": "sector_4",
+    "pipes": [
+     "S4b"
+    ],
+    "x": 555.0,
+    "y": 357.5,
+    "size_pct": 3.0,
+    "leak_lps": 1.9131
+   },
+   "open_sectors": [
+    3,
+    4
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.072,
+       "fused": 0.0726
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0241,
+       "fused": 0.0243
+      },
+      "V1": {
+       "m2": 0.0217,
+       "m1": 0.0159,
+       "fused": 0.016
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0237,
+       "fused": 0.0239
+      },
+      "V2": {
+       "m2": 0.0217,
+       "m1": 0.0155,
+       "fused": 0.0156
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0654,
+       "fused": 0.0653
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.039,
+       "fused": 0.0389
+      },
+      "V3": {
+       "m2": 0.0435,
+       "m1": 0.0458,
+       "fused": 0.0458
+      },
+      "S3a": {
+       "m2": 0.087,
+       "m1": 0.0766,
+       "fused": 0.0769
+      },
+      "S3b": {
+       "m2": 0.1087,
+       "m1": 0.0857,
+       "fused": 0.0862
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0401,
+       "fused": 0.0399
+      },
+      "V4": {
+       "m2": 0.0435,
+       "m1": 0.0484,
+       "fused": 0.0483
+      },
+      "S4a": {
+       "m2": 0.087,
+       "m1": 0.0868,
+       "fused": 0.0868
+      },
+      "S4b": {
+       "m2": 0.1087,
+       "m1": 0.1003,
+       "fused": 0.1005
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0941,
+       "fused": 0.0936
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0507,
+       "fused": 0.0504
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0298,
+       "fused": 0.0297
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0534,
+       "fused": 0.053
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0325,
+       "fused": 0.0323
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S4b",
+     "pipes": {
+      "S4b": {
+       "m2": 1.0,
+       "m1": 0.8596,
+       "fused": 0.9995
+      },
+      "V4": {
+       "m1": 0.0016
+      },
+      "S4a": {
+       "m1": 0.1388
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S4b",
+     "pipes": {
+      "S4b": {
+       "m2": 1.0,
+       "m1": 0.9165,
+       "fused": 0.9997
+      },
+      "S4a": {
+       "m1": 0.0835
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1919",
+   "scenario_id": 1919,
+   "title": "10 % leak on MN3 (main)",
+   "true": {
+    "site": "MN3",
+    "kind": "pipe",
+    "branch": "main",
+    "pipes": [
+     "MN3"
+    ],
+    "x": 350.0,
+    "y": 476.67,
+    "size_pct": 10.0,
+    "leak_lps": 6.1838
+   },
+   "open_sectors": [
+    5,
+    6
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "H6",
+     "pipes": {
+      "MN1": {
+       "m2": 0.1085,
+       "m1": 0.1082,
+       "fused": 0.1205
+      },
+      "L1": {
+       "m2": 0.0237,
+       "m1": 0.0362,
+       "fused": 0.0267
+      },
+      "V1": {
+       "m2": 0.0158,
+       "m1": 0.023,
+       "fused": 0.017
+      },
+      "L2": {
+       "m2": 0.0357,
+       "m1": 0.0356,
+       "fused": 0.0386
+      },
+      "V2": {
+       "m2": 0.0278,
+       "m1": 0.0225,
+       "fused": 0.0289
+      },
+      "MN2": {
+       "m2": 0.0563,
+       "m1": 0.0997,
+       "fused": 0.0897
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0526,
+       "fused": 0.0551
+      },
+      "V3": {
+       "m2": 0.0158,
+       "m1": 0.0319,
+       "fused": 0.0235
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0549,
+       "fused": 0.0568
+      },
+      "V4": {
+       "m2": 0.0158,
+       "m1": 0.0342,
+       "fused": 0.0251
+      },
+      "MN3": {
+       "m2": 0.059,
+       "m1": 0.1813,
+       "fused": 0.1487
+      },
+      "L5": {
+       "m2": 0.0263,
+       "m1": 0.0636,
+       "fused": 0.0466
+      },
+      "V5": {
+       "m2": 0.0316,
+       "m1": 0.014,
+       "fused": 0.0108
+      },
+      "S5a": {
+       "m2": 0.0632,
+       "fused": 0.0014
+      },
+      "S5b": {
+       "m2": 0.079,
+       "fused": 0.0018
+      },
+      "L6": {
+       "m2": 0.0409,
+       "m1": 0.1425,
+       "fused": 0.1639
+      },
+      "V6": {
+       "m2": 0.0632,
+       "m1": 0.0963,
+       "fused": 0.1336
+      },
+      "S6a": {
+       "m2": 0.1245,
+       "m1": 0.0034,
+       "fused": 0.0079
+      },
+      "S6b": {
+       "m2": 0.1476,
+       "fused": 0.0033
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S6a",
+     "pipes": {
+      "MN3": {
+       "m2": 0.0008,
+       "m1": 0.0701,
+       "fused": 0.0026
+      },
+      "L5": {
+       "m2": 0.0007,
+       "m1": 0.108,
+       "fused": 0.0031
+      },
+      "L6": {
+       "m2": 0.0019,
+       "m1": 0.0682,
+       "fused": 0.0029
+      },
+      "V6": {
+       "m2": 0.0846,
+       "m1": 0.0314,
+       "fused": 0.0478
+      },
+      "S6a": {
+       "m2": 0.8123,
+       "m1": 0.1117,
+       "fused": 0.5996
+      },
+      "S6b": {
+       "m2": 0.0998,
+       "m1": 0.5406,
+       "fused": 0.3429
+      },
+      "V5": {
+       "m1": 0.0593,
+       "fused": 0.0008
+      },
+      "S5a": {
+       "m1": 0.0099
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "M3",
+     "pipes": {
+      "MN3": {
+       "m2": 0.3337,
+       "m1": 0.2725,
+       "fused": 0.3332
+      },
+      "L5": {
+       "m2": 0.323,
+       "m1": 0.087,
+       "fused": 0.3239
+      },
+      "L6": {
+       "m2": 0.3267,
+       "m1": 0.2924,
+       "fused": 0.3326
+      },
+      "V6": {
+       "m2": 0.0101,
+       "m1": 0.2271,
+       "fused": 0.0092
+      },
+      "S6a": {
+       "m2": 0.0064,
+       "m1": 0.0063
+      },
+      "MN2": {
+       "m1": 0.033
+      },
+      "L3": {
+       "m1": 0.033
+      },
+      "L4": {
+       "m1": 0.033
+      },
+      "V5": {
+       "m1": 0.0156
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1924",
+   "scenario_id": 1924,
+   "title": "3 % leak on S5b (sector 5)",
+   "true": {
+    "site": "S5b",
+    "kind": "pipe",
+    "branch": "sector_5",
+    "pipes": [
+     "S5b"
+    ],
+    "x": 145.0,
+    "y": 595.83,
+    "size_pct": 3.0,
+    "leak_lps": 1.8708
+   },
+   "open_sectors": [
+    5,
+    6
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "A5",
+     "pipes": {
+      "V5": {
+       "m2": 0.1172,
+       "fused": 0.0006
+      },
+      "S5a": {
+       "m2": 0.228,
+       "m1": 0.2387,
+       "fused": 0.2023
+      },
+      "S5b": {
+       "m2": 0.6547,
+       "m1": 0.7611,
+       "fused": 0.7971
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S5b",
+     "pipes": {
+      "S5b": {
+       "m2": 1.0,
+       "m1": 0.8239,
+       "fused": 0.9994
+      },
+      "V5": {
+       "m1": 0.0027
+      },
+      "S5a": {
+       "m1": 0.1734,
+       "fused": 0.0006
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S5b",
+     "pipes": {
+      "S5b": {
+       "m2": 1.0,
+       "m1": 0.7703,
+       "fused": 0.9993
+      },
+      "S5a": {
+       "m1": 0.2294,
+       "fused": 0.0007
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_1928",
+   "scenario_id": 1928,
+   "title": "10 % leak on S6a (sector 6)",
+   "true": {
+    "site": "S6a",
+    "kind": "pipe",
+    "branch": "sector_6",
+    "pipes": [
+     "S6a"
+    ],
+    "x": 414.0,
+    "y": 595.83,
+    "size_pct": 10.0,
+    "leak_lps": 6.0498
+   },
+   "open_sectors": [
+    5,
+    6
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "A6",
+     "pipes": {
+      "L2": {
+       "m2": 0.0132
+      },
+      "V2": {
+       "m2": 0.0132
+      },
+      "L6": {
+       "m2": 0.0566
+      },
+      "V6": {
+       "m2": 0.0566,
+       "m1": 0.0884,
+       "fused": 0.0009
+      },
+      "S6a": {
+       "m2": 0.151,
+       "m1": 0.534,
+       "fused": 0.3403
+      },
+      "S6b": {
+       "m2": 0.7094,
+       "m1": 0.3776,
+       "fused": 0.6582
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S6b",
+     "pipes": {
+      "V6": {
+       "m2": 0.0073,
+       "m1": 0.3025,
+       "fused": 0.0594
+      },
+      "S6a": {
+       "m2": 0.0083,
+       "m1": 0.3578,
+       "fused": 0.063
+      },
+      "S6b": {
+       "m2": 0.9844,
+       "m1": 0.097,
+       "fused": 0.8715
+      },
+      "MN3": {
+       "m1": 0.0186
+      },
+      "L5": {
+       "m1": 0.0325,
+       "fused": 0.0008
+      },
+      "V5": {
+       "m1": 0.0169
+      },
+      "S5a": {
+       "m1": 0.0032
+      },
+      "L6": {
+       "m1": 0.1715,
+       "fused": 0.0041
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "S6a",
+     "pipes": {
+      "S6a": {
+       "m2": 1.0,
+       "m1": 0.6583,
+       "fused": 0.9989
+      },
+      "V6": {
+       "m1": 0.1564
+      },
+      "S6b": {
+       "m1": 0.1853,
+       "fused": 0.0006
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "farm_518",
+   "scenario_id": 518,
+   "title": "10 % leak on H3 (sector 3)",
+   "true": {
+    "site": "H3",
+    "kind": "node",
+    "branch": "sector_3",
+    "pipes": [
+     "L3",
+     "V3"
+    ],
+    "x": 344.0,
+    "y": 357.5,
+    "size_pct": 10.0,
+    "leak_lps": 5.8995
+   },
+   "open_sectors": [
+    1,
+    2
+   ],
+   "by_sensors": {
+    "3": {
+     "sensors": [
+      "M3",
+      "E5",
+      "E6"
+     ],
+     "detected": true,
+     "top_site": "M3",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0978,
+       "m1": 0.0838,
+       "fused": 0.0841
+      },
+      "L1": {
+       "m2": 0.0326,
+       "m1": 0.0278,
+       "fused": 0.0279
+      },
+      "V1": {
+       "m2": 0.0435,
+       "m1": 0.0338,
+       "fused": 0.034
+      },
+      "S1a": {
+       "m2": 0.087,
+       "m1": 0.0684,
+       "fused": 0.0688
+      },
+      "S1b": {
+       "m2": 0.1087,
+       "m1": 0.0853,
+       "fused": 0.0858
+      },
+      "L2": {
+       "m2": 0.0326,
+       "m1": 0.0274,
+       "fused": 0.0275
+      },
+      "V2": {
+       "m2": 0.0435,
+       "m1": 0.0327,
+       "fused": 0.033
+      },
+      "S2a": {
+       "m2": 0.087,
+       "m1": 0.0685,
+       "fused": 0.0689
+      },
+      "S2b": {
+       "m2": 0.1087,
+       "m1": 0.0912,
+       "fused": 0.0916
+      },
+      "MN2": {
+       "m2": 0.0652,
+       "m1": 0.0707,
+       "fused": 0.0705
+      },
+      "L3": {
+       "m2": 0.0326,
+       "m1": 0.0396,
+       "fused": 0.0394
+      },
+      "V3": {
+       "m2": 0.0217,
+       "m1": 0.0267,
+       "fused": 0.0266
+      },
+      "L4": {
+       "m2": 0.0326,
+       "m1": 0.0415,
+       "fused": 0.0413
+      },
+      "V4": {
+       "m2": 0.0217,
+       "m1": 0.0286,
+       "fused": 0.0284
+      },
+      "MN3": {
+       "m2": 0.0688,
+       "m1": 0.0987,
+       "fused": 0.098
+      },
+      "L5": {
+       "m2": 0.0362,
+       "m1": 0.0547,
+       "fused": 0.0543
+      },
+      "V5": {
+       "m2": 0.0217,
+       "m1": 0.0303,
+       "fused": 0.0301
+      },
+      "L6": {
+       "m2": 0.0362,
+       "m1": 0.0575,
+       "fused": 0.057
+      },
+      "V6": {
+       "m2": 0.0217,
+       "m1": 0.0331,
+       "fused": 0.0328
+      }
+     }
+    },
+    "6": {
+     "sensors": [
+      "E1",
+      "H2",
+      "H3",
+      "E4",
+      "E5",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "H5",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0711,
+       "m1": 0.0172,
+       "fused": 0.0048
+      },
+      "L1": {
+       "m2": 0.0126,
+       "m1": 0.002
+      },
+      "V1": {
+       "m2": 0.0107,
+       "m1": 0.0008
+      },
+      "S1a": {
+       "m2": 0.0215
+      },
+      "S1b": {
+       "m2": 0.0269
+      },
+      "L2": {
+       "m2": 0.0126,
+       "m1": 0.0014
+      },
+      "V2": {
+       "m2": 0.0107
+      },
+      "S2a": {
+       "m2": 0.0215
+      },
+      "S2b": {
+       "m2": 0.0269,
+       "m1": 0.0056,
+       "fused": 0.0007
+      },
+      "MN2": {
+       "m2": 0.0408,
+       "m1": 0.0206,
+       "fused": 0.0038
+      },
+      "L3": {
+       "m2": 0.0081,
+       "m1": 0.0181,
+       "fused": 0.0015
+      },
+      "V3": {
+       "m2": 0.0054,
+       "m1": 0.0106,
+       "fused": 0.0009
+      },
+      "L4": {
+       "m2": 0.0343,
+       "m1": 0.0202,
+       "fused": 0.0065
+      },
+      "V4": {
+       "m2": 0.0316,
+       "m1": 0.0127,
+       "fused": 0.0059
+      },
+      "MN3": {
+       "m2": 0.2269,
+       "m1": 0.167,
+       "fused": 0.1447
+      },
+      "L5": {
+       "m2": 0.1763,
+       "m1": 0.2092,
+       "fused": 0.323
+      },
+      "V5": {
+       "m2": 0.1637,
+       "m1": 0.1326,
+       "fused": 0.3024
+      },
+      "L6": {
+       "m2": 0.0555,
+       "m1": 0.229,
+       "fused": 0.1124
+      },
+      "V6": {
+       "m2": 0.0429,
+       "m1": 0.1524,
+       "fused": 0.0919
+      }
+     }
+    },
+    "10": {
+     "sensors": [
+      "E1",
+      "E2",
+      "M2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "M1",
+      "M3",
+      "H6"
+     ],
+     "detected": true,
+     "top_site": "MN3",
+     "pipes": {
+      "MN1": {
+       "m2": 0.0569,
+       "m1": 0.1833,
+       "fused": 0.0958
+      },
+      "L1": {
+       "m2": 0.019,
+       "m1": 0.0643,
+       "fused": 0.0337
+      },
+      "V1": {
+       "m2": 0.0252,
+       "m1": 0.0313,
+       "fused": 0.0166
+      },
+      "S1a": {
+       "m2": 0.0504,
+       "m1": 0.0023,
+       "fused": 0.0022
+      },
+      "S1b": {
+       "m2": 0.063,
+       "fused": 0.0013
+      },
+      "L2": {
+       "m2": 0.019,
+       "m1": 0.05,
+       "fused": 0.0263
+      },
+      "V2": {
+       "m2": 0.0252,
+       "m1": 0.015,
+       "fused": 0.0082
+      },
+      "S2a": {
+       "m2": 0.0504,
+       "fused": 0.0011
+      },
+      "S2b": {
+       "m2": 0.063,
+       "fused": 0.0013
+      },
+      "MN2": {
+       "m2": 0.0534,
+       "m1": 0.1671,
+       "fused": 0.1193
+      },
+      "L3": {
+       "m2": 0.0221,
+       "m1": 0.0958,
+       "fused": 0.0551
+      },
+      "V3": {
+       "m2": 0.0126,
+       "m1": 0.0741,
+       "fused": 0.0384
+      },
+      "L4": {
+       "m2": 0.0452,
+       "m1": 0.0991,
+       "fused": 0.1274
+      },
+      "V4": {
+       "m2": 0.0357,
+       "m1": 0.0775,
+       "fused": 0.1106
+      },
+      "MN3": {
+       "m2": 0.296,
+       "m1": 0.0771,
+       "fused": 0.2818
+      },
+      "L5": {
+       "m2": 0.0459,
+       "m1": 0.0123,
+       "fused": 0.0126
+      },
+      "V5": {
+       "m2": 0.0329,
+       "m1": 0.0038,
+       "fused": 0.0057
+      },
+      "L6": {
+       "m2": 0.0485,
+       "m1": 0.0277,
+       "fused": 0.0347
+      },
+      "V6": {
+       "m2": 0.0355,
+       "m1": 0.0192,
+       "fused": 0.0278
+      }
+     }
+    }
+   }
+  }
+ ]
+}

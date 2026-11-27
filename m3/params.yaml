@@ -1,0 +1,46 @@
+# M3 – pressure-wave method, SIMULATION ONLY (team decision 21 Nov: the bench cannot make
+# fast waves). Every value is an ASSUMPTION unless a source is given.
+# Units: SI. Heads in m of water.
+
+pipe:
+  length_m: 150.0        # role 5 brief / earlier hydropin-sim: one long PE pipe of ~150 m
+  diameter_m: 0.05       # inner diameter, PE 63 class (assumption)
+  wave_speed_mps: 350.0  # PE: a few hundred m/s (brief: 300-400 m/s)
+  darcy_f: 0.02          # steady friction factor (assumption, smooth PE at Re ~ 3e4)
+
+boundary:
+  reservoir_head_m: 30.0     # upstream constant head (~3 bar, typical sub-main)
+  initial_velocity_mps: 0.5  # flow through the downstream valve before closure
+  # Joukowsky surge a*V/g = 350*0.5/9.81 = 17.8 m < 30 m, so the negative wave
+  # never reaches vapour pressure (no column separation is modelled).
+
+valve:
+  closure_time_s: 0.025  # brief: closure much faster than 2L/a = 0.86 s (e.g. 25 ms)
+  closure_start_s: 0.05
+  closure_exponent: 1.0  # tau(t) = (1 - t/Tc)^m, linear in area
+
+leak:
+  default_position_m: 100.0  # from the upstream reservoir
+  default_fraction: 0.05     # leak flow as a fraction of the initial valve flow
+
+viscoelastic:
+  # PE pipe-wall creep: generalised Kelvin-Voigt model (several elements). Off for the
+  # baseline runs (validation against Joukowsky / 4L/a needs an elastic pipe);
+  # m3.ve_study turns it on.
+  # ILLUSTRATIVE ASSUMPTION, confirm with the mentor: compliances of the order found in
+  # published HDPE calibrations, which use several elements with retardation times from
+  # ~0.05 s to seconds (e.g. Covas et al. 2005, J. Hydraulic Research 43(1)).
+  # Total creep compliance 3e-10 1/Pa ~ 40 % of PE's elastic compliance (~7e-10, E ~ 1.4 GPa).
+  enabled: false
+  J_per_Pa: [1.0e-10, 1.0e-10, 1.0e-10]
+  tau_s: [0.05, 0.5, 1.5]
+  wall_m: 0.0058       # PE 63 PN10 wall -> D/e ~ 8.6
+  alpha: 1.0           # pipe constraint coefficient
+
+numerics:
+  n_reaches: 900       # dx = 0.167 m, dt = 0.476 ms (< 0.5 ms for 2 kHz output)
+  duration_s: 2.0
+
+acquisition:
+  fs_hz: 2000          # master document: 24-bit ADC at >= 2 kHz, 1 ms sensor
+  record_s: 5.0        # master document: ~5 s per recording

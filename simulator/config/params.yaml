@@ -1,0 +1,1062 @@
+# HydroPin – simulation parameters (single source of truth)
+#
+# Every constant used anywhere in the code is read from this file.
+# Code names, symbols and defaults mirror docs/math.md, section 0.
+#
+# Fields of each parameter:
+#   value   : number, list of numbers, or null (null = not known yet → any use raises an error)
+#   unit    : SI unit ("-" = dimensionless)
+#   symbol  : LaTeX symbol used in the math note
+#   meaning : one-line description
+#   source  : where the value comes from
+#   range   : [min, max] plausible values; the loader rejects values outside it
+#   verify  : true = literature placeholder, to replace with a datasheet or bench value
+#   at, at_unit : abscissa for tabulated parameters (e.g. water temperature)
+#
+# Units: SI everywhere. Pressure is pressure HEAD in metres of water. Flow in m3/s.
+
+meta:
+  version: 0.1.0
+  math_note: "docs/math.md"
+  units: SI (head in m of water, flow in m3/s)
+
+# ── 0.1 Water and physics ──────────────────────────────────────────────────────
+water:
+  G:
+    value: 9.81
+    unit: m/s2
+    symbol: g
+    meaning: Gravitational acceleration
+    source: Standard value
+    range: [9.78, 9.83]
+  RHO_W:
+    value: 998.2
+    unit: kg/m3
+    symbol: \rho
+    meaning: Water density at 20 °C
+    source: Standard water tables
+    range: [990.0, 1000.0]
+  NU_W:
+    value: [1.306e-6, 1.004e-6, 0.801e-6, 0.658e-6]
+    at: [10.0, 20.0, 30.0, 40.0]
+    at_unit: degC
+    unit: m2/s
+    symbol: \nu
+    meaning: Kinematic viscosity of water vs temperature (interpolated)
+    source: Standard water tables
+    range: [0.5e-6, 1.5e-6]
+  K_W:
+    value: 2.2e9
+    unit: Pa
+    symbol: K
+    meaning: Bulk modulus of water
+    source: Standard value (Wylie & Streeter)
+    range: [2.0e9, 2.3e9]
+  P_ATM:
+    value: 101325.0
+    unit: Pa
+    symbol: p_{atm}
+    meaning: Atmospheric pressure (sea level)
+    source: Standard atmosphere
+    range: [90000.0, 105000.0]
+  P_VAP:
+    value: [1228.0, 2339.0, 4246.0, 7384.0]
+    at: [10.0, 20.0, 30.0, 40.0]
+    at_unit: degC
+    unit: Pa
+    symbol: p_v
+    meaning: Vapour pressure of water vs temperature (interpolated)
+    source: Standard water tables
+    range: [500.0, 10000.0]
+  T_WATER:
+    value: 20.0
+    unit: degC
+    symbol: T_w
+    meaning: Default water temperature (overridden per scenario)
+    source: Choice; surface laterals run hotter in summer
+    range: [5.0, 45.0]
+
+# ── 0.2 Pipe materials (per-pipe geometry D_INT, E_WALL, L_PIPE lives in the network spec) ──
+materials:
+  PVC:
+    E_PIPE:
+      value: 3.0e9
+      unit: Pa
+      symbol: E
+      meaning: Young's modulus (short-term)
+      source: Typical PVC-U literature value
+      range: [2.4e9, 3.3e9]
+      verify: true
+    NU_P:
+      value: 0.40
+      unit: "-"
+      symbol: \nu_p
+      meaning: Poisson ratio
+      source: Typical PVC literature value
+      range: [0.38, 0.46]
+      verify: true
+    EPS_R:
+      value: 1.5e-6
+      unit: m
+      symbol: \varepsilon
+      meaning: Absolute roughness (new pipe)
+      source: Typical plastic pipe value
+      range: [1.5e-6, 1.0e-5]
+    J_K:
+      value: []
+      unit: 1/Pa
+      symbol: J_k
+      meaning: Kelvin-Voigt creep compliances (PVC treated as elastic)
+      source: Modelling choice
+    TAU_K:
+      value: []
+      unit: s
+      symbol: \tau_k
+      meaning: Kelvin-Voigt retardation times (PVC treated as elastic)
+      source: Modelling choice
+  PE100:
+    E_PIPE:
+      value: 1.1e9
+      unit: Pa
+      symbol: E
+      meaning: Young's modulus (short-term, HDPE PE100)
+      source: Typical HDPE literature value; falls with temperature
+      range: [0.8e9, 1.4e9]
+      verify: true
+    NU_P:
+      value: 0.46
+      unit: "-"
+      symbol: \nu_p
+      meaning: Poisson ratio
+      source: Typical PE literature value
+      range: [0.42, 0.48]
+      verify: true
+    EPS_R:
+      value: 1.5e-6
+      unit: m
+      symbol: \varepsilon
+      meaning: Absolute roughness (new pipe)
+      source: Typical plastic pipe value
+      range: [1.5e-6, 1.0e-5]
+    J_K:
+      value: [4.5e-11, 4.5e-11, 4.5e-11, 4.5e-11]
+      unit: 1/Pa
+      symbol: J_k
+      meaning: Kelvin-Voigt creep compliances (about 0.05 J0 each)
+      source: Order-of-magnitude placeholder; MUST be calibrated on the bench
+      range: [0.0, 2.0e-10]
+      verify: true
+    TAU_K:
+      value: [0.05, 0.5, 1.5, 5.0]
+      unit: s
+      symbol: \tau_k
+      meaning: Kelvin-Voigt retardation times
+      source: Placeholder grid; calibrated together with J_K
+      range: [0.001, 20.0]
+      verify: true
+  LDPE:
+    E_PIPE:
+      value: 0.25e9
+      unit: Pa
+      symbol: E
+      meaning: Young's modulus (drip laterals, LDPE/LLDPE)
+      source: Typical LDPE literature value
+      range: [0.15e9, 0.35e9]
+      verify: true
+    NU_P:
+      value: 0.46
+      unit: "-"
+      symbol: \nu_p
+      meaning: Poisson ratio
+      source: Typical PE literature value
+      range: [0.42, 0.49]
+      verify: true
+    EPS_R:
+      value: 1.5e-6
+      unit: m
+      symbol: \varepsilon
+      meaning: Absolute roughness (new pipe)
+      source: Typical plastic pipe value
+      range: [1.5e-6, 1.0e-5]
+    J_K:
+      value: [4.5e-11, 4.5e-11, 4.5e-11, 4.5e-11]
+      unit: 1/Pa
+      symbol: J_k
+      meaning: Kelvin-Voigt creep compliances
+      source: Placeholder (M3 is not run on laterals)
+      range: [0.0, 1.0e-9]
+      verify: true
+    TAU_K:
+      value: [0.05, 0.5, 1.5, 5.0]
+      unit: s
+      symbol: \tau_k
+      meaning: Kelvin-Voigt retardation times
+      source: Placeholder (M3 is not run on laterals)
+      range: [0.001, 20.0]
+      verify: true
+
+  PVC_FLEX:
+    E_PIPE:
+      value: 0.02e9
+      unit: Pa
+      symbol: E
+      meaning: Young's modulus of soft PVC hose (prototype pump hose)
+      source: Typical plasticised PVC literature value
+      range: [0.003e9, 0.05e9]
+      verify: true
+    NU_P:
+      value: 0.45
+      unit: "-"
+      symbol: \nu_p
+      meaning: Poisson ratio
+      source: Typical soft PVC literature value
+      range: [0.40, 0.49]
+      verify: true
+    EPS_R:
+      value: 1.5e-6
+      unit: m
+      symbol: \varepsilon
+      meaning: Absolute roughness (new hose)
+      source: Typical plastic pipe value
+      range: [1.5e-6, 1.0e-5]
+    J_K:
+      value: []
+      unit: 1/Pa
+      symbol: J_k
+      meaning: Kelvin-Voigt creep compliances (no transient run on the hose)
+      source: Modelling choice
+    TAU_K:
+      value: []
+      unit: s
+      symbol: \tau_k
+      meaning: Kelvin-Voigt retardation times (no transient run on the hose)
+      source: Modelling choice
+  SS316:
+    E_PIPE:
+      value: 193.0e9
+      unit: Pa
+      symbol: E
+      meaning: Young's modulus of 316 stainless steel (Swagelok sensor tees)
+      source: Standard steel tables
+      range: [190.0e9, 200.0e9]
+    NU_P:
+      value: 0.30
+      unit: "-"
+      symbol: \nu_p
+      meaning: Poisson ratio
+      source: Standard steel tables
+      range: [0.27, 0.31]
+    EPS_R:
+      value: 1.5e-6
+      unit: m
+      symbol: \varepsilon
+      meaning: Absolute roughness (drawn stainless tube)
+      source: Typical drawn tubing value
+      range: [1.5e-6, 1.0e-5]
+    J_K:
+      value: []
+      unit: 1/Pa
+      symbol: J_k
+      meaning: Kelvin-Voigt creep compliances (steel is elastic)
+      source: Physics
+    TAU_K:
+      value: []
+      unit: s
+      symbol: \tau_k
+      meaning: Kelvin-Voigt retardation times (steel is elastic)
+      source: Physics
+
+pipes:
+  C1:
+    value: 1.0
+    unit: "-"
+    symbol: c_1
+    meaning: Pipe anchoring factor in the wave-speed formula (1 = free to move)
+    source: Math note §5.2; farm pipes loosely buried or on the surface
+    range: [0.5, 1.2]
+
+# ── 0.3 Drippers, laterals, leaks ──────────────────────────────────────────────
+emitters:
+  Q_NOM:
+    value: 5.5556e-7
+    unit: m3/s
+    symbol: q_{nom}
+    meaning: Nominal dripper flow (= 2 L/h)
+    source: Typical dripper datasheet
+    range: [5.5556e-7, 1.1112e-6]
+    verify: true
+  H_NOM:
+    value: 10.0
+    unit: m
+    symbol: h_{nom}
+    meaning: Nominal dripper pressure head (about 1 bar)
+    source: Typical dripper datasheet
+    range: [5.0, 20.0]
+    verify: true
+  X_EMIT:
+    value: 0.5
+    unit: "-"
+    symbol: x
+    meaning: Dripper exponent (0.5 non-compensating, 0-0.1 pressure-compensating)
+    source: Typical dripper datasheet
+    range: [0.0, 1.0]
+    verify: true
+  H_ACT:
+    value: 7.0
+    unit: m
+    symbol: h_{act}
+    meaning: Activation head of pressure-compensating drippers
+    source: Typical PC dripper datasheet
+    range: [5.0, 10.0]
+    verify: true
+  H_MAX:
+    value: 35.0
+    unit: m
+    symbol: h_{max}
+    meaning: Upper limit of the compensation range
+    source: Typical PC dripper datasheet
+    range: [30.0, 40.0]
+    verify: true
+  CV_MFG:
+    value: 0.05
+    unit: "-"
+    symbol: c_v
+    meaning: Manufacturing coefficient of variation of k_d
+    source: Typical dripper datasheet (classes A/B)
+    range: [0.03, 0.07]
+    verify: true
+  C_CLOG:
+    value: 0.0
+    unit: "-"
+    symbol: c_j
+    meaning: Clogging fraction of a dripper (0 = new); sampled per dripper in Monte Carlo
+    source: Modelling choice; upper bound from range
+    range: [0.0, 0.3]
+  S_EMIT:
+    value: 0.4
+    unit: m
+    symbol: s
+    meaning: Dripper spacing along a lateral
+    source: Typical drip design
+    range: [0.2, 1.0]
+    verify: true
+
+leaks:
+  CD_LEAK:
+    value: 0.62
+    unit: "-"
+    symbol: C_d
+    meaning: Leak discharge coefficient (sharp-edged hole)
+    source: Orifice theory; WNTR default is 0.75
+    range: [0.6, 0.75]
+  N1_LEAK:
+    value: 0.5
+    unit: "-"
+    symbol: N_1
+    meaning: Leak pressure exponent (0.5 rigid hole, up to about 1.5 split plastic)
+    source: Leakage literature (FAVAD)
+    range: [0.5, 1.5]
+    verify: true
+  M_FAVAD:
+    value: 0.0
+    unit: m2/m
+    symbol: m
+    meaning: Growth of leak area with pressure head (0 = rigid hole)
+    source: FAVAD; value for split PE to be measured
+    range: [0.0, 1.0e-3]
+    verify: true
+
+# ── 0.4 Pump, energy, money (pump curve H0_PUMP, R_PUMP, N_PUMP lives in the network spec) ──
+energy:
+  ETA_PUMP:
+    value: 0.6
+    unit: "-"
+    symbol: \eta
+    meaning: Pump + motor efficiency
+    source: Typical small agricultural pump
+    range: [0.4, 0.8]
+    verify: true
+  C_ELEC:
+    value: null
+    unit: TND/kWh
+    symbol: c_e
+    meaning: Electricity price for agricultural pumping
+    source: TO SOURCE (STEG agricultural tariff)
+    verify: true
+  C_WATER:
+    value: 1.5
+    unit: TND/m3
+    symbol: c_w
+    meaning: Real (full) cost of irrigation water
+    source: Blueprint, ref. [9] (full cost 1.45-1.60 TND/m3)
+    range: [1.45, 1.60]
+
+# ── 0.5 Transients (M3) ────────────────────────────────────────────────────────
+transient:
+  ALPHA_AIR:
+    value: 0.0
+    unit: "-"
+    symbol: \alpha_g
+    meaning: Free-air volume fraction (0 = fully purged)
+    source: Modelling choice; swept in Monte Carlo
+    range: [0.0, 1.0e-3]
+  T_CLOSE:
+    value: 0.01
+    unit: s
+    symbol: T_c
+    meaning: Excitation valve closure time
+    source: Placeholder until the valve is chosen
+    range: [0.005, 0.05]
+    verify: true
+  E_M:
+    value: 1.5
+    unit: "-"
+    symbol: E_m
+    meaning: Valve closure-curve exponent
+    source: Wylie & Streeter closure law
+    range: [1.0, 2.0]
+    verify: true
+  PSI_MAX:
+    value: 0.05
+    unit: "-"
+    symbol: \psi
+    meaning: Max relative wave-speed adjustment for the MOC grid
+    source: Common MOC practice
+    range: [0.0, 0.1]
+
+# ── 0.6 Sensors and decisions ──────────────────────────────────────────────────
+sensors:
+  FS_BAR:
+    value: 6.0
+    unit: bar
+    symbol: F_S
+    meaning: Low-rate sensor full scale (only parameter not in SI, matches datasheets)
+    source: Recommended range for drip networks
+    range: [4.0, 10.0]
+  ACC:
+    value: 0.0025
+    unit: "-"
+    symbol: ACC
+    meaning: Accuracy as a fraction of full scale
+    source: Typical industrial transmitter datasheet
+    range: [0.001, 0.01]
+    verify: true
+  TEMPCO:
+    value: 0.0002
+    unit: 1/K
+    symbol: \alpha_T
+    meaning: Zero drift per kelvin, fraction of full scale
+    source: Typical datasheet (0.2 % span / 10 K)
+    range: [0.0, 0.001]
+    verify: true
+  T_AMP:
+    value: 15.0
+    unit: K
+    symbol: T_{amp}
+    meaning: Half-amplitude of the daily temperature swing at the sensor box
+    source: Assumption for a field box in Tunisian summer
+    range: [0.0, 25.0]
+    verify: true
+  DRIFT_YR:
+    value: 0.002
+    unit: 1/yr
+    symbol: \beta
+    meaning: Ageing drift per year, fraction of full scale
+    source: Typical datasheet long-term stability
+    range: [0.0, 0.005]
+    verify: true
+  SIGMA_N:
+    value: 0.0005
+    unit: "-"
+    symbol: \sigma_\varepsilon
+    meaning: Short-term noise standard deviation, fraction of full scale
+    source: Assumption; to measure on the bench
+    range: [0.0, 0.005]
+    verify: true
+  ADC_BITS:
+    value: 16
+    unit: bit
+    symbol: n_b
+    meaning: ADC resolution (ADS1115)
+    source: Hardware choice
+    range: [10, 24]
+  LOSS_RATE:
+    value: 0.02
+    unit: "-"
+    symbol: LOSS
+    meaning: LoRa packet loss probability
+    source: Assumption
+    range: [0.0, 0.3]
+    verify: true
+  FS_HIGH:
+    value: 2000.0
+    unit: Hz
+    symbol: f_s
+    meaning: M3 high-rate sampling frequency
+    source: Blueprint (>= 2 kHz)
+    range: [1000.0, 100000.0]
+  TAU_SENS:
+    value: 1.0e-3
+    unit: s
+    symbol: \tau_s
+    meaning: M3 sensor response time
+    source: Typical piezo-resistive sensor datasheet
+    range: [1.0e-5, 5.0e-3]
+    verify: true
+  SIGMA_SYNC:
+    value: 1.0e-6
+    unit: s
+    symbol: \sigma_{sync}
+    meaning: GPS time-sync error between M3 sensors
+    source: Typical GPS PPS accuracy
+    range: [0.0, 1.0e-3]
+    verify: true
+
+  TEMP_COMP_RESIDUAL:
+    value: 0.1
+    unit: "-"
+    symbol: \rho_T
+    meaning: Fraction of the daily temperature drift left after compensation with the box temperature
+    source: Assumption; to measure on the bench (math note §3.3)
+    range: [0.0, 1.0]
+    verify: true
+  SIGMA_Q:
+    value: 0.005
+    unit: "-"
+    symbol: \sigma_Q
+    meaning: Flow-meter noise, fraction of the reading
+    source: Typical electromagnetic flow meter (0.5 %)
+    range: [0.001, 0.05]
+    verify: true
+
+  SIGMA_HF:
+    value: 0.01
+    unit: m
+    symbol: \sigma_{HF}
+    meaning: Noise of one high-rate (M3) sample, in metres of water
+    source: Assumption (piezo-resistive sensor + 24-bit ADC); to measure on the bench
+    range: [0.0005, 0.05]
+    verify: true
+  N_PULSES:
+    value: 16
+    unit: "-"
+    symbol: N_p
+    meaning: Number of identical M3 pulses averaged in one test
+    source: Design choice (math note §5.9)
+    range: [1, 100]
+
+decision:
+  KAPPA:
+    value: 3.0
+    unit: "-"
+    symbol: \kappa
+    meaning: Detection margin in multiples of the noise
+    source: Modelling choice
+    range: [1.0, 6.0]
+  TAU1:
+    value: 0.3
+    unit: "-"
+    symbol: \tau_1
+    meaning: P(leak) threshold to watch and trigger M3
+    source: Placeholder, tuned in Step 10
+    range: [0.0, 1.0]
+  TAU2:
+    value: 0.8
+    unit: "-"
+    symbol: \tau_2
+    meaning: P(leak) threshold to alert
+    source: Placeholder, tuned in Step 10
+    range: [0.0, 1.0]
+  N_AVG:
+    value: 15
+    unit: "-"
+    symbol: n_{avg}
+    meaning: Readings averaged per decision window (1 reading per minute → 15 min)
+    source: Design choice (math note §3.3)
+    range: [1, 120]
+
+# ── 0.7 Prototype board (3rd phase hardware list, 18 Nov 2026; math note §10) ──
+prototype:
+  PB_TILT:
+    value: 0.0
+    unit: "deg"
+    symbol: '\theta_B'
+    meaning: "Board tilt from horizontal (0 = lying flat on the table, 90 = standing upright)"
+    source: "Team decision, 22 Nov 2026: the board lies on the table"
+    range: [0.0, 90.0]
+  PB_Z_BOARD:
+    value: 0.5
+    unit: "m"
+    symbol: 'z_B'
+    meaning: "Height of the board's bottom edge above the bucket water surface"
+    source: "Assumption: table 0.75 m, bucket on the floor with water at 0.28 m; measure"
+    range: [0.0, 2.0]
+    verify: true
+  PB_Z_PUMP:
+    value: 0.0
+    unit: "m"
+    symbol: 'z_P'
+    meaning: "Height of the pump outlet above the bucket water surface"
+    source: "Assumption (pump next to the bucket); measure"
+    range: [-0.5, 1.0]
+    verify: true
+  PB_D_HOSE:
+    value: 0.006
+    unit: "m"
+    symbol: 'd_h'
+    meaning: "Inside diameter of the soft pump hose (fits the 8 mm pump ports)"
+    source: "Hardware list (8 mm hose); inside diameter assumed"
+    range: [0.004, 0.01]
+    verify: true
+  PB_L_HOSE:
+    value: 1.0
+    unit: "m"
+    symbol: 'L_h'
+    meaning: "Length of the soft pump hose"
+    source: "Hardware list (1 m)"
+    range: [0.2, 3.0]
+  PB_D_OUT_PE:
+    value: 0.016
+    unit: "m"
+    symbol: 'D_o'
+    meaning: "Outside diameter of the PE irrigation pipe"
+    source: "Hardware list (16 mm PE)"
+    range: [0.015, 0.017]
+  PB_E_WALL_PE:
+    value: 0.0012
+    unit: "m"
+    symbol: 'e_{PE}'
+    meaning: "Wall thickness of the 16 mm PE pipe"
+    source: "Typical 16 mm irrigation tube; measure with a caliper"
+    range: [0.0008, 0.002]
+    verify: true
+  PB_D_BARB:
+    value: 0.011
+    unit: "m"
+    symbol: 'd_{barb}'
+    meaning: "Bore of the 16 mm barbed fittings (tees, elbows, reducer)"
+    source: "Assumption; measure the bore"
+    range: [0.008, 0.0136]
+    verify: true
+  PB_D_VALVE:
+    value: 0.008
+    unit: "m"
+    symbol: 'd_v'
+    meaning: "Bore of a 16 mm mini valve (R1, R2, V1, V2)"
+    source: "Assumption; measure the bore"
+    range: [0.004, 0.0136]
+    verify: true
+  PB_D_TAP:
+    value: 0.008
+    unit: "m"
+    symbol: 'd_t'
+    meaning: "Bore of a 1/2 inch leak-tap mini valve"
+    source: "Assumption; measure the bore"
+    range: [0.004, 0.015]
+    verify: true
+  PB_D_SS:
+    value: 0.01
+    unit: "m"
+    symbol: 'd_{ss}'
+    meaning: "Inside diameter of the Swagelok stainless sensor tee"
+    source: "Assumption (12 mm tube, 1 mm wall); measure"
+    range: [0.006, 0.0136]
+    verify: true
+  PB_L_SS:
+    value: 0.06
+    unit: "m"
+    symbol: 'L_{ss}'
+    meaning: "Length of one Swagelok sensor tee"
+    source: "Assumption; measure"
+    range: [0.02, 0.15]
+    verify: true
+  PB_L_TAP:
+    value: 0.25
+    unit: "m"
+    symbol: 'L_t'
+    meaning: "Length of a leak-tap tube back to the bucket"
+    source: "Hardware list (20-30 cm)"
+    range: [0.1, 0.5]
+  PB_L_RETURN:
+    value: 1.5
+    unit: "m"
+    symbol: 'L_r'
+    meaning: "Length of the shared return pipe from the right corner to the bucket"
+    source: "Assumption; measure"
+    range: [0.3, 3.0]
+    verify: true
+  PB_RETURN_FULL:
+    value: 0
+    unit: "-"
+    symbol: '\chi_r'
+    meaning: "1 = return pipe runs full down to its end (siphon); 0 = it drains freely from the corner"
+    source: "Assumption; check by looking at the return pipe"
+    range: [0, 1]
+    verify: true
+  PB_DZ_SENSOR:
+    value: 0.08
+    unit: "m"
+    symbol: '\Delta z_s'
+    meaning: "Height of a pressure sensor's diaphragm above the pipe axis (sensor pointing up)"
+    source: "Assumption from the sketch; measure"
+    range: [0.0, 0.3]
+    verify: true
+  K_TEE_RUN:
+    value: 0.4
+    unit: "-"
+    symbol: 'K_{tr}'
+    meaning: "Tee, flow straight through (on top of the bore restriction)"
+    source: "Crane TP-410 order of magnitude"
+    range: [0.2, 1.0]
+    verify: true
+  K_TEE_BRANCH:
+    value: 1.2
+    unit: "-"
+    symbol: 'K_{tb}'
+    meaning: "Tee, flow turning into or out of the branch"
+    source: "Crane TP-410 order of magnitude"
+    range: [0.8, 2.0]
+    verify: true
+  K_ELBOW:
+    value: 0.9
+    unit: "-"
+    symbol: 'K_{el}'
+    meaning: "Sharp 90 degree barbed elbow (on top of the bore restriction)"
+    source: "Crane TP-410 order of magnitude"
+    range: [0.5, 1.5]
+    verify: true
+  K_FLOWMETER:
+    value: 10.0
+    unit: "-"
+    symbol: 'K_{FM}'
+    meaning: "Loss of the Hall flow sensor and its two adapters (16 mm pipe velocity)"
+    source: "Assumption; measured with the healthy calibration"
+    range: [0.0, 100.0]
+    verify: true
+  K_EXIT:
+    value: 1.0
+    unit: "-"
+    symbol: 'K_{ex}'
+    meaning: "Free outlet into the bucket: the velocity head is lost"
+    source: "Borda-Carnot (exact for a free jet)"
+    range: [1.0, 1.0]
+  K_PLUG:
+    value: [0.0, 0.05, 0.29, 0.75, 1.56, 3.1, 5.47, 9.68, 17.3, 31.2, 52.6, 106.0, 206.0, 486.0]
+    at: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0]
+    at_unit: deg
+    unit: "-"
+    symbol: 'K_{pc}(\theta)'
+    meaning: "Loss of a quarter-turn plug/ball valve vs closing angle, on the valve bore velocity"
+    source: "Weisbach plug-cock table (Idelchik); real valves calibrated on the bench"
+    range: [0.0, 1000.0]
+    verify: true
+  THETA_CLOSED:
+    value: 82.0
+    unit: "deg"
+    symbol: '\theta_c'
+    meaning: "Closing angle at which a plug valve shuts completely"
+    source: "Weisbach plug-cock table"
+    range: [75.0, 90.0]
+  PB_Q0_PUMP:
+    value: 4.1667e-05
+    unit: "m3/s"
+    symbol: 'Q_0'
+    meaning: "R365 free-flow rate at 12 V (2.5 L/min)"
+    source: "R365 listings: 2-3 L/min"
+    range: [3.3e-05, 5e-05]
+    verify: true
+  PB_H0_PUMP:
+    value: 18.0
+    unit: "m"
+    symbol: 'H_0'
+    meaning: "R365 shut-off head at 12 V (1.8 bar)"
+    source: "R365 listings: 1-2.5 kgf/cm2 (one listing says far less); measure"
+    range: [5.0, 26.0]
+    verify: true
+  PB_N_PUMP:
+    value: 1.0
+    unit: "-"
+    symbol: 'n_P'
+    meaning: "Exponent of the diaphragm pump curve (1 = straight line)"
+    source: "Typical small diaphragm pump curve"
+    range: [0.5, 2.0]
+    verify: true
+  PB_V_NOM:
+    value: 12.0
+    unit: "V"
+    symbol: 'V_{nom}'
+    meaning: "Pump rated voltage"
+    source: "R365 listings"
+    range: [6.0, 14.0]
+  PB_V_SUPPLY:
+    value: 12.0
+    unit: "V"
+    symbol: 'V_s'
+    meaning: "Voltage given by the 12 V adapter under load"
+    source: "Hardware list; measure with a multimeter"
+    range: [6.0, 14.0]
+    verify: true
+  PB_SIGMA_V:
+    value: 0.003
+    unit: "-"
+    symbol: '\sigma_V'
+    meaning: "Slow relative wander of the adapter voltage (pump speed)"
+    source: "Assumption for a switching adapter; measure"
+    range: [0.0, 0.02]
+    verify: true
+  PB_TAU_V:
+    value: 60.0
+    unit: "s"
+    symbol: '\tau_V'
+    meaning: "Correlation time of the slow adapter-voltage wander"
+    source: "Assumption; measure with the quiet recording"
+    range: [1.0, 3600.0]
+    verify: true
+  PB_T_SPINDOWN:
+    value: 0.1
+    unit: "s"
+    symbol: 'T_{sd}'
+    meaning: "Time for the R365 to stop after a power cut (speed falls linearly to 0)"
+    source: "Assumption for a small DC diaphragm pump; film it"
+    range: [0.02, 1.0]
+    verify: true
+  PB_RIPPLE_M:
+    value: 0.1
+    unit: "m"
+    symbol: 'A_r'
+    meaning: "Peak pump pressure ripple reaching the sensors"
+    source: "Assumption; measure with the 5-minute quiet recording"
+    range: [0.0, 2.0]
+    verify: true
+  PB_F_RIPPLE:
+    value: 150.0
+    unit: "Hz"
+    symbol: 'f_r'
+    meaning: "Pump ripple frequency (chambers x motor speed)"
+    source: "Assumption; measure"
+    range: [10.0, 500.0]
+    verify: true
+  PB_T_WATER:
+    value: 22.0
+    unit: "degC"
+    symbol: 'T_{lab}'
+    meaning: "Water temperature on the bench"
+    source: "Assumption (indoor lab)"
+    range: [10.0, 35.0]
+    verify: true
+  PB_T_AMP_LAB:
+    value: 2.0
+    unit: "K"
+    symbol: 'T_{lab,amp}'
+    meaning: "Half-amplitude of the lab temperature swing during a session"
+    source: "Assumption"
+    range: [0.0, 10.0]
+    verify: true
+  PB_SAFE_FRAC:
+    value: 0.9
+    unit: "-"
+    symbol: '\phi_s'
+    meaning: "Fraction of the sensor maximum the bench may reach (safety margin)"
+    source: "Design choice (borrowed lab sensors)"
+    range: [0.5, 1.0]
+  PS_P_MIN:
+    value: -1.0
+    unit: "bar"
+    symbol: 'p_{min}'
+    meaning: "Swagelok S sensor range, low end (gauge)"
+    source: "Hardware list (-1 ... 1.6 bar)"
+    range: [-1.0, 0.0]
+  PS_P_MAX:
+    value: 1.6
+    unit: "bar"
+    symbol: 'p_{max}'
+    meaning: "Swagelok S sensor range, high end (gauge)"
+    source: "Hardware list (-1 ... 1.6 bar)"
+    range: [1.0, 2.5]
+  PS_V_MAX:
+    value: 10.0
+    unit: "V"
+    symbol: 'V_{max}'
+    meaning: "Sensor output at p_max (0-10 V version)"
+    source: "Hardware list"
+    range: [5.0, 10.0]
+  PS_ACC:
+    value: 0.005
+    unit: "-"
+    symbol: 'ACC_s'
+    meaning: "Accuracy, fraction of span (limit-point calibration)"
+    source: "Swagelok S model catalogue"
+    range: [0.001, 0.01]
+  PS_TEMPCO:
+    value: 0.0002
+    unit: "1/K"
+    symbol: '\alpha_s'
+    meaning: "Thermal effect, fraction of span per kelvin (0.2 % per 10 K)"
+    source: "Swagelok S model catalogue"
+    range: [0.0, 0.001]
+  PS_DRIFT_YR:
+    value: 0.002
+    unit: "1/yr"
+    symbol: '\beta_s'
+    meaning: "Stability, fraction of span per year"
+    source: "Swagelok S model catalogue"
+    range: [0.0, 0.005]
+  PS_SIGMA_N:
+    value: 0.0002
+    unit: "-"
+    symbol: '\sigma_s'
+    meaning: "Output noise, fraction of span (not in the catalogue)"
+    source: "Assumption; measure with the quiet recording"
+    range: [0.0, 0.002]
+    verify: true
+  PS_TAU:
+    value: 0.001
+    unit: "s"
+    symbol: '\tau_{ps}'
+    meaning: "Sensor response time"
+    source: "Swagelok S model catalogue (<= 1 ms)"
+    range: [1e-05, 0.01]
+  CL_R_SHUNT:
+    value: 150.0
+    unit: "Ohm"
+    symbol: 'R_{sh}'
+    meaning: "Shunt resistor if a sensor is the 4-20 mA version"
+    source: "Hardware list"
+    range: [100.0, 250.0]
+  DIV_R_TOP:
+    value: 20000.0
+    unit: "Ohm"
+    symbol: 'R_1'
+    meaning: "Divider top resistor (sensor side)"
+    source: "Bench rev 1 as built: 20k/10k (was 22k in the 18 Nov list)"
+    range: [1000.0, 100000.0]
+  DIV_R_BOT:
+    value: 10000.0
+    unit: "Ohm"
+    symbol: 'R_2'
+    meaning: "Divider bottom resistor (ground side)"
+    source: "Hardware list"
+    range: [1000.0, 100000.0]
+  DIV_TOL:
+    value: 0.01
+    unit: "-"
+    symbol: 't_R'
+    meaning: "Resistor tolerance (1 % kit)"
+    source: "Cost sheet (1/4 W 1 % kit)"
+    range: [0.001, 0.05]
+  FW_DIV_FACTOR:
+    value: 3.0
+    unit: "-"
+    symbol: 'c_{fw}'
+    meaning: "Divider factor in the firmware conversion (sensor voltage = measured x 3.0)"
+    source: "Bench rev 1 as built (firmware/include/config.h, hydropin/config.py)"
+    range: [1.0, 10.0]
+  FW_T_AVG:
+    value: 1.0
+    unit: "s"
+    symbol: 'T_{fw}'
+    meaning: "Firmware averaging and publishing period"
+    source: "Design choice"
+    range: [0.1, 60.0]
+  ADS_FSR:
+    value: 4.096
+    unit: "V"
+    symbol: 'FSR'
+    meaning: "ADS1115 programmable full-scale range (+/-)"
+    source: "Design choice (ADS1115 datasheet values)"
+    range: [0.256, 6.144]
+  ADS_BITS:
+    value: 16
+    unit: "bit"
+    symbol: 'n_{ads}'
+    meaning: "ADS1115 resolution"
+    source: "ADS1115 datasheet"
+    range: [16, 16]
+  ADS_DR:
+    value: 128.0
+    unit: "SPS"
+    symbol: 'DR'
+    meaning: "ADS1115 data rate (shared by the channels read in turn)"
+    source: "Design choice (8 ... 860 SPS)"
+    range: [8.0, 860.0]
+  ADS_NOISE:
+    value: 0.00012
+    unit: "V"
+    symbol: '\sigma_{ads}'
+    meaning: "ADS1115 input-referred noise at +/-4.096 V (125 uV rms incl. quantisation)"
+    source: "ADS1115 datasheet, noise table"
+    range: [0.0, 0.0005]
+  ADS_GAIN_ERR:
+    value: 0.0005
+    unit: "-"
+    symbol: '\sigma_{g}'
+    meaning: "Spread of the ADS1115 gain error (0.01 % typ, 0.15 % max)"
+    source: "ADS1115 datasheet"
+    range: [0.0, 0.0015]
+  ADS_OFFSET_LSB:
+    value: 1.0
+    unit: "LSB"
+    symbol: '\sigma_{o}'
+    meaning: "Spread of the ADS1115 offset (+/-3 LSB max single-ended)"
+    source: "ADS1115 datasheet"
+    range: [0.0, 3.0]
+  ADS_Z_IN:
+    value: 6000000.0
+    unit: "Ohm"
+    symbol: 'Z_{in}'
+    meaning: "ADS1115 common-mode input impedance at +/-4.096 V"
+    source: "ADS1115 datasheet"
+    range: [1000000.0, 10000000.0]
+  ADS_VDD:
+    value: 3.3
+    unit: "V"
+    symbol: 'V_{DD}'
+    meaning: "ADS1115 supply (inputs above it read as V_DD)"
+    source: "Hardware list (ESP32 3.3 V)"
+    range: [2.0, 5.5]
+  FM_K:
+    value: 8.1
+    unit: "Hz/(L/min)"
+    symbol: 'K_F'
+    meaning: "Hall flow sensor pulse factor of the real device"
+    source: "Brass G1/2 sensor datasheet (f = 8.1 Q - 3); identify the model or calibrate"
+    range: [5.0, 12.0]
+    verify: true
+  FM_F_OFF:
+    value: -3.0
+    unit: "Hz"
+    symbol: 'f_0'
+    meaning: "Pulse-frequency offset of the real device (rotor slip at low flow)"
+    source: "Brass G1/2 sensor datasheet (f = 8.1 Q - 3)"
+    range: [-5.0, 0.0]
+    verify: true
+  FM_ACC:
+    value: 0.03
+    unit: "-"
+    symbol: 'ACC_F'
+    meaning: "Device-to-device spread of the pulse factor"
+    source: "Hall flow sensor datasheets (+/-3 %)"
+    range: [0.0, 0.1]
+  FM_JITTER:
+    value: 0.01
+    unit: "-"
+    symbol: '\sigma_F'
+    meaning: "Short-term relative fluctuation of the rotor speed"
+    source: "Assumption; measure"
+    range: [0.0, 0.05]
+    verify: true
+  FM_K_FW:
+    value: 7.5
+    unit: "Hz/(L/min)"
+    symbol: 'K_{fw}'
+    meaning: "Pulse factor written in the firmware before calibration"
+    source: "Common example code (Seeed G1/2)"
+    range: [5.0, 12.0]
+    verify: true
+  FM_T_WIN:
+    value: 1.0
+    unit: "s"
+    symbol: 'T_w'
+    meaning: "Pulse-counting window of the firmware"
+    source: "Design choice"
+    range: [0.1, 60.0]

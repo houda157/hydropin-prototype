@@ -1,0 +1,40 @@
+{
+ "version": "rev1",
+ "note": "Mirror of hydropin/config.py (source of truth) and firmware/include/config.h. bar = offset_bar + slope_bar_per_v * (raw * lsb_v * divider). Flow gain is provisional.",
+ "pressure": {
+  "PT1": {
+   "adc_channel": "A0",
+   "branch": "A",
+   "range_bar": [
+    0.0,
+    6.0
+   ],
+   "lsb_v": 0.0001250038148136845,
+   "divider": 3.0,
+   "offset_bar": 0.0,
+   "slope_bar_per_v": 0.6
+  },
+  "PT2": {
+   "adc_channel": "A1",
+   "branch": "B",
+   "range_bar": [
+    -1.0,
+    1.6
+   ],
+   "lsb_v": 0.0001250038148136845,
+   "divider": 3.0,
+   "offset_bar": -1.0,
+   "slope_bar_per_v": 0.26
+  }
+ },
+ "flow": {
+  "F0": {
+   "gpio": 27,
+   "pulses_per_litre": 450.0,
+   "hz_per_lpm": 7.5,
+   "gain": 1.5,
+   "window_s": 2.0,
+   "provisional": true
+  }
+ }
+}

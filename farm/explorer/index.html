@@ -1,0 +1,760 @@
+<meta charset="utf-8">
+<title>Farm Leak Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<script>if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embed");</script>
+<style>
+/* Layout: the farm as a tilted 3D model in the middle, with pressure pillars and callouts, panels
+   left and right, a playback timeline under it. Look: the farmer app's (as the dashboard,
+   docs/superpowers/specs/2026-11-27-dashboard-reskin-design.md): green = all is well, red = the leak
+   only, water blue = pressure and pipes. Inter, rounded cards, no shadows.
+   ?embed (inside the dashboard's Farm tab) hides the page header. */
+:root {
+  --bg: #f0fdf4; --panel: #ffffff; --panel-2: #f6faf7; --ink: #0c1814; --muted: #5b6b63; --line: #d0dad3;
+  --floor: #dbe7df;       /* stage grid */
+  --field: #e6f5eb; --field-off: #eef2ef;
+  --pipe: #3b82f6;        /* water */
+  --water: #2563eb;       /* strong end of the pressure-drop scale */
+  --lo: #d6e2ec;          /* "no change" end of the scale */
+  --primary: #15803d; --primary-ink: #ffffff; --primary-soft: #dcf3e3;
+  --ok: #15803d; --ok-soft: #d9f0e1;
+  --leak: #dc2626; --leak-soft: #fbe4e1;
+  --watch: #b45309; --watch-soft: #fbf0e0;
+  --idle: #94a39a; --idle-soft: #eef2ef;
+  --font-display: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r-card: 14px; --r-ctl: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1a15; --panel: #15231c; --panel-2: #1b2c23; --ink: #e6efe9; --muted: #93a59b; --line: #2a3d33;
+  --floor: #22332a; --field: #173826; --field-off: #1b2a22; --pipe: #60a5fa; --water: #60a5fa; --lo: #2a3a47;
+  --primary: #16a34a; --primary-ink: #ffffff; --primary-soft: #173826; --ok: #4ade80; --ok-soft: #173826;
+  --leak: #f87171; --leak-soft: #3a2320; --watch: #f59e0b; --watch-soft: #3a2c14; --idle: #6b7d73; --idle-soft: #1d2b24;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1a15; --panel: #15231c; --panel-2: #1b2c23; --ink: #e6efe9; --muted: #93a59b; --line: #2a3d33;
+  --floor: #22332a; --field: #173826; --field-off: #1b2a22; --pipe: #60a5fa; --water: #60a5fa; --lo: #2a3a47;
+  --primary: #16a34a; --primary-ink: #ffffff; --primary-soft: #173826; --ok: #4ade80; --ok-soft: #173826;
+  --leak: #f87171; --leak-soft: #3a2320; --watch: #f59e0b; --watch-soft: #3a2c14; --idle: #6b7d73; --idle-soft: #1d2b24;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-display); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+.app { max-width: 1480px; margin: 0 auto; padding-block: 20px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+.embed .strip { display: none; }
+.embed .app { padding: 2px 2px 8px; }
+.lbl { font: 500 0.78rem var(--font-mono); color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* header strip */
+.strip { display: grid; grid-template-columns: auto minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)); background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
+.strip > div { padding: 12px 16px; border-left: 1px solid var(--line); display: grid; gap: 2px; align-content: center; min-width: 0; }
+.strip > div:first-child { border-left: 0; }
+.tag { display: flex !important; align-items: center; gap: 10px; padding: 0 20px !important; color: var(--primary);
+  font: 700 1.05rem var(--font-display); letter-spacing: -0.01em; }
+.tag .mark { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: var(--primary-ink); display: grid; place-items: center; }
+.tag svg { width: 18px; height: 18px; }
+.title b { font: 700 1.25rem/1.2 var(--font-display); letter-spacing: -0.015em; }
+.cellv { font: 600 0.95rem var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-right: 7px; vertical-align: 1px; }
+.st-leak { color: var(--leak); } .st-ok { color: var(--ok); } .st-watch { color: var(--watch); } .st-idle { color: var(--muted); }
+
+/* body grid */
+.body { display: grid; grid-template-columns: 270px minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+.col { display: grid; gap: 14px; min-width: 0; }
+.pn { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+.pn-h { display: flex; align-items: center; gap: 8px; }
+.pn-h .sq { display: none; }
+.pn-h .lbl { color: var(--ink); font: 600 0.95rem var(--font-display); flex: 1; }
+.pn-h .idx { font: 500 0.76rem var(--font-mono); color: var(--muted); }
+.big { font: 700 2.1rem/1.05 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.big small { font: 500 0.84rem var(--font-mono); color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.kv div { display: grid; gap: 1px; min-width: 0; }
+.kv b { font: 600 0.92rem var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note { font-size: 0.84rem; color: var(--muted); margin: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 0.8rem var(--font-mono); padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.chip:disabled { cursor: default; }
+
+.cells { display: flex; gap: 3px; }
+.cells span { flex: 1; height: 12px; border-radius: 3px; background: var(--lo); }
+.cells span.on { background: var(--water); }
+.cells span.hot { background: var(--leak); }
+
+/* sensor list */
+.list { display: grid; gap: 0; max-height: 460px; overflow: auto; margin: 0 -4px; padding: 0 4px; }
+.li { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.li:first-child { border-top: 0; }
+.li .id { font: 600 0.84rem var(--font-mono); }
+.li .nm { font: 500 0.78rem var(--font-mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li .v { font: 500 0.84rem var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.st { font: 600 0.72rem var(--font-mono); padding: 3px 9px; border-radius: 999px; text-align: center; min-width: 4.8rem; }
+.st.ok { background: var(--ok-soft); color: var(--ok); }
+.st.hot { background: var(--leak-soft); color: var(--leak); }
+.st.on { background: var(--primary); color: var(--primary-ink); }
+.st.low { background: var(--idle-soft); color: var(--muted); }
+.st.off { border: 1px solid var(--line); color: var(--muted); }
+button.st { cursor: pointer; border: 1px solid transparent; }
+button.st.off { border-color: var(--line); background: transparent; }
+
+/* stage */
+.stage { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; min-width: 0; }
+.stage svg { display: block; width: 100%; height: auto; }
+.stage-top { position: absolute; inset: 12px 16px auto 16px; display: flex; justify-content: space-between; pointer-events: none; }
+.mode { position: absolute; left: 18px; bottom: 16px; display: grid; gap: 2px; pointer-events: none; max-width: 70%; }
+.mode b { font: 700 clamp(1.4rem, 2.8vw, 2.2rem)/1.1 var(--font-display); color: var(--leak); letter-spacing: -0.02em; }
+.mode b[data-kind="place"] { color: var(--primary); }
+.hints { position: absolute; right: 16px; bottom: 16px; display: grid; gap: 2px; text-align: right; pointer-events: none; }
+.legend { position: absolute; right: 16px; top: 36px; display: grid; gap: 4px; justify-items: end; pointer-events: none; }
+.ramp { width: 130px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--lo), var(--water)); }
+.ramp.score { background: linear-gradient(90deg, var(--watch), var(--idle), var(--ok)); }
+
+/* svg pieces */
+.floor { stroke: var(--floor); stroke-width: 1; }
+.fieldp { fill: var(--field); stroke: var(--line); stroke-width: 1.2; }
+.fieldp.off { fill: var(--field-off); stroke-dasharray: 5 4; }
+.flab { font: 600 10.5px var(--font-mono); fill: var(--muted); }
+.pipe { fill: none; stroke-linecap: round; }
+.pipe.off { stroke: var(--idle) !important; stroke-dasharray: 2 6; }
+.spot { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; cursor: pointer; }
+.spot:hover, .spot:focus-visible { stroke: var(--primary); stroke-width: 3; }
+.callout-line { fill: none; stroke: var(--ink); stroke-width: 1; }
+.callout-sq { fill: var(--leak); }
+.ct1 { font: 600 10px var(--font-mono); fill: var(--ink); }
+.ct2 { font: 500 9.5px var(--font-mono); fill: var(--muted); }
+.pval { font: 600 9.5px var(--font-mono); fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
+.ring { fill: none; stroke: var(--leak); stroke-width: 2; }
+.cand-sq { cursor: pointer; }
+.cand-sq:hover .cbox { stroke: var(--primary); stroke-width: 2.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .ring { animation: ring 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .pillar { transition: opacity .2s; }
+}
+@keyframes ring { from { transform: scale(0.5); opacity: 1; } to { transform: scale(2.4); opacity: 0; } }
+
+/* timeline */
+.timeline { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 18px; display: grid;
+  grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; }
+.play { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--primary); color: var(--primary-ink); cursor: pointer; display: grid; place-items: center; }
+.play svg { width: 16px; height: 16px; }
+.tl-main { display: grid; gap: 6px; min-width: 0; }
+.tl-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tl-row .now { color: var(--ink); font-weight: 600; }
+.track { position: relative; height: 26px; }
+.track .base { position: absolute; left: 0; right: 0; top: 12px; height: 3px; border-radius: 999px; background: var(--line); }
+.track .prog { position: absolute; left: 0; top: 12px; height: 3px; border-radius: 999px; background: var(--primary); }
+.tick { position: absolute; top: 4px; width: 14px; height: 18px; margin-left: -7px; border: 0; background: transparent; cursor: pointer; padding: 0; }
+.tick::after { content: ""; position: absolute; left: 6px; top: 6px; width: 2px; height: 6px; background: var(--muted); }
+.tick.cur::after { left: 2px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--primary); box-sizing: border-box; }
+.tick .bar { position: absolute; bottom: 14px; left: 3px; width: 8px; border-radius: 2px; background: var(--ok); opacity: 0.85; }
+select.sel, input[type=range] { width: 100%; accent-color: var(--primary); }
+select.sel { font: 500 0.86rem var(--font-mono); padding: 8px 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: var(--r-ctl); }
+.row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 1180px) {
+  .body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .center { grid-column: 1 / -1; order: -1; }
+  .strip { grid-template-columns: auto minmax(0, 1fr) repeat(2, minmax(0, 1fr)); }
+  .strip .x { display: none; }
+}
+@media (max-width: 720px) {
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .strip { grid-template-columns: auto minmax(0, 1fr); }
+  .strip > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .strip .x2 { display: none; }
+  .hints, .legend, .stage-top { display: none; }
+  .mode { position: static; max-width: none; padding: 0 16px 16px; }
+  .mode b { font-size: 1.4rem; }
+}
+</style>
+
+<div class="app">
+  <!-- header strip -->
+  <header class="strip">
+    <div class="tag" aria-hidden="true">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c3.5 4.6 6 8 6 11.2a6 6 0 0 1-12 0C6 10.5 8.5 7.1 12 2.5z"/></svg></span>HydroPin
+    </div>
+    <div class="title"><span class="lbl">Virtual drip farm, 50 ha, simulation</span><b>Farm leak explorer</b></div>
+    <div><span class="lbl">Irrigation shift</span><span class="cellv" id="h-shift">—</span></div>
+    <div class="x"><span class="lbl">Scenarios</span><span class="cellv">2,070 leaks</span></div>
+    <div class="x x2"><span class="lbl">Sensor noise σ</span><span class="cellv" id="h-sigma">10 mbar</span></div>
+    <div><span class="lbl">Status</span><span class="cellv dot" id="h-status">—</span></div>
+  </header>
+
+  <div class="body">
+    <!-- left column -->
+    <div class="col" id="left-explore">
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Leak</span><span class="idx">01</span></div>
+        <div class="big" id="l-flow">—</div>
+        <div class="kv">
+          <div><span class="lbl">Per day</span><b id="l-day">—</b></div>
+          <div><span class="lbl">Branch</span><b id="l-branch">—</b></div>
+          <div><span class="lbl">Version</span><b id="l-ver">—</b></div>
+        </div>
+        <div class="chips" id="c-size" aria-label="Leak size"></div>
+      </section>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Pump</span><span class="idx">02</span></div>
+        <div class="big" id="p-flow">—</div>
+        <div class="cells" id="p-cells" aria-hidden="true"></div>
+        <div class="kv">
+          <div><span class="lbl">Healthy</span><b id="p-h">—</b></div>
+          <div><span class="lbl">Rise</span><b id="p-d">—</b></div>
+          <div><span class="lbl">Check</span><b id="p-c">flow ↑</b></div>
+        </div>
+        <p class="note">Water escaping makes the pump push more: the flow check notices the leak, but not where it is.</p>
+      </section>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Pressure</span><span class="idx">03</span></div>
+        <div class="big" id="r-common">—</div>
+        <div class="kv">
+          <div><span class="lbl">Clue at</span><b id="r-at">—</b></div>
+          <div><span class="lbl">Extra drop</span><b id="r-extra">—</b></div>
+          <div><span class="lbl">Noticed by</span><b id="r-seen">—</b></div>
+        </div>
+        <p class="note" id="r-note"></p>
+      </section>
+    </div>
+
+    <div class="col" id="left-place" hidden>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Kit</span><span class="idx">01</span></div>
+        <div class="big" id="k-n">—</div>
+        <div class="kv">
+          <div><span class="lbl">Cost</span><b id="k-cost">—</b></div>
+          <div><span class="lbl">Per sensor</span><b>292 DT</b></div>
+          <div><span class="lbl">Noise σ</span><b id="k-sig">—</b></div>
+        </div>
+        <p class="note">217 DT sensor node + 75 DT buried tapping point (master document prices).</p>
+      </section>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Leaks noticed</span><span class="idx">02</span></div>
+        <div class="big" id="k-det">—</div>
+        <div class="kv">
+          <div><span class="lbl">Small 1&nbsp;%</span><b id="k-s1">—</b></div>
+          <div><span class="lbl">Medium 3&nbsp;%</span><b id="k-s3">—</b></div>
+          <div><span class="lbl">Big 10&nbsp;%</span><b id="k-s10">—</b></div>
+        </div>
+      </section>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Right field</span><span class="idx">03</span></div>
+        <div class="big" id="k-br">—</div>
+        <p class="note" id="k-note"></p>
+      </section>
+    </div>
+
+    <!-- center: 3D stage + timeline -->
+    <div class="col center">
+      <div class="stage">
+        <svg id="map" role="img" aria-label="3D view of the simulated farm"></svg>
+        <div class="stage-top"><span class="lbl" id="s-tl">Farm model rev 1.0</span><span class="lbl" id="s-tr"></span></div>
+        <div class="legend" id="legend"></div>
+        <div class="mode"><span class="lbl" id="m-small">Scenario</span><b id="m-big">—</b><span class="lbl" id="m-sub"></span></div>
+        <div class="hints lbl" id="hints"></div>
+      </div>
+      <div class="timeline">
+        <button class="play" id="play" type="button" aria-label="Play">
+          <svg viewBox="0 0 16 16" fill="currentColor" id="play-ico"><path d="M4 2.5v11l9-5.5z"/></svg>
+        </button>
+        <div class="tl-main">
+          <div class="tl-row"><span class="lbl" id="t-left">Leak tour</span><span class="lbl now" id="t-mid"></span><span class="lbl" id="t-right"></span></div>
+          <div class="track" id="track"><div class="base"></div><div class="prog" id="prog"></div></div>
+          <div class="tl-row"><span class="lbl" id="t-bl"></span><span class="lbl" id="t-br"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right column -->
+    <div class="col">
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Mode</span><span class="idx">04</span></div>
+        <div class="chips" id="c-mode"></div>
+        <div id="view-explore" class="chips"></div>
+        <div id="view-place" class="row" hidden>
+          <span class="lbl">Noise σ</span><div class="chips" id="c-sigma"></div>
+        </div>
+      </section>
+      <section class="pn" id="pn-scen">
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Scenario</span><span class="idx">05</span></div>
+        <span class="lbl">Fields watered</span>
+        <div class="chips" id="c-shift"></div>
+        <label class="lbl" for="spot">Leak spot</label>
+        <select class="sel" id="spot"></select>
+        <label class="lbl" for="ver">Farm version <span id="ver-v" class="mono"></span>/10</label>
+        <input type="range" id="ver" min="0" max="9" step="1" value="0">
+      </section>
+      <section class="pn" id="pn-auto" hidden>
+        <div class="pn-h"><span class="sq"></span><span class="lbl">Optimiser</span><span class="idx">05</span></div>
+        <div class="row">
+          <select class="sel" id="nauto" style="width:auto"></select>
+          <button class="chip" id="auto" type="button" aria-pressed="true">Choose</button>
+          <button class="chip" id="clear" type="button">Clear</button>
+        </div>
+        <p class="note">Greedy pick + swaps, scored on all 2,070 leaks. Role 2's real tool refines this.</p>
+      </section>
+      <section class="pn">
+        <div class="pn-h"><span class="sq"></span><span class="lbl" id="list-title">Sensor spots</span><span class="idx">06</span></div>
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="lbl">Simulated data from the WNTR model in farm/leaks/out (3 shifts × 10 farm versions × 23 spots × 3 sizes)</span>
+    <span class="lbl">Assumptions in farm/model/params.yaml. 3σ rule: a sensor notices a drop above 3 × noise</span>
+  </div>
+</div>
+
+<script src="farm-data.js"></script>
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (id) => document.getElementById(id);
+  const state = { mode: "explore", colour: "clue", cfg: 0, at: "A2", size: 3, world: 0, sigma: 10, sensors: new Set(), playing: false, budget: 6 };
+  let D, NODE, IDX, CANDS, KEY, SPOTS, BUDGET = {};
+  let timer = null;
+
+  // ---------- naming
+  const FIELD = (s) => `Field ${s}`;
+  const branchName = (b) => b === "main" ? "Main" : FIELD(b.split("_")[1]);
+  const LONG = { PS: "Pump outlet", M1: "Main junction 1", M2: "Main junction 2", M3: "Main junction 3",
+    MN1: "Main pipe, pump to J1", MN2: "Main pipe, J1 to J2", MN3: "Main pipe, J2 to J3" };
+  function spotName(id) {
+    if (LONG[id]) return LONG[id];
+    const k = id[0], s = id.replace(/\D/g, "");
+    if (id.startsWith("S")) return `${FIELD(s)} sub-main, ${id.endsWith("a") ? "1st" : "2nd"} half`;
+    return { H: `${FIELD(s)} entrance`, B: `${FIELD(s)} after valve`, A: `${FIELD(s)} middle`, E: `${FIELD(s)} far end` }[k] || id;
+  }
+  const SHORT = (id) => id === "PS" ? "Pump out" : id[0] === "M" ? `Main J${id.slice(1)}` : id[0] === "H" ? `F${id.slice(1)} entry` : `F${id.slice(1)} end`;
+
+  // ---------- 3D projection (orthographic, yaw + tilt)
+  const YAW = -32 * Math.PI / 180, TILT = 0.5, ZK = 1, PH = 150;
+  const cY = Math.cos(YAW), sY = Math.sin(YAW);
+  function P(x, y, z = 0) {
+    const dx = x - 350, dy = y - 345;
+    const xr = dx * cY - dy * sY, yr = dx * sY + dy * cY;
+    return { x: xr, y: -yr * TILT - z * ZK, d: yr };
+  }
+
+  // ---------- start
+  if (window.FARM_DATA) Promise.resolve().then(() => init(window.FARM_DATA));
+  else fetch("farm-data.json").then(r => r.json()).then(init).catch(err => { $("m-big").textContent = "Data not loaded"; $("m-sub").textContent = err.message; });
+
+  function init(data) {
+    D = data;
+    NODE = Object.fromEntries(D.nodes.map(n => [n.id, n]));
+    IDX = Object.fromEntries(D.node_order.map((id, i) => [id, i]));
+    CANDS = D.candidate_order.slice();
+    const sc = D.scen;
+    KEY = new Map(); SPOTS = [new Map(), new Map(), new Map()];
+    for (let i = 0; i < sc.at.length; i++) {
+      KEY.set(`${sc.cfg[i]}|${sc.world[i]}|${sc.at[i]}|${sc.size[i]}`, i);
+      if (!SPOTS[sc.cfg[i]].has(sc.at[i])) SPOTS[sc.cfg[i]].set(sc.at[i], { x: sc.x[i], y: sc.y[i], kind: sc.kind[i] });
+    }
+    setupSvg();
+    bindStatic();
+    state.sensors = new Set(budgetSet(6));
+    render();
+  }
+
+  // ---------- helpers
+  const NN = () => D.node_order.length;
+  const dp = (s, id) => D.dP[s * NN() + IDX[id]] / 10;   // mbar, negative = drop
+  // pressure drop: water blue (red is kept for the leak itself); coverage: amber → grey → green
+  const mix = (f) => `color-mix(in oklab, var(--water) ${Math.round(100 * Math.max(0, Math.min(1, f)))}%, var(--lo))`;
+  const scoreCol = (f) => f >= 0.5 ? `color-mix(in oklab, var(--ok) ${Math.round(200 * (f - 0.5))}%, var(--idle))`
+                                   : `color-mix(in oklab, var(--idle) ${Math.round(200 * f)}%, var(--watch))`;
+  function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  const pts = (arr) => arr.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  // ---------- svg scaffolding
+  let svg, gFloor, gFields, gPipes, gGround, gPillars, gCall, VB;
+  function setupSvg() {
+    svg = $("map");
+    // frame the farm itself (plus pillar height above and room for the mode title below)
+    const farm = [[-10, -50], [710, -50], [710, 725], [-10, 725]].map(([x, y]) => P(x, y));
+    const minX = Math.min(...farm.map(p => p.x)) - 30, maxX = Math.max(...farm.map(p => p.x)) + 30;
+    const top = Math.min(...[[0, 715], [700, 715], [700, 0], [0, 0]].map(([x, y]) => P(x, y, PH + 30).y));
+    const bot = Math.max(...farm.map(p => p.y));
+    svg.setAttribute("viewBox", `${minX.toFixed(0)} ${(top - 20).toFixed(0)} ${(maxX - minX).toFixed(0)} ${(bot - top + 95).toFixed(0)}`);
+    VB = { minX, maxX };
+    gFloor = el("g", {}, svg); gFields = el("g", {}, svg); gPipes = el("g", {}, svg); gGround = el("g", {}, svg); gPillars = el("g", {}, svg); gCall = el("g", {}, svg);
+    for (let x = -140; x <= 840; x += 70) { const a = P(x, -120), b = P(x, 840); el("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: "floor" }, gFloor); }
+    for (let y = -120; y <= 840; y += 70) { const a = P(-140, y), b = P(840, y); el("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: "floor" }, gFloor); }
+    const r = P(350, -30);
+    el("rect", { x: r.x - 22, y: r.y - 7, width: 44, height: 14, fill: "var(--panel-2)", stroke: "var(--pipe)" }, gFloor);
+    const t = el("text", { x: r.x + 28, y: r.y + 4, class: "ct2" }, gFloor); t.textContent = "basin + pump";
+  }
+
+  function drawFarm(opts) {
+    gFields.innerHTML = ""; gPipes.innerHTML = ""; gGround.innerHTML = ""; gPillars.innerHTML = ""; gCall.innerHTML = "";
+    const open = new Set(D.configs[state.cfg]);
+    const placeMode = state.mode === "place";
+    for (const s of D.sectors) {
+      const [x0, y0, x1, y1] = s.bbox, i = 8;
+      const on = placeMode || open.has(s.id);
+      el("polygon", { points: pts([P(x0 + i, y0 + i), P(x1 - i, y0 + i), P(x1 - i, y1 - i), P(x0 + i, y1 - i)]), class: "fieldp" + (on ? "" : " off") }, gFields);
+      const c = P((x0 + x1) / 2, y1 - 40);
+      const t = el("text", { x: c.x, y: c.y, "text-anchor": "middle", class: "flab" }, gFields);
+      t.textContent = FIELD(s.id) + (on ? "" : " closed");
+    }
+    for (const p of D.pipes) {
+      const a = NODE[p.from], b = NODE[p.to];
+      const pa = P(a.x, a.y), pb = P(b.x, b.y);
+      const off = !placeMode && p.sector && !open.has(p.sector) && p.kind !== "sector_link";
+      el("line", { x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y, class: "pipe" + (off ? " off" : ""),
+        stroke: p.kind === "pump" ? "var(--muted)" : (opts.pipe ? opts.pipe(p) : "var(--pipe)"),
+        "stroke-width": p.kind === "pump" ? 1.5 : Math.max(2, (p.d || 0.1) * 26), "stroke-dasharray": p.kind === "pump" ? "3 4" : null }, gPipes);
+    }
+    if (opts.ground) opts.ground();
+    if (opts.pillars) opts.pillars();
+    if (opts.callouts) opts.callouts();
+  }
+
+  function pillar(n, h, fill, label, extra = {}) {
+    const b = P(n.x, n.y), t = P(n.x, n.y, Math.max(h, 1.5));
+    const w = 7, k = 3.5;
+    const g = el("g", { class: "pillar", ...extra.attrs }, gPillars);
+    el("ellipse", { cx: b.x, cy: b.y + 1, rx: 11, ry: 5, fill: "var(--ink)", opacity: 0.12 }, g);
+    el("polygon", { points: pts([{ x: b.x - w, y: b.y }, { x: b.x, y: b.y + k }, { x: t.x, y: t.y + k }, { x: t.x - w, y: t.y }]), fill: `color-mix(in oklab, ${fill} 78%, var(--ink))` }, g);
+    el("polygon", { points: pts([{ x: b.x, y: b.y + k }, { x: b.x + w, y: b.y }, { x: t.x + w, y: t.y }, { x: t.x, y: t.y + k }]), fill }, g);
+    el("polygon", { points: pts([{ x: t.x - w, y: t.y }, { x: t.x, y: t.y - k }, { x: t.x + w, y: t.y }, { x: t.x, y: t.y + k }]), fill: `color-mix(in oklab, ${fill} 70%, var(--panel-2))`, stroke: extra.stroke || "none", "stroke-width": extra.stroke ? 2 : null }, g);
+    if (label) { const tx = el("text", { x: t.x, y: t.y - 8, "text-anchor": "middle", class: "pval" }, g); tx.textContent = label; }
+    return g;
+  }
+
+  function callout(px, py, dx, dy, l1, l2) {
+    const lx = px + dx, ly = py + dy;
+    el("polyline", { points: `${px},${py} ${lx},${ly} ${lx + (dx > 0 ? 14 : -14)},${ly}`, class: "callout-line" }, gCall);
+    const anchor = dx > 0 ? "start" : "end", tx = lx + (dx > 0 ? 18 : -18);
+    el("rect", { x: dx > 0 ? tx : tx - 6, y: ly - 13, width: 6, height: 6, class: "callout-sq" }, gCall);
+    const a = el("text", { x: dx > 0 ? tx + 10 : tx - 10, y: ly - 7, "text-anchor": anchor, class: "ct1" }, gCall); a.textContent = l1;
+    const b = el("text", { x: tx, y: ly + 6, "text-anchor": anchor, class: "ct2" }, gCall); b.textContent = l2;
+  }
+
+  // ---------- controls
+  function chips(container, items, get, set, opts = {}) {
+    container.innerHTML = "";
+    for (const [val, label] of items) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = label;
+      b.setAttribute("aria-pressed", String(get() === val));
+      b.addEventListener("click", () => { if (!opts.keepTour) stopTour(); set(val); render(); });
+      container.appendChild(b);
+    }
+  }
+  function bindStatic() {
+    $("spot").addEventListener("change", e => { stopTour(); state.at = e.target.value; render(); });
+    $("ver").addEventListener("input", e => { state.world = +e.target.value; render(); });
+    for (let n = 1; n <= 10; n++) { const o = document.createElement("option"); o.value = n; o.textContent = `${n} sensor${n > 1 ? "s" : ""}`; if (n === 6) o.selected = true; $("nauto").appendChild(o); }
+    $("auto").addEventListener("click", () => { stopTour(); state.budget = +$("nauto").value; state.sensors = new Set(budgetSet(state.budget)); render(); });
+    $("clear").addEventListener("click", () => { stopTour(); state.sensors = new Set(); render(); });
+    $("play").addEventListener("click", () => state.playing ? stopTour() : startTour());
+  }
+  function refreshControls() {
+    chips($("c-mode"), [["explore", "Explore a leak"], ["place", "Place sensors"]], () => state.mode, v => state.mode = v);
+    chips($("view-explore"), [["total", "Total drop"], ["clue", "Location clue"]], () => state.colour, v => state.colour = v);
+    chips($("c-sigma"), [[5, "5 mbar"], [10, "10 mbar"], [20, "20 mbar"]], () => state.sigma, v => { state.sigma = v; BUDGET = {}; state.sensors = new Set(budgetSet(state.budget)); });
+    chips($("c-shift"), [[0, "1 + 2"], [1, "3 + 4"], [2, "5 + 6"]], () => state.cfg, v => { state.cfg = v; if (!SPOTS[v].has(state.at)) state.at = `A${2 * v + 2}`; });
+    chips($("c-size"), [[1, "1 % small"], [3, "3 % medium"], [10, "10 % big"]], () => state.size, v => state.size = v);
+    const sel = $("spot"); sel.innerHTML = "";
+    for (const id of SPOTS[state.cfg].keys()) { const o = document.createElement("option"); o.value = id; o.textContent = spotName(id); if (id === state.at) o.selected = true; sel.appendChild(o); }
+    $("ver").value = state.world; $("ver-v").textContent = pad2(state.world + 1);
+    const ex = state.mode === "explore";
+    $("left-explore").hidden = !ex; $("left-place").hidden = ex;
+    $("view-explore").hidden = !ex; $("view-place").hidden = ex;
+    $("pn-scen").hidden = !ex; $("pn-auto").hidden = ex;
+    $("h-shift").textContent = ex ? `Fields ${D.configs[state.cfg].join(" + ")}` : "All 3 shifts";
+    $("h-sigma").textContent = `${ex ? 10 : state.sigma} mbar`;
+  }
+
+  // ---------- tour (explore) / budget sweep (place)
+  function startTour() {
+    state.playing = true;
+    $("play").setAttribute("aria-label", "Pause");
+    $("play-ico").innerHTML = '<path d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/>';
+    timer = setInterval(() => {
+      if (state.mode === "explore") {
+        const ids = [...SPOTS[state.cfg].keys()];
+        state.at = ids[(ids.indexOf(state.at) + 1) % ids.length];
+      } else {
+        state.budget = state.budget % 10 + 1;
+        state.sensors = new Set(budgetSet(state.budget));
+        $("nauto").value = state.budget;
+      }
+      render();
+    }, state.mode === "explore" ? 1600 : 1300);
+  }
+  function stopTour() {
+    if (!state.playing) return;
+    state.playing = false; clearInterval(timer);
+    $("play").setAttribute("aria-label", "Play");
+    $("play-ico").innerHTML = '<path d="M4 2.5v11l9-5.5z"/>';
+  }
+
+  // ---------- explore
+  function renderExplore() {
+    const s = KEY.get(`${state.cfg}|${state.world}|${state.at}|${state.size}`);
+    const sc = D.scen, open = new Set(D.configs[state.cfg]);
+    const live = (n) => n.sector === null || n.kind === "sector_head" || open.has(n.sector);
+    const drop = (id) => -dp(s, id);
+    const thr = 30;
+    const liveAll = D.node_order.filter(id => live(NODE[id]));
+    const sorted = liveAll.map(drop).sort((a, b) => a - b);
+    const common = sorted[Math.floor(sorted.length / 2)];
+    const clue = state.colour === "clue";
+    const val = (id) => clue ? Math.max(0, drop(id) - common) : drop(id);
+    let maxVal = 1e-9; for (const id of liveAll) maxVal = Math.max(maxVal, val(id));
+    const liveC = CANDS.filter(id => live(NODE[id]));
+    const top = liveC.reduce((a, id) => drop(id) > drop(a) ? id : a, liveC[0]);
+    const extra = drop(top) - common;
+    const seen = liveC.filter(id => drop(id) > thr).length;
+
+    drawFarm({
+      pipe: (p) => mix(((val(p.from) + val(p.to)) / 2) / maxVal),
+      ground: () => {
+        for (const [id, sp] of SPOTS[state.cfg]) {
+          if (id === state.at) continue;
+          const g = P(sp.x, sp.y);
+          const e = el("ellipse", { cx: g.x, cy: g.y, rx: 6.5, ry: 3.6, class: "spot", tabindex: "0", role: "button", "aria-label": `Move the leak to ${spotName(id)}` }, gGround);
+          const pick = () => { stopTour(); state.at = id; render(); };
+          e.addEventListener("click", pick); e.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(); } });
+          el("title", {}, e).textContent = spotName(id);
+        }
+        const L = P(sc.x[s], sc.y[s]);
+        el("ellipse", { cx: L.x, cy: L.y, rx: 10, ry: 5.5, class: "ring" }, gGround);
+        el("path", { d: `M ${L.x} ${L.y - 20} C ${L.x + 9} ${L.y - 7}, ${L.x + 8} ${L.y + 2}, ${L.x} ${L.y + 2} C ${L.x - 8} ${L.y + 2}, ${L.x - 9} ${L.y - 7}, ${L.x} ${L.y - 20} Z`, fill: "var(--leak)", stroke: "var(--panel)", "stroke-width": 1.5 }, gGround);
+      },
+      pillars: () => {
+        const order = CANDS.slice().sort((a, b) => P(NODE[b].x, NODE[b].y).d - P(NODE[a].x, NODE[a].y).d);
+        for (const id of order) {
+          const n = NODE[id];
+          if (!live(n)) { pillar(n, 2, "var(--idle)", null); continue; }
+          const v = val(id), f = v / maxVal;
+          // the pillar that points to the leak ("biggest extra drop") is the only red one
+          pillar(n, 6 + f * PH, id === top && clue ? "var(--leak)" : mix(0.15 + 0.85 * f), (clue ? "+" : "−") + v.toFixed(0));
+        }
+      },
+      callouts: () => {
+        const L = P(sc.x[s], sc.y[s]);
+        callout(L.x, L.y + 2, L.x > 0 ? -70 : 70, 46, "Leak spot", spotName(state.at));
+        if (clue) { const T = P(NODE[top].x, NODE[top].y, 6 + PH); const right = T.x < VB.maxX - 190; callout(T.x + (right ? 8 : -8), T.y - 4, right ? 40 : -40, -30, "Biggest extra drop", `${top} +${extra.toFixed(1)} mbar`); }
+      },
+    });
+
+    // header + panels
+    const leak = sc.leak[s], pump = sc.pump[s], pump0 = sc.pump0[s];
+    $("h-status").textContent = seen ? "Leak detected" : "Below noise";
+    $("h-status").className = "cellv dot " + (seen ? "st-leak" : "st-idle");
+    $("l-flow").innerHTML = `${leak.toFixed(2)}<small>L/s lost</small>`;
+    $("l-day").textContent = `${(leak * 86.4).toFixed(0)} m³`;
+    $("l-branch").textContent = branchName(sc.branch[s]);
+    $("l-ver").textContent = `${pad2(state.world + 1)}/10`;
+    $("p-flow").innerHTML = `${pump.toFixed(1)}<small>L/s</small>`;
+    $("p-h").textContent = pump0.toFixed(1);
+    $("p-d").textContent = `+${(pump - pump0).toFixed(2)}`;
+    const cells = 12, onC = Math.round(cells * pump0 / (pump0 + 7)), hotC = Math.max(1, Math.round(cells * (pump - pump0) / (pump0 + 7)));
+    $("p-cells").innerHTML = Array.from({ length: cells }, (_, i) => `<span class="${i < onC ? "on" : i < onC + hotC ? "hot" : ""}"></span>`).join("");
+    $("r-common").innerHTML = `−${common.toFixed(1)}<small>mbar everywhere</small>`;
+    $("r-at").textContent = top;
+    $("r-extra").textContent = `+${extra.toFixed(1)}`;
+    $("r-seen").textContent = `${seen}/${liveC.length}`;
+    $("r-note").textContent = `Every pressure falls by about ${common.toFixed(0)} mbar: that says there is a leak. Only ${top} falls ${extra.toFixed(0)} mbar more: that difference says where.`;
+
+    // stage text
+    $("m-small").textContent = clue ? "Location clue: extra drop beyond the average" : "Total pressure drop";
+    $("m-big").textContent = sc.branch[s] === "main" ? "Leak on the main" : `Leak in ${branchName(sc.branch[s])}`;
+    $("m-big").dataset.kind = "leak";
+    $("m-sub").textContent = `${state.size} % leak, ${leak.toFixed(2)} L/s, farm version ${pad2(state.world + 1)}`;
+    $("s-tr").textContent = `Shift: fields ${D.configs[state.cfg].join(" + ")}`;
+    $("hints").innerHTML = "<span>Click a dot to move the leak</span><span>▶ for a leak tour</span>";
+    $("legend").innerHTML = `<span class="lbl">${clue ? "Extra drop" : "Pressure drop"} = pillar height</span><span class="ramp"></span><span class="lbl">0 → ${maxVal.toFixed(0)} mbar</span>`;
+
+    // sensor list
+    $("list-title").textContent = "Sensor spots, live";
+    $("list").innerHTML = CANDS.map(id => {
+      const n = NODE[id];
+      if (!live(n)) return row(id, "—", `<span class="st off">Closed</span>`);
+      const v = drop(id);
+      const st = id === top && extra > 5 ? `<span class="st hot">Clue</span>` : v > thr ? `<span class="st ok">Noticed</span>` : `<span class="st low">Below noise</span>`;
+      return row(id, `−${v.toFixed(1)}`, st);
+    }).join("");
+
+    // timeline: leak tour
+    const ids = [...SPOTS[state.cfg].keys()], cur = ids.indexOf(state.at);
+    $("t-left").textContent = "Leak tour";
+    $("t-mid").textContent = `Leak at ${spotName(state.at)}`;
+    $("t-right").textContent = `Spot ${pad2(cur + 1)} / ${ids.length}`;
+    $("t-bl").textContent = `${branchName(sc.branch[s])}, ${state.size} % leak`;
+    $("t-br").textContent = `${ids.length} leak spots in this shift`;
+    track(ids.map((id, i) => ({ title: spotName(id), cur: i === cur, on: () => { stopTour(); state.at = id; render(); } })), cur / (ids.length - 1));
+  }
+  const row = (id, v, st) => `<div class="li"><span class="id">${id}</span><span class="nm">${SHORT(id)}</span><span class="v">${v}</span>${st}</div>`;
+
+  function track(items, frac, bars) {
+    const t = $("track");
+    t.querySelectorAll(".tick").forEach(e => e.remove());
+    $("prog").style.width = `${(100 * Math.max(0, frac)).toFixed(1)}%`;
+    items.forEach((it, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tick" + (it.cur ? " cur" : ""); b.title = it.title; b.setAttribute("aria-label", it.title);
+      b.style.left = `${(100 * i / (items.length - 1)).toFixed(2)}%`;
+      if (bars) { const bar = document.createElement("span"); bar.className = "bar"; bar.style.height = `${(bars[i] * 22).toFixed(1)}px`; b.appendChild(bar); }
+      b.addEventListener("click", it.on);
+      t.appendChild(b);
+    });
+  }
+
+  // ---------- place
+  let OPEN = null;
+  function evaluate(sensors, sigma) {
+    OPEN = OPEN || Object.fromEntries(Object.entries(D.configs).map(([k, v]) => [k, new Set(v)]));
+    const sc = D.scen, n = sc.at.length, thr = 3 * sigma, list = [...sensors];
+    let det = 0, br = 0;
+    const bySize = { 1: [0, 0], 3: [0, 0], 10: [0, 0] }, spot = new Map();
+    for (let s = 0; s < n; s++) {
+      let any = false; const vals = [];
+      for (const id of list) { const v = dp(s, id); if (v !== 0) vals.push([id, v]); if (-v > thr) any = true; }
+      let right = false;
+      if (any && vals.length) {
+        // same rule as farm/placement/optimise.py: candidates in row order, ties to the first;
+        // a sensor at the head of a closed sector reads the main pipe, so it speaks for "main"
+        vals.sort((a, b) => CANDS.indexOf(a[0]) - CANDS.indexOf(b[0]));
+        const mean = vals.reduce((a, [, v]) => a + v, 0) / vals.length;
+        let best = vals[0]; for (const e of vals) if (e[1] - mean < best[1] - mean) best = e;
+        const nd = NODE[best[0]], open = OPEN[sc.cfg[s]];
+        const said = nd.sector != null && !open.has(nd.sector) ? "main" : nd.branch;
+        right = said === sc.branch[s];
+      }
+      if (any) det++; if (right) br++;
+      bySize[sc.size[s]][0]++; if (any) bySize[sc.size[s]][1]++;
+      const a = spot.get(sc.at[s]) || [0, 0, 0]; a[0]++; if (any) a[1]++; if (right) a[2]++; spot.set(sc.at[s], a);
+    }
+    return { det: det / n, br: br / n, bySize, spot };
+  }
+  const score = (set) => { const r = evaluate(set, state.sigma); return r.br + 0.25 * r.det; };
+  function optimise(k) {
+    const chosen = [];
+    for (let i = 0; i < k; i++) {
+      let best = null, bs = -1;
+      for (const c of CANDS) { if (chosen.includes(c)) continue; const v = score([...chosen, c]); if (v > bs + 1e-9) { bs = v; best = c; } }
+      chosen.push(best);
+    }
+    let cur = score(chosen), improved = true;
+    while (improved) {
+      improved = false;
+      for (let i = 0; i < chosen.length; i++) for (const c of CANDS) {
+        if (chosen.includes(c)) continue;
+        const trial = chosen.slice(); trial[i] = c; const v = score(trial);
+        if (v > cur + 1e-9) { chosen.splice(0, chosen.length, ...trial); cur = v; improved = true; }
+      }
+    }
+    return chosen;
+  }
+  function budgetSet(k) {
+    const key = `${state.sigma}|${k}`;
+    if (!BUDGET[key]) { const set = optimise(k); BUDGET[key] = { set, res: evaluate(set, state.sigma) }; }
+    return BUDGET[key].set;
+  }
+
+  function renderPlace() {
+    const r = evaluate(state.sensors, state.sigma);
+    const all = new Map(); for (const m of SPOTS) for (const [id, sp] of m) all.set(id, sp);
+    drawFarm({
+      pipe: () => "var(--pipe)",
+      ground: () => {
+        for (const [id, sp] of all) {
+          const a = r.spot.get(id); if (!a) continue;
+          const g = P(sp.x, sp.y), f = a[2] / a[0];
+          const e = el("ellipse", { cx: g.x, cy: g.y, rx: 8, ry: 4.4, fill: scoreCol(f), stroke: "var(--panel-2)", "stroke-width": 1.2 }, gGround);
+          el("title", {}, e).textContent = `${spotName(id)}: noticed ${(100 * a[1] / a[0]).toFixed(0)} %, right field ${(100 * f).toFixed(0)} %`;
+        }
+      },
+      pillars: () => {
+        const order = CANDS.slice().sort((a, b) => P(NODE[b].x, NODE[b].y).d - P(NODE[a].x, NODE[a].y).d);
+        for (const id of order) {
+          const n = NODE[id], on = state.sensors.has(id);
+          const g = on ? pillar(n, 46, "var(--primary)", id) : pillar(n, 6, "var(--idle)", null);   // sensors: green, as in the app's map
+          g.classList.add("cand-sq"); g.setAttribute("tabindex", "0"); g.setAttribute("role", "button");
+          g.setAttribute("aria-label", `${on ? "Remove" : "Add"} sensor at ${spotName(id)}`);
+          el("title", {}, g).textContent = `${spotName(id)}: click to ${on ? "remove" : "add"}`;
+          const tog = () => { stopTour(); on ? state.sensors.delete(id) : state.sensors.add(id); render(); };
+          g.addEventListener("click", tog); g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); tog(); } });
+        }
+      },
+    });
+    const n = state.sensors.size;
+    $("h-status").textContent = `${n} sensor${n === 1 ? "" : "s"} placed`;
+    $("h-status").className = "cellv dot " + (r.br >= 0.5 ? "st-ok" : "st-watch");
+    $("k-n").innerHTML = `${n}<small>sensors</small>`;
+    $("k-cost").textContent = `${(n * 292).toLocaleString("en")} DT`;
+    $("k-sig").textContent = `${state.sigma} mbar`;
+    $("k-det").innerHTML = `${Math.round(100 * r.det)}<small>% of 2,070</small>`;
+    const pc = (a) => `${Math.round(100 * a[1] / a[0])} %`;
+    $("k-s1").textContent = pc(r.bySize[1]); $("k-s3").textContent = pc(r.bySize[3]); $("k-s10").textContent = pc(r.bySize[10]);
+    $("k-br").innerHTML = `${Math.round(100 * r.br)}<small>% traced to the right field</small>`;
+    const small = r.bySize[1][1] / r.bySize[1][0];
+    $("k-note").textContent = n === 0 ? "No sensors yet: click the grey stubs on the model, or let the optimiser choose."
+      : r.br < 0.5 ? "Leaks are noticed but often not traced: add sensors where the ground dots stay amber."
+      : small < 0.5 ? `Small 1 % leaks stay hard: their drop is close to the noise. A quieter sensor (try 5 mbar) helps more than extra sensors.`
+      : "Good coverage. Remove a sensor: if the numbers barely move, the kit can be cheaper.";
+    $("m-small").textContent = "Sensor placement, tested on all 2,070 leaks";
+    $("m-big").textContent = `${n} sensors, ${Math.round(100 * r.br)} %`;
+    $("m-big").dataset.kind = "place";
+    $("m-sub").textContent = `${Math.round(100 * r.det)} % noticed, ${(n * 292).toLocaleString("en")} DT kit`;
+    $("s-tr").textContent = "All shifts, all farm versions";
+    $("hints").innerHTML = "<span>Click a stub to add or remove a sensor</span><span>▶ to sweep the budget</span>";
+    $("legend").innerHTML = `<span class="lbl">Ground dots: traced to the right field</span><span class="ramp score"></span><span class="lbl">0 → 100 %</span>`;
+
+    // single-sensor value list
+    $("list-title").textContent = "Sensor spots, toggle";
+    $("list").innerHTML = CANDS.map(id => {
+      const on = state.sensors.has(id);
+      return `<div class="li"><span class="id">${id}</span><span class="nm">${SHORT(id)}</span><span class="v"></span><button type="button" class="st ${on ? "on" : "off"}" data-id="${id}" aria-pressed="${on}">${on ? "On" : "Off"}</button></div>`;
+    }).join("");
+    $("list").querySelectorAll("button[data-id]").forEach(b => b.addEventListener("click", () => {
+      stopTour(); const id = b.dataset.id; state.sensors.has(id) ? state.sensors.delete(id) : state.sensors.add(id); render();
+    }));
+
+    // timeline: sensor budget 1..10 with the "right field" share as bars
+    const ks = Array.from({ length: 10 }, (_, i) => i + 1);
+    const res = ks.map(k => { budgetSet(k); return BUDGET[`${state.sigma}|${k}`].res; });
+    const curK = ks.indexOf(n);
+    $("t-left").textContent = "Sensor budget";
+    const isOpt = curK >= 0 && BUDGET[`${state.sigma}|${n}`].set.length === n && BUDGET[`${state.sigma}|${n}`].set.every(id => state.sensors.has(id));
+    $("t-mid").textContent = isOpt ? `Optimiser: ${n} sensors → ${Math.round(100 * res[curK].br)} % right field`
+                                   : `Your selection: ${n} sensors → ${Math.round(100 * r.br)} % right field`;
+    $("t-right").textContent = `${pad2(Math.max(0, n))} / 10`;
+    $("t-bl").textContent = "Bars: share traced to the right field with the best set";
+    const best = res.reduce((m, x, i) => x.br > res[m].br + 0.005 ? i : m, 0);
+    $("t-br").textContent = `More than ${ks[best]} sensors adds nothing`;
+    track(ks.map((k, i) => ({ title: `${k} sensors: ${Math.round(100 * res[i].det)} % noticed, ${Math.round(100 * res[i].br)} % right field`,
+      cur: k === n, on: () => { stopTour(); state.budget = k; $("nauto").value = k; state.sensors = new Set(budgetSet(k)); render(); } })),
+      curK >= 0 ? curK / 9 : 0, res.map(x => x.br));
+  }
+
+  // ---------- main
+  function render() {
+    refreshControls();
+    state.mode === "explore" ? renderExplore() : renderPlace();
+  }
+})();
+</script>

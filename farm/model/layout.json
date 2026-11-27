@@ -1,0 +1,749 @@
+{
+ "version": "1.0",
+ "simulation": true,
+ "label": "Simulated farm (WNTR) \u2013 not a real network",
+ "units": {
+  "xy": "m",
+  "elev": "m",
+  "length": "m",
+  "diameter": "m",
+  "flow": "L/s"
+ },
+ "farm": {
+  "area_ha": 50,
+  "width_m": 700,
+  "length_m": 715,
+  "pump_node": "PS",
+  "source_node": "R0",
+  "irrigation_shifts": [
+   [
+    1,
+    2
+   ],
+   [
+    3,
+    4
+   ],
+   [
+    5,
+    6
+   ]
+  ]
+ },
+ "nodes": [
+  {
+   "id": "R0",
+   "x": 350.0,
+   "y": -30.0,
+   "elev": 98.0,
+   "kind": "reservoir",
+   "sector": null,
+   "branch": "main",
+   "candidate": false
+  },
+  {
+   "id": "PS",
+   "x": 350.0,
+   "y": 0.0,
+   "elev": 100.0,
+   "kind": "pump_out",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "id": "M1",
+   "x": 350.0,
+   "y": 119.16666666666667,
+   "elev": 100.477,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "id": "H1",
+   "x": 344.0,
+   "y": 119.16666666666667,
+   "elev": 100.468,
+   "kind": "sector_head",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": true
+  },
+  {
+   "id": "B1",
+   "x": 342.0,
+   "y": 119.16666666666667,
+   "elev": 100.465,
+   "kind": "valve_out",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": false
+  },
+  {
+   "id": "A1",
+   "x": 230.0,
+   "y": 119.16666666666667,
+   "elev": 100.297,
+   "kind": "manifold",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": false
+  },
+  {
+   "id": "E1",
+   "x": 60.0,
+   "y": 119.16666666666667,
+   "elev": 100.042,
+   "kind": "submain_end",
+   "sector": 1,
+   "branch": "sector_1",
+   "candidate": true
+  },
+  {
+   "id": "H2",
+   "x": 356.0,
+   "y": 119.16666666666667,
+   "elev": 100.486,
+   "kind": "sector_head",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": true
+  },
+  {
+   "id": "B2",
+   "x": 358.0,
+   "y": 119.16666666666667,
+   "elev": 100.489,
+   "kind": "valve_out",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": false
+  },
+  {
+   "id": "A2",
+   "x": 470.0,
+   "y": 119.16666666666667,
+   "elev": 100.657,
+   "kind": "manifold",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": false
+  },
+  {
+   "id": "E2",
+   "x": 640.0,
+   "y": 119.16666666666667,
+   "elev": 100.912,
+   "kind": "submain_end",
+   "sector": 2,
+   "branch": "sector_2",
+   "candidate": true
+  },
+  {
+   "id": "M2",
+   "x": 350.0,
+   "y": 357.5,
+   "elev": 101.43,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "id": "H3",
+   "x": 344.0,
+   "y": 357.5,
+   "elev": 101.421,
+   "kind": "sector_head",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": true
+  },
+  {
+   "id": "B3",
+   "x": 342.0,
+   "y": 357.5,
+   "elev": 101.418,
+   "kind": "valve_out",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": false
+  },
+  {
+   "id": "A3",
+   "x": 230.0,
+   "y": 357.5,
+   "elev": 101.25,
+   "kind": "manifold",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": false
+  },
+  {
+   "id": "E3",
+   "x": 60.0,
+   "y": 357.5,
+   "elev": 100.995,
+   "kind": "submain_end",
+   "sector": 3,
+   "branch": "sector_3",
+   "candidate": true
+  },
+  {
+   "id": "H4",
+   "x": 356.0,
+   "y": 357.5,
+   "elev": 101.439,
+   "kind": "sector_head",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": true
+  },
+  {
+   "id": "B4",
+   "x": 358.0,
+   "y": 357.5,
+   "elev": 101.442,
+   "kind": "valve_out",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": false
+  },
+  {
+   "id": "A4",
+   "x": 470.0,
+   "y": 357.5,
+   "elev": 101.61,
+   "kind": "manifold",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": false
+  },
+  {
+   "id": "E4",
+   "x": 640.0,
+   "y": 357.5,
+   "elev": 101.865,
+   "kind": "submain_end",
+   "sector": 4,
+   "branch": "sector_4",
+   "candidate": true
+  },
+  {
+   "id": "M3",
+   "x": 350.0,
+   "y": 595.8333333333334,
+   "elev": 102.383,
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "candidate": true
+  },
+  {
+   "id": "H5",
+   "x": 344.0,
+   "y": 595.8333333333334,
+   "elev": 102.374,
+   "kind": "sector_head",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": true
+  },
+  {
+   "id": "B5",
+   "x": 342.0,
+   "y": 595.8333333333334,
+   "elev": 102.371,
+   "kind": "valve_out",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": false
+  },
+  {
+   "id": "A5",
+   "x": 230.0,
+   "y": 595.8333333333334,
+   "elev": 102.203,
+   "kind": "manifold",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": false
+  },
+  {
+   "id": "E5",
+   "x": 60.0,
+   "y": 595.8333333333334,
+   "elev": 101.948,
+   "kind": "submain_end",
+   "sector": 5,
+   "branch": "sector_5",
+   "candidate": true
+  },
+  {
+   "id": "H6",
+   "x": 356.0,
+   "y": 595.8333333333334,
+   "elev": 102.392,
+   "kind": "sector_head",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": true
+  },
+  {
+   "id": "B6",
+   "x": 358.0,
+   "y": 595.8333333333334,
+   "elev": 102.395,
+   "kind": "valve_out",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": false
+  },
+  {
+   "id": "A6",
+   "x": 470.0,
+   "y": 595.8333333333334,
+   "elev": 102.563,
+   "kind": "manifold",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": false
+  },
+  {
+   "id": "E6",
+   "x": 640.0,
+   "y": 595.8333333333334,
+   "elev": 102.818,
+   "kind": "submain_end",
+   "sector": 6,
+   "branch": "sector_6",
+   "candidate": true
+  }
+ ],
+ "pipes": [
+  {
+   "id": "PUMP",
+   "from": "R0",
+   "to": "PS",
+   "kind": "pump",
+   "sector": null,
+   "branch": "main",
+   "leak_candidate": false
+  },
+  {
+   "id": "MN1",
+   "from": "PS",
+   "to": "M1",
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "leak_candidate": true,
+   "length": 119.17,
+   "diameter": 0.235
+  },
+  {
+   "id": "L1",
+   "from": "M1",
+   "to": "H1",
+   "kind": "sector_link",
+   "sector": 1,
+   "branch": "sector_1",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V1",
+   "from": "H1",
+   "to": "B1",
+   "kind": "sector_valve",
+   "sector": 1,
+   "branch": "sector_1",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S1a",
+   "from": "B1",
+   "to": "A1",
+   "kind": "submain_1",
+   "sector": 1,
+   "branch": "sector_1",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S1b",
+   "from": "A1",
+   "to": "E1",
+   "kind": "submain_2",
+   "sector": 1,
+   "branch": "sector_1",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L2",
+   "from": "M1",
+   "to": "H2",
+   "kind": "sector_link",
+   "sector": 2,
+   "branch": "sector_2",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V2",
+   "from": "H2",
+   "to": "B2",
+   "kind": "sector_valve",
+   "sector": 2,
+   "branch": "sector_2",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S2a",
+   "from": "B2",
+   "to": "A2",
+   "kind": "submain_1",
+   "sector": 2,
+   "branch": "sector_2",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S2b",
+   "from": "A2",
+   "to": "E2",
+   "kind": "submain_2",
+   "sector": 2,
+   "branch": "sector_2",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "MN2",
+   "from": "M1",
+   "to": "M2",
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "leak_candidate": true,
+   "length": 238.33,
+   "diameter": 0.235
+  },
+  {
+   "id": "L3",
+   "from": "M2",
+   "to": "H3",
+   "kind": "sector_link",
+   "sector": 3,
+   "branch": "sector_3",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V3",
+   "from": "H3",
+   "to": "B3",
+   "kind": "sector_valve",
+   "sector": 3,
+   "branch": "sector_3",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S3a",
+   "from": "B3",
+   "to": "A3",
+   "kind": "submain_1",
+   "sector": 3,
+   "branch": "sector_3",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S3b",
+   "from": "A3",
+   "to": "E3",
+   "kind": "submain_2",
+   "sector": 3,
+   "branch": "sector_3",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L4",
+   "from": "M2",
+   "to": "H4",
+   "kind": "sector_link",
+   "sector": 4,
+   "branch": "sector_4",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V4",
+   "from": "H4",
+   "to": "B4",
+   "kind": "sector_valve",
+   "sector": 4,
+   "branch": "sector_4",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S4a",
+   "from": "B4",
+   "to": "A4",
+   "kind": "submain_1",
+   "sector": 4,
+   "branch": "sector_4",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S4b",
+   "from": "A4",
+   "to": "E4",
+   "kind": "submain_2",
+   "sector": 4,
+   "branch": "sector_4",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "MN3",
+   "from": "M2",
+   "to": "M3",
+   "kind": "main",
+   "sector": null,
+   "branch": "main",
+   "leak_candidate": true,
+   "length": 238.33,
+   "diameter": 0.235
+  },
+  {
+   "id": "L5",
+   "from": "M3",
+   "to": "H5",
+   "kind": "sector_link",
+   "sector": 5,
+   "branch": "sector_5",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V5",
+   "from": "H5",
+   "to": "B5",
+   "kind": "sector_valve",
+   "sector": 5,
+   "branch": "sector_5",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S5a",
+   "from": "B5",
+   "to": "A5",
+   "kind": "submain_1",
+   "sector": 5,
+   "branch": "sector_5",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S5b",
+   "from": "A5",
+   "to": "E5",
+   "kind": "submain_2",
+   "sector": 5,
+   "branch": "sector_5",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  },
+  {
+   "id": "L6",
+   "from": "M3",
+   "to": "H6",
+   "kind": "sector_link",
+   "sector": 6,
+   "branch": "sector_6",
+   "leak_candidate": false,
+   "length": 6.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "V6",
+   "from": "H6",
+   "to": "B6",
+   "kind": "sector_valve",
+   "sector": 6,
+   "branch": "sector_6",
+   "leak_candidate": false,
+   "length": 2.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S6a",
+   "from": "B6",
+   "to": "A6",
+   "kind": "submain_1",
+   "sector": 6,
+   "branch": "sector_6",
+   "leak_candidate": true,
+   "length": 112.0,
+   "diameter": 0.15
+  },
+  {
+   "id": "S6b",
+   "from": "A6",
+   "to": "E6",
+   "kind": "submain_2",
+   "sector": 6,
+   "branch": "sector_6",
+   "leak_candidate": true,
+   "length": 170.0,
+   "diameter": 0.11
+  }
+ ],
+ "sectors": [
+  {
+   "id": 1,
+   "name": "Sector 1",
+   "row": 1,
+   "side": "west",
+   "nodes": [
+    "H1",
+    "B1",
+    "A1",
+    "E1"
+   ],
+   "bbox": [
+    0.0,
+    0.0,
+    350.0,
+    238.33333333333334
+   ],
+   "design_flow_lps": 34.72
+  },
+  {
+   "id": 2,
+   "name": "Sector 2",
+   "row": 1,
+   "side": "east",
+   "nodes": [
+    "H2",
+    "B2",
+    "A2",
+    "E2"
+   ],
+   "bbox": [
+    350.0,
+    0.0,
+    700.0,
+    238.33333333333334
+   ],
+   "design_flow_lps": 34.72
+  },
+  {
+   "id": 3,
+   "name": "Sector 3",
+   "row": 2,
+   "side": "west",
+   "nodes": [
+    "H3",
+    "B3",
+    "A3",
+    "E3"
+   ],
+   "bbox": [
+    0.0,
+    238.33333333333334,
+    350.0,
+    476.6666666666667
+   ],
+   "design_flow_lps": 34.72
+  },
+  {
+   "id": 4,
+   "name": "Sector 4",
+   "row": 2,
+   "side": "east",
+   "nodes": [
+    "H4",
+    "B4",
+    "A4",
+    "E4"
+   ],
+   "bbox": [
+    350.0,
+    238.33333333333334,
+    700.0,
+    476.6666666666667
+   ],
+   "design_flow_lps": 34.72
+  },
+  {
+   "id": 5,
+   "name": "Sector 5",
+   "row": 3,
+   "side": "west",
+   "nodes": [
+    "H5",
+    "B5",
+    "A5",
+    "E5"
+   ],
+   "bbox": [
+    0.0,
+    476.6666666666667,
+    350.0,
+    715.0
+   ],
+   "design_flow_lps": 34.72
+  },
+  {
+   "id": 6,
+   "name": "Sector 6",
+   "row": 3,
+   "side": "east",
+   "nodes": [
+    "H6",
+    "B6",
+    "A6",
+    "E6"
+   ],
+   "bbox": [
+    350.0,
+    476.6666666666667,
+    700.0,
+    715.0
+   ],
+   "design_flow_lps": 34.72
+  }
+ ]
+}

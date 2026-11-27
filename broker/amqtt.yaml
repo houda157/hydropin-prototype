@@ -1,0 +1,13 @@
+# MQTT broker without admin rights (alternative to Mosquitto on Windows):
+#   python -m pip install amqtt
+#   amqtt -c broker/amqtt.yaml
+# Same behaviour as broker/mosquitto.conf: port 1883 on every network interface (the ESP32
+# connects to the laptop's IP), anonymous clients allowed (bench on a private hotspot only).
+---
+listeners:
+  default:
+    type: tcp
+    bind: 0.0.0.0:1883
+plugins:
+  amqtt.plugins.authentication.AnonymousAuthPlugin:
+    allow_anonymous: true
