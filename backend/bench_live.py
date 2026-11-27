@@ -6,12 +6,21 @@ Sending runs in a daemon thread so a slow or failing Telegram never blocks inges
 from __future__ import annotations
 
 import threading
+from datetime import datetime
 from typing import Any
 
 from detection.bench_detector import BenchConfig, BenchDetector, load_config
 
 from . import notify
 
+FAULT_NOTICE_COOLDOWN_S = 600.0
+
+
+def _seconds(ts: Any) -> float | None:
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
 
 
 def _send_async(text: str) -> None:
@@ -27,6 +36,7 @@ class BenchLive:
         self.send_notifications = send_notifications
         self._prev_state: str | None = None
         self._prev_faults: set[str] = set()
+        self._fault_sent: dict[str, float] = {}     # fault name -> frame time of its last notice
 
     def push(self, msg: dict[str, Any], run_id: int | None = None) -> tuple[dict[str, Any], list[str]]:
         with self.lock:
@@ -48,8 +58,14 @@ class BenchLive:
         if self._prev_state == "LEAK" and state == "HEALTHY":
             out.append(f"HydroPin resolved: back to HEALTHY, {frame['lost_l']:.2f} L lost ({frame['ts']})")
         faults = set(frame.get("faults") or []) - {"data_gap"}
+        now = _seconds(frame["ts"])
         for f in sorted(faults - self._prev_faults):
-            out.append(f"HydroPin sensor fault: {f} ({frame['ts']})")
+            # a fault that comes and goes (loose wire, noise at a threshold) is notified once per cooldown
+            last = self._fault_sent.get(f)
+            if last is None or now is None or now - last >= FAULT_NOTICE_COOLDOWN_S:
+                out.append(f"HydroPin sensor fault: {f} ({frame['ts']})")
+                if now is not None:
+                    self._fault_sent[f] = now
         self._prev_state, self._prev_faults = state, faults
         return out
 

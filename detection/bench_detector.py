@@ -28,6 +28,8 @@ from pathlib import Path
 
 import numpy as np
 
+from hydropin import config
+
 STATES = ("PUMP_OFF", "SETTLING", "LEARNING", "HEALTHY", "WATCH", "LEAK", "OFFLINE")
 TAPS = ("L1", "L2", "L3")
 TAP_BRANCH = {"L1": "A", "L2": "B", "L3": "B"}
@@ -59,7 +61,7 @@ class BenchConfig:
     n_consecutive: int = 10           # ... for 10 samples (5 s at 2 Hz)
     adapt_tau_s: float = 600.0        # slow baseline follow while clearly healthy
     gap_s: float = 3.0                # no frame for 3 s -> OFFLINE
-    stuck_s: float = 5.0
+    stuck_s: float = 10.0             # identical raw ADC counts this long = frozen reading
     unplug_s: float = 3.0
     # unit drop direction in [PT1, PT2] for each tap (bench twin: L1 drops PT1 ~2x PT2;
     # L2/L3 drop PT2 more). Replace with measured fingerprints after the calibration runs.
@@ -91,6 +93,24 @@ def load_config(path: str | Path | None = None) -> BenchConfig:
         if cand.exists():
             return BenchConfig.from_json(cand)
     return BenchConfig()
+
+
+def values_from_raw(msg: dict) -> dict:
+    """The message's ``values`` with both pressures recomputed from the raw ADC counts.
+
+    The firmware rounds bar to 0.01 (10 mbar), coarser than the sensor noise after
+    oversampling: rounded values repeat for seconds and look "stuck". One ADC count is
+    about 0.2 mbar. Messages without raw counts keep their values.
+    """
+    values = dict(msg["values"])
+    raw = msg.get("raw") or {}
+    if raw.get("pressure_adc") is not None:
+        p1 = config.adc_to_pressure_bar(raw["pressure_adc"])
+        values["pressure_bar"] = min(max(p1, config.PRESSURE_RANGE_BAR[0]), config.PRESSURE_RANGE_BAR[1])
+    if raw.get("pressure_b_adc") is not None:
+        p2 = config.adc_to_pressure_b_bar(raw["pressure_b_adc"])
+        values["pressure_b_bar"] = min(max(p2, config.PRESSURE_B_RANGE_BAR[0]), config.PRESSURE_B_RANGE_BAR[1])
+    return values
 
 
 def _ts_seconds(ts) -> float:
@@ -311,7 +331,7 @@ class BenchDetector:
         return self._finish(frame)
 
     def update_message(self, msg: dict) -> dict:
-        frame = self.update(msg["values"], msg["ts"])
+        frame = self.update(values_from_raw(msg), msg["ts"])
         frame["device"] = msg.get("device")
         frame["seq"] = msg.get("seq")
         return frame
