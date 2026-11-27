@@ -5,7 +5,7 @@ import threading
 from typing import Any
 
 from hydropin import config
-from hydropin.messages import MessageError, validate_message
+from hydropin.messages import MessageError, normalize_message, validate_message
 
 from . import notify, storage
 from .bench_live import BenchLive
@@ -20,6 +20,7 @@ def ingest_message(
     send_notifications: bool = False,
     bench: BenchLive | None = None,
 ) -> dict[str, Any]:
+    msg = normalize_message(msg)
     validate_message(msg)
     alert: dict[str, Any] | None = None
     frame: dict[str, Any] | None = None

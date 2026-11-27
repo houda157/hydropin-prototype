@@ -40,7 +40,9 @@ static int16_t read_adc(uint8_t channel) {
     for (uint8_t i = 0; i < PRESSURE_OVERSAMPLE; i++) {
         acc += s_ads.readADC_SingleEnded(channel);
     }
-    return (int16_t)(acc / PRESSURE_OVERSAMPLE);
+    acc /= PRESSURE_OVERSAMPLE;
+    // single-ended reads dip a few counts below 0 near 0 V; the contract keeps counts >= 0
+    return (int16_t)(acc < 0 ? 0 : acc);
 }
 
 static float adc_to_bar(int16_t adc, float divider, float gain, float offset) {
