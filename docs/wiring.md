@@ -93,7 +93,8 @@ calibration and is not enabled in the current firmware.
 
 1. Never connect +24 V directly to R1-R4 or the ADS1115.
 2. Never feed 5 V or 4.4 V directly into an ESP32 GPIO.
-3. The current detector/ML expects branch **flow** shares (L1/L2/L3). This bench
-   has branch **pressure** sensors, not branch flow sensors. Until you add
-   branch flow sensors or retrain on PT1/PT2, the live detector is a connectivity
-   and data-quality test, not a validated branch-localisation result.
+3. The detector uses the main flow (F0) and the two branch pressures (PT1, PT2):
+   flow to detect, the pressure pattern to name the branch (A or B). L2 and L3
+   share branch B and one sensor, so the promise is the branch, not the tap. The
+   branch result counts as validated only once the bench campaign has been scored
+   (`docs/test_protocol.md`).
