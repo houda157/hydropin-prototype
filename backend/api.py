@@ -199,6 +199,23 @@ def events(request: Request, run_id: int | None = None, limit: int = 500) -> lis
         return storage.list_events(conn, run_id=run_id, limit=limit)
 
 
+@router.get("/api/leaks")
+def leaks(request: Request, limit: int = 20) -> list[dict[str, Any]]:
+    """Leak episodes, newest first, with status open | checking | fixed (farmer app)."""
+    with storage.db_session(_db(request)) as conn:
+        return storage.list_leaks(conn, limit=limit)
+
+
+@router.post("/api/leaks/{leak_id}/fixed")
+def leak_fixed(leak_id: int, request: Request) -> dict[str, Any]:
+    """The farmer says the leak is fixed; the sensors confirm it when the bench is back to HEALTHY."""
+    with storage.db_session(_db(request)) as conn:
+        row = storage.mark_leak_fixed(conn, leak_id, storage.utc_now())
+    if row is None:
+        raise HTTPException(status_code=404, detail="leak not found")
+    return row
+
+
 @router.post("/api/baseline/reset")
 def baseline_reset(request: Request) -> dict[str, Any]:
     """Re-learn the healthy baseline (after any valve change): SETTLING -> LEARNING -> HEALTHY."""
