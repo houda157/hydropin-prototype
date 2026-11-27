@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 
 #include "config.h"
+#include "remote_log.h"
 #include "network.h"
 #include "sensors.h"
 
@@ -44,12 +45,12 @@ static void publish_snapshot(const SensorSnapshot& s) {
     char payload[768];
     size_t needed = measureJson(doc);
     if (needed >= sizeof(payload)) {
-        Serial.println("[main] JSON too large, dropping sample");
+        Log.println("[main] JSON too large, dropping sample");
         return;
     }
     serializeJson(doc, payload, sizeof(payload));
     if (!network_publish(payload)) {
-        Serial.println("[main] publish failed (mqtt down)");
+        Log.println("[main] publish failed (mqtt down)");
     }
     s_seq++;
 }
@@ -57,8 +58,8 @@ static void publish_snapshot(const SensorSnapshot& s) {
 void setup() {
     Serial.begin(115200);
     delay(200);
-    Serial.println();
-    Serial.println("[main] hydropin bench node");
+    Log.println();
+    Log.println("[main] hydropin bench node");
     sensors_begin();
     network_begin();
 }
