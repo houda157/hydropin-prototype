@@ -1,11 +1,13 @@
 #include "network.h"
 
+#include <ArduinoOTA.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <sys/time.h>
 #include <time.h>
 
 #include "config.h"
+#include "remote_log.h"
 #include "secrets.h"
 
 static WiFiClient s_wifi;
@@ -14,6 +16,31 @@ static char s_telemetry_topic[96];
 static char s_status_topic[96];
 static uint32_t s_last_wifi_attempt = 0;
 static uint32_t s_last_mqtt_attempt = 0;
+static bool s_ota_started = false;
+
+// OTA needs a live WiFi link (mDNS + UDP listener), so start it lazily.
+static void ota_begin() {
+    ArduinoOTA.setHostname(DEVICE_ID);
+#ifdef OTA_PASSWORD
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+#endif
+    ArduinoOTA.onStart([]() {
+        s_mqtt.disconnect();
+        Log.println("[ota] start");
+    });
+    ArduinoOTA.onProgress([](unsigned int done, unsigned int total) {
+        static uint8_t last = 255;
+        uint8_t pct = total ? (done * 100 / total) : 0;
+        if (pct / 10 != last / 10) Log.printf("[ota] %u%%\n", pct);
+        last = pct;
+    });
+    ArduinoOTA.onEnd([]() { Log.println("[ota] done, rebooting"); });
+    ArduinoOTA.onError([](ota_error_t e) { Log.printf("[ota] error %u\n", e); });
+    ArduinoOTA.begin();
+    remote_log_begin();
+    s_ota_started = true;
+    Log.printf("[ota] ready: %s.local / %s (log: telnet port 23)\n", DEVICE_ID, WiFi.localIP().toString().c_str());
+}
 
 static void build_topics() {
     snprintf(s_telemetry_topic, sizeof(s_telemetry_topic), "hydropin/bench/%s/telemetry", DEVICE_ID);
@@ -21,13 +48,13 @@ static void build_topics() {
 }
 
 static void mqtt_connect() {
-    Serial.print("[mqtt] connecting...");
+    Log.print("[mqtt] connecting...");
     bool ok = s_mqtt.connect(DEVICE_ID, nullptr, nullptr, s_status_topic, 1, true, "offline");
     if (ok) {
         s_mqtt.publish(s_status_topic, "online", true);
-        Serial.println("ok");
+        Log.println("ok");
     } else {
-        Serial.printf("failed rc=%d\n", s_mqtt.state());
+        Log.printf("failed rc=%d\n", s_mqtt.state());
     }
 }
 
@@ -37,18 +64,18 @@ bool network_begin() {
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    Serial.print("[wifi] connecting");
+    Log.print("[wifi] connecting");
     uint32_t start = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
         delay(250);
-        Serial.print(".");
+        Log.print(".");
     }
-    Serial.println();
+    Log.println();
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.print("[wifi] ip ");
-        Serial.println(WiFi.localIP());
+        Log.print("[wifi] ip ");
+        Log.println(WiFi.localIP());
     } else {
-        Serial.println("[wifi] not connected yet; will retry in loop");
+        Log.println("[wifi] not connected yet; will retry in loop");
     }
 
     configTime(0, 0, "pool.ntp.org", "time.google.com");
@@ -64,11 +91,17 @@ void network_loop() {
             s_last_wifi_attempt = millis();
             WiFi.reconnect();
         }
+    } else if (!s_ota_started) {
+        ota_begin();
     } else if (!s_mqtt.connected()) {
-        if (millis() - s_last_mqtt_attempt > 5000) {
+        if (s_last_mqtt_attempt == 0 || millis() - s_last_mqtt_attempt > 5000) {
             s_last_mqtt_attempt = millis();
             mqtt_connect();
         }
+    }
+    if (s_ota_started) {
+        ArduinoOTA.handle();
+        remote_log_loop();
     }
     s_mqtt.loop();
 }

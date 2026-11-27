@@ -2,7 +2,6 @@
 import re
 from pathlib import Path
 
-import pytest
 
 from hydropin import config
 
@@ -40,9 +39,6 @@ def test_calibration_constants_match():
     assert number("PRESSURE_MAX_BAR") == config.PRESSURE_RANGE_BAR[1]
 
 
-@pytest.mark.xfail(strict=False, reason="firmware/ is Talel's branch version (22k/10k, x3.2) until Moetez pushes the "
-                   "bench firmware with the real 20k/10k (x3.0) divider; the backend recomputes bar from raw ADC "
-                   "counts with x3.0, so detection is right either way. Remove this mark after that merge.")
 def test_pressure_divider_matches():
     assert number("PRESSURE_DIVIDER") == config.PRESSURE_DIVIDER
 
