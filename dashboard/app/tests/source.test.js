@@ -61,3 +61,10 @@ test("detectSource", async () => {
   assert.equal(await detectSource("..", async () => { throw new Error("x"); }), "demo");
   assert.equal(await detectSource("..", async () => ({ ok: false, json: async () => ({}) })), "demo");
 });
+
+test("final fix 3: a poll that hangs (laptop asleep) ends as OFFLINE after the timeout", async () => {
+  const hang = () => new Promise(() => {});
+  const s = liveSource("..", { fetchImpl: hang, intervalMs: 1000, timeoutMs: 30 });
+  const snap = await new Promise((res) => s.start(res)); s.stop();
+  assert.equal(snap.stateResponse.state, "OFFLINE");
+});

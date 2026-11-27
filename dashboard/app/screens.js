@@ -63,8 +63,9 @@ function statusCard(c) {
       + `<a class="btn primary" href="tel:${PHONE}">${ic("help")}${T(c, "btn.call_us")}</a>`;
   }
   if (v.status === "leak") {
+    const sub = v.confirmed === false ? T(c, "status.leak.unconfirmed") : T(c, "status.leak.sub", { time: clock(c, v.foundTs) });
     return `<section class="status bad">${ic("alert", "xl")}<div><div class="t">${T(c, "status.leak.title", { sector: v.sector || "?" })}</div>`
-      + `<div class="s">${T(c, "status.leak.sub", { time: clock(c, v.foundTs) })}</div></div></section>`
+      + `<div class="s">${sub}</div></div></section>`
       + `<a class="btn danger" href="#/where">${ic("map")}${T(c, "btn.show_where")}</a>`;
   }
   return `<section class="status ok">${ic("check", "xl")}<div><div class="t">${T(c, "status.ok.title")}</div>`
@@ -136,18 +137,26 @@ export function detailsSheet(c) {
   rows.push(`<div class="kv"><span class="k">${T(c, "details.why")}</span>${T(c, "details.why_text", { sector })}</div>`);
   const nums = leak ? leakNumbers(leak, scale) : { share: v.share, lostM3: null };
   if (!Number.isFinite(nums.share)) nums.share = v.share;
-  let lost = `<span class="muted">${T(c, "money.not_set")}</span>`, how = lost;
+  const notSet = `<span class="muted">${T(c, "money.not_set")}</span>`;
+  let lost = notSet, how = notSet;
+  // live: what the bench really lost is litres; every m3 / DT figure is a farm projection, said as such
+  const benchLitres = isLive(c) && leak && Number.isFinite(leak.lost_l)
+    ? T(c, "details.bench_lost", { l: fmt(c.lang, leak.lost_l, 2) }) : null;
   if (moneyReady(scale) && Number.isFinite(nums.lostM3)) {
-    lost = `≈ ${esc(fmt(c.lang, nums.lostM3, 1))} m³ · ${money(c, Math.round(nums.lostM3 * scale.price_dt_per_m3 * 100) / 100)}`;
+    const lostDt = Math.round(nums.lostM3 * scale.price_dt_per_m3 * 100) / 100;
+    lost = benchLitres ? `${benchLitres} · ${money(c, lostDt)}` : `≈ ${esc(fmt(c.lang, nums.lostM3, 1))} m³ · ${money(c, lostDt)}`;
     const m = leakMoney(nums, scale);
     if (m) {
-      const hours = Math.max(0, (c.now - new Date(v.foundTs || (leak && leak.started_ts))) / 3.6e6);
-      how = T(c, "money.how", {
-        perHour: fmt(c.lang, m.leakM3PerH, 1), days: fmt(c.lang, scale.days_to_notice_without_hydropin),
-        hours: fmt(c.lang, Number.isFinite(hours) ? hours : 0, 1), saved: fmt(c.lang, m.savedM3), price: fmt(c.lang, scale.price_dt_per_m3, 2),
+      const prefix = isLive(c) ? `${T(c, "money.how_farm", { area: fmt(c.lang, scale.area_ha || 0) })} ` : "";
+      how = prefix + T(c, "money.how", {
+        perHour: fmt(c.lang, m.leakM3PerH, 1), hoursPerDay: fmt(c.lang, scale.irrigation_hours_per_day),
+        days: fmt(c.lang, scale.days_to_notice_without_hydropin), would: fmt(c.lang, m.wouldLoseM3),
+        lost: fmt(c.lang, nums.lostM3, 1), saved: fmt(c.lang, m.savedM3), price: fmt(c.lang, scale.price_dt_per_m3, 2),
         dt: fmt(c.lang, m.savedDt, 1),
       }) + ` ${estimate(c)}`;
     }
+  } else if (benchLitres) {
+    lost = benchLitres;
   }
   rows.push(`<div class="kv"><span class="k">${T(c, "details.lost")}</span>${lost}</div>`);
   rows.push(`<div class="kv"><span class="k">${T(c, "details.where")}</span>${v.whereTap ? T(c, "where.near_tap", { tap: v.whereTap }) : T(c, "where.sector", { sector })}</div>`);
@@ -171,11 +180,22 @@ export function fixedScreen(c) {
     + `<a class="btn primary" href="#/home">${T(c, "btn.back_home")}</a></div>`;
 }
 
+// live: sensors the detector reports as faulty (PT1_unplugged, PT2_stuck...); the demo has none
+const SENSOR_OF_FAULT = { PT1: "P1 · Sector A", PT2: "P2 · Sector B" };
+function faultySensors(c) {
+  if (!isLive(c)) return new Set();
+  const faults = (c.snap.stateResponse.frame && c.snap.stateResponse.frame.faults) || [];
+  return new Set(faults.map((f) => SENSOR_OF_FAULT[String(f).split("_")[0]]).filter(Boolean));
+}
+
 export function mapScreen(c) {
   const n = isLive(c) ? 3 : 6;
+  const bad = faultySensors(c);
   const status = c.view.status === "offline"
     ? `<section class="status off">${ic("alert")}<div class="t">${T(c, "status.offline.title")}</div></section>`
-    : `<section class="status ok">${ic("check")}<div class="t">${T(c, "map.sensors_ok", { n })}</div></section>`;
+    : bad.size
+      ? `<section class="status warn">${ic("alert")}<div class="t">${T(c, "map.sensors_attention", { n: bad.size })}</div></section>`
+      : `<section class="status ok">${ic("check")}<div class="t">${T(c, "map.sensors_ok", { n })}</div></section>`;
   return `<h1 class="title">${T(c, "map.title")}</h1>${badge(c)}${farmCard(c, true)}${status}`
     + `<button class="details" data-action="sensors"><span>${T(c, "map.sensors_pipes")}</span>${ic("down", "sm")}</button>`;
 }
@@ -183,7 +203,10 @@ export function mapScreen(c) {
 export function sensorsSheet(c) {
   const names = isLive(c) ? ["F0 · Pump", "P1 · Sector A", "P2 · Sector B"]
     : ["F0 · Pump", "P1 · Sector A", "P2 · Sector B", "P3 · Sector C", "P4 · Sector D", "P5 · Main pipe"];
-  return `<h2>${T(c, "sheet.sensors")}</h2>` + names.map((s) => `<div class="li">${ic("check", "sm ok-c")}<span class="tx">${esc(s)}</span></div>`).join("");
+  const bad = faultySensors(c);
+  return `<h2>${T(c, "sheet.sensors")}</h2>` + names.map((s) => (bad.has(s)
+    ? `<div class="li">${ic("alert", "sm warn-c")}<span class="tx">${esc(s)}</span></div>`
+    : `<div class="li">${ic("check", "sm ok-c")}<span class="tx">${esc(s)}</span></div>`)).join("");
 }
 
 function monthBars(c) {

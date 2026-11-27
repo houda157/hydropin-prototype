@@ -7,10 +7,16 @@ from typing import Any
 
 from . import storage
 
+# states in which the detector learns a new baseline, with the leak possibly inside it
+RELEARN_STATES = ("PUMP_OFF", "SETTLING", "LEARNING")
+
 
 def track_leak(conn: sqlite3.Connection, frame: dict[str, Any]) -> int | None:
-    """LEAK opens or updates the episode; PUMP_OFF marks it (HEALTHY can no longer prove a
-    repair after the baseline is re-learned); HEALTHY closes it; other states change nothing."""
+    """LEAK opens or updates the episode; HEALTHY closes it (the sensors confirm the repair).
+    PUMP_OFF, SETTLING and LEARNING mean the detector is re-learning its baseline (pump stop,
+    baseline reset, new detector process) with the leak possibly inside it: from then on HEALTHY
+    proves nothing, so the episode is marked (pump_stopped = 1) and stays open until the farmer
+    taps "I fixed it". WATCH and OFFLINE change nothing."""
     state = frame.get("state")
     open_ = storage.get_open_leak(conn)
     if state == "LEAK":
@@ -20,7 +26,7 @@ def track_leak(conn: sqlite3.Connection, frame: dict[str, Any]) -> int | None:
         return leak_id
     if open_ is None:
         return None
-    if state == "PUMP_OFF":
+    if state in RELEARN_STATES:
         storage.mark_pump_stopped(conn, open_["id"])
     elif state == "HEALTHY" and not open_["pump_stopped"]:
         storage.close_leak(conn, open_["id"], str(frame["ts"]))

@@ -73,3 +73,14 @@ test("leak in checking stays the current leak; no tap under 0.6", () => {
                    [{ id: 7, status: "checking", started_ts: "x" }, { id: 6, status: "fixed", started_ts: "y" }], ["A", "B"]);
   assert.equal(v.leakId, 7); assert.equal(v.leakStatus, "checking"); assert.equal(v.whereTap, null);
 });
+
+test("final fix 1: an open leak stays on screen after the pump stops or the baseline is re-learned", () => {
+  for (const s of ["PUMP_OFF", "SETTLING", "LEARNING", "HEALTHY"]) {
+    const v = toView({ state: s, frame: { state: s } },
+      [{ id: 5, status: "open", branch: "B", pump_stopped: 1, started_ts: "2026-11-27T06:12:00.000Z" }], ["A", "B"]);
+    assert.equal(v.status, "leak", s); assert.equal(v.sector, "B", s); assert.equal(v.confirmed, false, s);
+  }
+  const live = toView({ state: "LEAK", frame: { state: "LEAK", branch: "B", flow_base_lpm: 1.5, leak_lpm: 0.3 } },
+    [{ id: 5, status: "open", branch: "B" }], ["A", "B"]);
+  assert.equal(live.confirmed, true);
+});

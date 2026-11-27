@@ -85,3 +85,36 @@ test("fixed screen: thanks and the money saved", () => {
 test("Arabic screens are in Arabic", () => {
   assert.ok(homeScreen(ctx("leak", "ar")).includes(t("ar", "status.leak.title", { sector: "B" })));
 });
+
+const benchLeak = { id: 1, status: "open", branch: "B", base_lpm: 1.5, max_leak_lpm: 0.3, lost_l: 0.45, started_ts: "2026-11-27T06:12:00.000Z" };
+
+test("final fix 1: Home keeps an unconfirmed open leak in red with its button", () => {
+  const c = ctx("normal", "en", { stateResponse: { state: "PUMP_OFF", frame: { state: "PUMP_OFF" } },
+    leaks: [{ ...benchLeak, pump_stopped: 1 }] });
+  const html = homeScreen(c);
+  assert.ok(html.includes(t("en", "status.leak.title", { sector: "B" })));
+  assert.ok(html.includes(t("en", "status.leak.unconfirmed")));
+  assert.ok(html.includes(t("en", "btn.show_where")));
+  assert.ok(!html.includes(t("en", "status.ok.title")));
+});
+
+test("final fix 4: live Details says what the bench lost and keeps m3 inside the farm projection", () => {
+  const c = ctx("leak", "en", { kind: "live", leaks: [benchLeak] });
+  const html = detailsSheet(c);
+  assert.ok(html.includes(t("en", "details.bench_lost", { l: "0.45" })), "bench litres");
+  assert.ok(html.includes(t("en", "money.how_farm", { area: "50" })), "farm projection prefix");
+});
+
+test("final fix 5: How we count shows every step of the formula", () => {
+  const html = detailsSheet(ctx("leak"));
+  assert.ok(html.includes("16 m³/h × 8 h/day × 10 days = 1,280 m³"), html);
+  assert.ok(html.includes("− 3 m³") && html.includes("= 1,277 m³"));
+});
+
+test("final fix 6: live Map reports a faulty sensor", () => {
+  const c = ctx("normal", "en", { kind: "live", sectors: ["A", "B"],
+    stateResponse: { state: "HEALTHY", frame: { state: "HEALTHY", faults: ["PT1_unplugged"] } } });
+  const html = mapScreen(c);
+  assert.ok(html.includes(t("en", "map.sensors_attention", { n: 1 })));
+  assert.ok(!html.includes(t("en", "map.sensors_ok", { n: 3 })));
+});

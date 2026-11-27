@@ -4,7 +4,7 @@
 const CACHE = "hydropin-app-v1";
 const SHELL = [
   "./", "index.html", "app.css", "main.js", "screens.js", "farm.js", "demo.js",
-  "lib/i18n.js", "lib/strings.js", "lib/severity.js", "lib/savings.js", "lib/status.js", "lib/source.js",
+  "lib/i18n.js", "lib/strings.js", "lib/severity.js", "lib/savings.js", "lib/status.js", "lib/source.js", "lib/route.js",
   "../config.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png",
 ];
 

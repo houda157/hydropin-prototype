@@ -3,6 +3,7 @@
 // URL options for filming: ?demo=leak|fixed, ?source=demo, ?lang=fr|ar|en.
 import { demoSource } from "./demo.js";
 import { detectLang, isRtl, loadLang, saveLang, t } from "./lib/i18n.js";
+import { initialHash } from "./lib/route.js";
 import { detectSource, liveSource } from "./lib/source.js";
 import { toView } from "./lib/status.js";
 import * as S from "./screens.js";
@@ -95,6 +96,8 @@ window.addEventListener("hashchange", () => { state.sheet = null; render(); wind
 
 async function boot() {
   applyLang();
+  const start = initialHash(params, location.hash);
+  if (location.hash !== start) history.replaceState(null, "", start);
   const demo = params.get("demo");
   const kind = demo || params.get("source") === "demo" ? "demo" : await detectSource("..");
   state.source = kind === "demo" ? demoSource({ start: ["leak", "fixed"].includes(demo) ? demo : "normal" }) : liveSource("..");

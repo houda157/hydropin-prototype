@@ -3,6 +3,10 @@
 // Tone: short, plain words a farmer reads at 6 am. No technical terms on the first screen.
 
 const en = {
+  "map.sensors_attention": "Sensors needing attention: {n}",
+  "money.how_farm": "If this leak happened on a {area} ha farm:",
+  "details.bench_lost": "{l} L lost on the test bench",
+  "status.leak.unconfirmed": "Not confirmed fixed yet",
   "sheet.sensors": "Sensors", "sheet.water_saved": "Water saved this season", "sheet.avg_repair": "Average time to repair",
   "plan.monitor": "Monitor: the alert and the suspect zone", "plan.pinpoint": "Pinpoint: adds the pressure-wave test, to a few metres",
   "plan.payment": "Half paid at the start of the season, half after harvest",
@@ -29,12 +33,12 @@ const en = {
   "details.why": "Why we think so",
   "details.why_text": "More water is leaving the pump than the plants are using, and the pressure dropped in Sector {sector}.",
   "details.lost": "Lost so far", "details.where": "Where exactly", "details.how_we_count": "How we count the money",
-  "money.how": "A leak like this loses about {perHour} m³ per hour of irrigation. Unnoticed, it would run about {days} days. Found after {hours} h: {saved} m³ saved × {price} DT/m³ = {dt} DT.",
+  "money.how": "{perHour} m³/h × {hoursPerDay} h/day × {days} days = {would} m³ lost if nobody noticed − {lost} m³ lost = {saved} m³ saved × {price} DT/m³ = {dt} DT.",
   "money.not_set": "Farm figures not set yet", "money.estimate": "estimate",
   "checking.title": "Checking…", "checking.sub": "The sensors are confirming the repair.",
   "fixed.title": "Fixed. Thank you!", "fixed.sub": "The sensors confirm the water is back to normal.",
   "fixed.saved": "You saved about",
-  "fixed.not_confirmed": "Fixed (the pump stopped during the leak, so the sensors cannot confirm it).",
+  "fixed.not_confirmed": "Fixed (the sensors re-learned the normal state during the leak, so they cannot confirm it).",
   "map.title": "My farm", "map.sensors_ok": "All {n} sensors working", "map.sensors_pipes": "Sensors and pipes",
   "savings.title": "Savings", "savings.season": "Season {year} · HydroPin saved you",
   "savings.count": "{n} leaks found and fixed", "savings.details": "Water and repair times",
@@ -45,6 +49,10 @@ const en = {
 };
 
 const fr = {
+  "map.sensors_attention": "Capteurs à vérifier : {n}",
+  "money.how_farm": "Si cette fuite arrivait sur une ferme de {area} ha :",
+  "details.bench_lost": "{l} L perdus sur le banc d'essai",
+  "status.leak.unconfirmed": "Réparation pas encore confirmée",
   "sheet.sensors": "Capteurs", "sheet.water_saved": "Eau économisée cette saison", "sheet.avg_repair": "Temps moyen de réparation",
   "plan.monitor": "Monitor : l'alerte et la zone suspecte", "plan.pinpoint": "Pinpoint : ajoute le test par onde de pression, à quelques mètres près",
   "plan.payment": "La moitié au début de la saison, l'autre après la récolte",
@@ -73,12 +81,12 @@ const fr = {
   "details.why": "Pourquoi",
   "details.why_text": "Plus d'eau sort de la pompe que les plantes n'en utilisent, et la pression a baissé dans le secteur {sector}.",
   "details.lost": "Perdu jusqu'ici", "details.where": "Où exactement", "details.how_we_count": "Comment on calcule l'argent",
-  "money.how": "Une fuite comme celle-ci perd environ {perHour} m³ par heure d'irrigation. Sans HydroPin, elle durerait environ {days} jours. Trouvée après {hours} h : {saved} m³ économisés × {price} DT/m³ = {dt} DT.",
+  "money.how": "{perHour} m³/h × {hoursPerDay} h/jour × {days} jours = {would} m³ perdus si personne ne la voyait − {lost} m³ perdus = {saved} m³ économisés × {price} DT/m³ = {dt} DT.",
   "money.not_set": "Chiffres de la ferme pas encore renseignés", "money.estimate": "estimation",
   "checking.title": "Vérification…", "checking.sub": "Les capteurs confirment la réparation.",
   "fixed.title": "Réparé. Merci !", "fixed.sub": "Les capteurs confirment que l'eau est revenue à la normale.",
   "fixed.saved": "Vous avez économisé environ",
-  "fixed.not_confirmed": "Réparé (la pompe s'est arrêtée pendant la fuite, les capteurs ne peuvent pas le confirmer).",
+  "fixed.not_confirmed": "Réparé (les capteurs ont réappris l'état normal pendant la fuite, ils ne peuvent pas le confirmer).",
   "map.title": "Ma ferme", "map.sensors_ok": "Les {n} capteurs fonctionnent", "map.sensors_pipes": "Capteurs et conduites",
   "savings.title": "Économies", "savings.season": "Saison {year} · HydroPin vous a fait économiser",
   "savings.count": "{n} fuites trouvées et réparées", "savings.details": "Eau et temps de réparation",
@@ -91,6 +99,10 @@ const fr = {
 
 // Modern Standard Arabic. Proofread by Israa before the video.
 const ar = {
+  "map.sensors_attention": "مستشعرات تحتاج إلى فحص: {n}",
+  "money.how_farm": "لو حدث هذا التسرب في مزرعة مساحتها {area} هكتار:",
+  "details.bench_lost": "{l} لتر ضائعة على منصة الاختبار",
+  "status.leak.unconfirmed": "لم يُؤكَّد الإصلاح بعد",
   "sheet.sensors": "المستشعرات", "sheet.water_saved": "الماء الموفَّر هذا الموسم", "sheet.avg_repair": "متوسط مدة الإصلاح",
   "plan.monitor": "Monitor: التنبيه والمنطقة المشتبه بها", "plan.pinpoint": "Pinpoint: يضيف اختبار موجة الضغط، بدقة بضعة أمتار",
   "plan.payment": "النصف في بداية الموسم، والنصف بعد الحصاد",
@@ -117,12 +129,12 @@ const ar = {
   "details.why": "لماذا نعتقد ذلك",
   "details.why_text": "الماء الخارج من المضخة أكثر مما تستهلكه النباتات، وانخفض الضغط في القطاع {sector}.",
   "details.lost": "الضائع حتى الآن", "details.where": "المكان بالضبط", "details.how_we_count": "كيف نحسب المال",
-  "money.how": "تسرب كهذا يضيّع حوالي {perHour} م³ في كل ساعة ري. دون HydroPin، يستمر حوالي {days} أيام. اكتُشف بعد {hours} ساعة: {saved} م³ موفّرة × {price} د.ت/م³ = {dt} د.ت.",
+  "money.how": "{perHour} م³/س × {hoursPerDay} س/يوم × {days} أيام = {would} م³ تضيع لو لم ينتبه أحد − {lost} م³ ضائعة = {saved} م³ موفّرة × {price} د.ت/م³ = {dt} د.ت.",
   "money.not_set": "لم تُدخل أرقام المزرعة بعد", "money.estimate": "تقدير",
   "checking.title": "جارٍ التحقق…", "checking.sub": "المستشعرات تؤكد الإصلاح.",
   "fixed.title": "تم الإصلاح. شكرًا!", "fixed.sub": "تؤكد المستشعرات أن الماء عاد إلى وضعه الطبيعي.",
   "fixed.saved": "لقد وفّرت حوالي",
-  "fixed.not_confirmed": "تم الإصلاح (توقفت المضخة أثناء التسرب، لذا لا يمكن للمستشعرات تأكيده).",
+  "fixed.not_confirmed": "تم الإصلاح (أعادت المستشعرات تعلّم الوضع الطبيعي أثناء التسرب، لذا لا يمكنها تأكيده).",
   "map.title": "مزرعتي", "map.sensors_ok": "كل المستشعرات ({n}) تعمل", "map.sensors_pipes": "المستشعرات والقنوات",
   "savings.title": "التوفير", "savings.season": "موسم {year} · وفّر لك HydroPin",
   "savings.count": "{n} تسربات اكتُشفت وأُصلحت", "savings.details": "الماء ومدة الإصلاح",

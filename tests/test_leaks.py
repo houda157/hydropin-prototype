@@ -84,3 +84,28 @@ def test_open_episode_survives_backend_restart(tmp_path):
     with storage.db_session(db) as conn:
         track_leak(conn, _frame("LEAK", "2026-11-27T06:15:00.000Z"))
         assert len(storage.list_leaks(conn)) == 1
+
+
+def test_final_fix2_relearn_during_a_leak_cannot_confirm_the_repair(tmp_path):
+    """Baseline reset or a new detector process during a leak: HEALTHY afterwards proves nothing."""
+    db = tmp_path / "relearn.db"
+    storage.init_db(db)
+    with storage.db_session(db) as conn:
+        for state, ts in [("LEAK", T0), ("SETTLING", "2026-11-27T06:13:00.000Z"),
+                          ("LEARNING", "2026-11-27T06:13:20.000Z"), ("HEALTHY", "2026-11-27T06:14:00.000Z")]:
+            track_leak(conn, _frame(state, ts))
+        row = storage.list_leaks(conn)[0]
+    assert row["status"] == "open" and row["ended_ts"] is None and row["pump_stopped"] == 1
+
+
+def test_final_fix2_baseline_reset_through_the_api(tmp_path):
+    msgs = simulate(build("leak_L2", duration_s=220))          # the tap stays open to the end
+    with TestClient(_app(tmp_path / "reset.db")) as client:
+        reset_done = False
+        for m in msgs:
+            r = client.post("/api/ingest", json=m).json()
+            if not reset_done and r["frame"] and r["frame"]["state"] == "LEAK":
+                client.post("/api/baseline/reset")
+                reset_done = True
+        leaks = client.get("/api/leaks").json()
+    assert reset_done and leaks and leaks[0]["status"] == "open"

@@ -26,15 +26,27 @@ export async function detectSource(base = "..", fetchImpl = fetch) {
   }
 }
 
-export function liveSource(base = "..", { fetchImpl = fetch, intervalMs = 2000 } = {}) {
-  let cb = null, handle = null, lastLeaks = [];
-  const getJson = async (url) => {
-    const r = await fetchImpl(url);
-    if (!r.ok) throw new Error(`${url}: ${r.status}`);
-    return r.json();
+export function liveSource(base = "..", { fetchImpl = fetch, intervalMs = 2000, timeoutMs = 4000 } = {}) {
+  let cb = null, handle = null, lastLeaks = [], busy = false;
+  // a laptop that went to sleep can leave a request hanging for minutes: give up after timeoutMs
+  // and show OFFLINE rather than the last (possibly stale) "Everything is fine"
+  const getJson = (url) => {
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => { if (ctrl) ctrl.abort(); reject(new Error(`${url}: timeout`)); }, timeoutMs);
+    });
+    const request = (async () => {
+      const r = await fetchImpl(url, ctrl ? { signal: ctrl.signal } : undefined);
+      if (!r.ok) throw new Error(`${url}: ${r.status}`);
+      return r.json();
+    })();
+    return Promise.race([request, timeout]).finally(() => clearTimeout(timer));
   };
   const snap = (stateResponse, leaks) => ({ stateResponse, leaks, sectors: ["A", "B"], kind: "live", scale: FARM_SCALE });
   async function poll() {
+    if (busy) return;              // one poll at a time: answers cannot arrive out of order
+    busy = true;
     let s;
     try {
       const [state, leaks] = await Promise.all([getJson(`${base}/api/state`), getJson(`${base}/api/leaks?limit=20`)]);
@@ -42,6 +54,8 @@ export function liveSource(base = "..", { fetchImpl = fetch, intervalMs = 2000 }
       s = snap(state, leaks);
     } catch {
       s = snap(OFFLINE, lastLeaks);
+    } finally {
+      busy = false;
     }
     if (cb) cb(s);
   }
