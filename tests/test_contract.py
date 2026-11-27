@@ -114,9 +114,9 @@ def test_pressure_offset_roundtrip(monkeypatch):
 
 
 def test_pressure_sensor_full_scale_is_6_bar():
-    # PT1: 0..6 bar over 0-10 V through 22k/10k -> 3.125 V at the ADS.
-    # That is ~25000 counts, not 32767.
+    # PT1: 0..6 bar over 0-10 V through 20k/10k -> 3.333 V at the ADS.
+    # That is ~26667 counts, not 32767.
     assert config.PRESSURE_RANGE_BAR == (0.0, 6.0)
     adc = config.pressure_bar_to_adc(6.0)
-    assert adc == pytest.approx(25000, abs=2)
+    assert adc == pytest.approx(26667, abs=2)
     assert config.adc_to_pressure_bar(adc) == pytest.approx(6.0, abs=1e-3)
