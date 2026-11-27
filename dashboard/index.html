@@ -82,9 +82,19 @@
       </div>
 
       <div class="col">
-        <div class="pn">
-          <div class="pn-h"><span class="sq"></span><span class="lbl">Bench rev 1</span><span class="idx">F0 · PT1 · PT2 · taps L1–L3</span></div>
+        <div class="pn" id="bench-pn">
+          <div class="pn-h"><span class="sq"></span><span class="lbl">Bench</span>
+            <button type="button" class="btn btn-sm" id="b3-home" hidden>Reset view</button>
+            <div class="seg seg-sm" role="group" aria-label="Bench view">
+              <button type="button" id="bv-3d" aria-pressed="true">3D</button><button type="button" id="bv-2d" aria-pressed="false">2D</button>
+            </div>
+          </div>
+          <div id="bench3d" class="bench3d" role="img" aria-label="3D bench: live readings and suspected leak taps" hidden></div>
           <svg id="schematic" viewBox="0 0 640 210" role="img" aria-label="Bench schematic with leak probability per tap"></svg>
+          <p class="note" id="bench3d-msg" hidden></p>
+          <details class="more" id="bench3d-details" hidden><summary>Details</summary>
+            <p class="note">Drag to turn, scroll to zoom. P1, P2, F0 and the suspected taps come from this backend (live or replay). The 3D model and the pipe colours come from Houda's digital twin at its default valve setting (R1 = R2 = 65°, V1 = V2 = 78°): the bench does not measure the pressure along each pipe or the valve angles. On branch B the detector cannot tell L2 from L3, so both are marked "suspected" and no tap is drawn open.</p>
+          </details>
         </div>
         <div class="pn">
           <div class="pn-h"><span class="sq"></span><span class="lbl">Pressures</span><span class="idx">bar</span></div>

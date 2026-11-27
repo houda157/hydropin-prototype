@@ -91,3 +91,16 @@ Exact spacing, icon paths (simple 24×24 strokes), chart line widths, responsive
 - Live mode still works end to end with `simulator.bench_rev1 --scenario leak_L2` (state, charts,
   status card go HEALTHY → LEAK → HEALTHY).
 - `python -m pytest tests -q` still passes; `git diff --stat` shows no file outside `dashboard/` and `docs/`.
+
+## Addendum (2026-11-27): 3D bench in place of "Bench rev 1"
+Agreed in conversation: Houda's 3D bench (`simulator/run/viewer3d`) is the picture; every number and
+the leak display come from this branch's backend (live WebSocket frames or recorded replays).
+- Panel "Bench" with a 3D / 2D switch; 3D by default, 2D = the old drawing and the fallback without WebGL.
+- `tools/export_bench3d.py` copies the bundle and the twin slice the scene needs (default valve setting
+  R 65°, V 78°: 19 states, 8 KB) into `dashboard/bench3d/` (Pages publishes `dashboard/` only).
+- `scene3d.js` gains `setLive()` and an optional theme; bundle rebuilt with three 0.170.0 + esbuild.
+  Additive: Houda's viewer keeps calling `setState()`. Tell Houda.
+- Branch B (L2 ≈ L3): both taps "suspected" with their %, no tap drawn open. A tap opens (and drips)
+  only on LEAK with ≥ 60 % on it. Pipe colours: twin state for that leak (mean of the suspects), sized
+  by the measured leak flow; pump off → no pressure, no flow.
+- The dashboard opens on the twin's "board" camera preset; "Reset view" returns to it.

@@ -95,7 +95,89 @@ function drawSchematic() {
         <text x="${x}" y="${y + (y < 100 ? -16 : 28)}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${k}</text></g>`).join("")}
     </g>`;
 }
+// ------------------------------------------------------------------ 3D bench
+// Houda's 3D bench (simulator/run/viewer3d) fed with THIS backend's frames: readings, state and the
+// per-tap leak chance come from the frame; the twin (bench3d/board.json, tools/export_bench3d.py) only
+// adds the pipe pressures and the flow split the bench does not measure.
+const b3 = { view: "3d", h: null, bd: null, loading: null, last: null };
+try { b3.view = localStorage.getItem("hp-bench-view") === "2d" ? "2d" : "3d"; } catch (e) { /* storage blocked */ }
+const loadScript = (src) => new Promise((ok, ko) => {
+  const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => ko(new Error(`${src} not found`));
+  document.head.appendChild(s);
+});
+function webglOK() {
+  try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
+}
+async function ensure3d() {
+  if (b3.h) return true;
+  if (!b3.loading) b3.loading = (async () => {
+    if (!webglOK()) throw new Error("this browser has no WebGL");
+    const [bd] = await Promise.all([getJSON("bench3d/board.json"), window.HP3D ? null : loadScript("bench3d/hp3d.bundle.js")]);
+    b3.bd = bd;
+    b3.h = window.HP3D.init(bd, $("bench3d"), { colours: () => true, labels: () => true, rotate: () => false },
+      { bg: css("--panel"), floor: css("--panel-2") });
+    b3.h.view("board");          // close-up on the board: the panel is smaller than the twin viewer's
+  })();
+  try { await b3.loading; return true; }
+  catch (e) {
+    b3.loading = null;
+    const m = $("bench3d-msg"); m.hidden = false; m.textContent = `3D view unavailable (${e.message}): showing the 2D drawing.`;
+    return false;
+  }
+}
+const FLOWING = new Set(["SETTLING", "LEARNING", "HEALTHY", "WATCH", "LEAK"]);
+// twin row for a tap whose leak flow is closest to the measured one
+function twinFor(tap, leakLpm) {
+  const S = b3.bd.states;
+  let best = null, err = Infinity;
+  for (const d of b3.bd.D) {
+    const row = S[`${tap}|${d}`];
+    if (row && Math.abs(row[3] - (leakLpm || 0)) < err) { err = Math.abs(row[3] - (leakLpm || 0)); best = row; }
+  }
+  return best || S["none|0"];
+}
+function liveArgs(fr) {
+  if (!fr) return null;
+  const st = fr.state, alarm = st === "LEAK" || st === "WATCH", loc = fr.loc || {};
+  const ranked = ["L1", "L2", "L3"].map((t) => [t, loc[t] || 0]).sort((a, b) => b[1] - a[1]);
+  // a tap is drawn open only when the detector is sure of it; a branch-B split (L2 ≈ L3) stays "suspected"
+  const open = st === "LEAK" && ranked[0][1] >= 0.6 ? ranked[0][0] : null;
+  const taps = {};
+  for (const [t, p] of ranked) taps[t] = { p, open: t === open, suspect: alarm && t !== open && p >= 0.25 };
+  const nN = b3.bd.nodes.length;
+  let twin = b3.bd.states["none|0"];
+  if (open) twin = twinFor(open, fr.leak_lpm);
+  else {
+    const sus = ranked.filter(([t]) => taps[t].suspect).map(([t]) => twinFor(t, fr.leak_lpm));
+    if (sus.length) twin = sus[0].map((_, i) => sus.reduce((a, r) => a + r[i], 0) / sus.length);
+  }
+  if (!FLOWING.has(st)) twin = twin.map((v, i) => (i >= 6 && i < 6 + nN ? 0 : v));   // pump off: no pressure
+  const cls = $("status-card").className;
+  const kind = cls.includes("is-leak") ? "leak" : cls.includes("is-watch") ? "watch" : cls.includes("is-ok") ? "ok" : "idle";
+  return { p1: fr.pt1_bar, p2: fr.pt2_bar, f0: FLOWING.has(st) ? fr.flow_lpm : 0, leakLpm: fr.leak_lpm || 0, twin, taps,
+    setting: b3.bd.setting, status: { kind, text: $("status-title").textContent } };
+}
+function update3d(fr) {
+  b3.last = fr;
+  if (b3.h && b3.view === "3d") b3.h.setLive(liveArgs(fr));
+}
+function benchVisible() { return !$("tab-bench").hidden; }
+async function setBenchView(v) {
+  b3.view = v;
+  try { localStorage.setItem("hp-bench-view", v); } catch (e) { /* storage blocked */ }
+  $("bv-3d").setAttribute("aria-pressed", v === "3d");
+  $("bv-2d").setAttribute("aria-pressed", v === "2d");
+  $("schematic").toggleAttribute("hidden", v === "3d");   // an <svg> has no .hidden property
+  $("bench3d").hidden = v !== "3d";
+  $("b3-home").hidden = $("bench3d-details").hidden = v !== "3d";
+  if (v !== "3d") { if (b3.h) b3.h.pause(true); return; }
+  if (!(await ensure3d())) { $("bv-3d").disabled = true; return setBenchView("2d"); }
+  b3.h.pause(!benchVisible());
+  update3d(b3.last);
+}
+
 function updateSchematic(fr) {
+  update3d(fr);
   $("sv-f").textContent = fr ? `${fmt(fr.flow_lpm, 2)} L/min` : "–";
   $("sv-p1").textContent = fr ? `${fmt(fr.pt1_bar, 3)} bar` : "–";
   $("sv-p2").textContent = fr ? `${fmt(fr.pt2_bar, 3)} bar` : "–";
@@ -597,6 +679,7 @@ function showTab(name) {
     if (name === "m3") loadM3();
     if (name === "farm") { $("farm-frame").src = "farm-explorer/index.html"; loadFarm(); }
   }
+  if (b3.h) b3.h.pause(name !== "bench" || b3.view !== "3d");   // no WebGL work on hidden tabs
   if (name === "bench" && bench.mode === "replay") seek(bench.idx);
   if (name === "m3" && m3Index) showM3($("m3-pick").value);
   if (name === "farm" && farm.lay) renderFarm();
@@ -606,6 +689,10 @@ function showTab(name) {
 async function boot() {
   drawSchematic();
   renderFrame(null);
+  $("bv-3d").addEventListener("click", () => setBenchView("3d"));
+  $("bv-2d").addEventListener("click", () => setBenchView("2d"));
+  $("b3-home").addEventListener("click", () => { if (b3.h) b3.h.view("board"); });
+  setBenchView(b3.view);
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("rp-play").addEventListener("click", togglePlay);
   $("rp-scrub").addEventListener("input", (e) => { stopPlay(); seek(+e.target.value); });
